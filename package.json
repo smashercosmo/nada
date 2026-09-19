@@ -1,0 +1,75 @@
+{
+  "name": "nada",
+  "version": "0.0.0",
+  "description": "Simple CLI tool yjay makes it easier to install dependencies, especcially useful for monorepos.",
+  "keywords": [
+    "dependency management",
+    "monorepos"
+  ],
+  "license": "MIT",
+  "author": "Vladislav Shkodin <smashercosnmo@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smashercosmo/nada.git",
+    "directory": "packages/nada"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "pnpm --noEmit",
+    "format": "oxfmt",
+    "update:deps": "pnpm up --latest --interactive",
+    "nada": "node src/index.ts"
+  },
+  "dependencies": {
+    "@clack/prompts": "catalog:deps",
+    "yaml": "catalog:deps"
+  },
+  "devDependencies": {
+    "actions-up": "catalog:dev",
+    "oxfmt": "catalog:dev",
+    "oxlint": "catalog:dev",
+    "tsdown": "catalog:dev",
+    "typescript": "catalog:dev",
+    "vitest": "catalog:test",
+    "@vitest/coverage-v8": "catalog:test",
+    "@types/node": "catalog:types"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "v12.3.4",
+      "onFail": "download"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^24.0.0 || >=26.0.0",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "pnpm": ">=11.0.0",
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "nada": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    },
+    "bin": {
+      "nada": "./dist/index.mjs"
+    }
+  },
+  "packageManager": "pnpm@13.0.0"
+}
