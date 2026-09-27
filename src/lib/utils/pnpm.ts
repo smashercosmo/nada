@@ -1,10 +1,19 @@
-import child_process, {
-  type ChildProcess,
-  type SpawnOptions,
-} from "node:child_process";
-import type { WorkspaceProject } from "./types.js";
-import {spawn, spawnProcessAndCaptureResult} from "./spawn.ts";
-import process from "node:process";
+import type { ChildProcess, SpawnOptions } from "node:child_process"
+
+import child_process from "node:child_process"
+import process from "node:process"
+
+import { SUPPORTED_PACKAGE_MANAGER } from "#lib/utils/constants.js"
+import {
+  spawn,
+  spawnProcessAndCaptureResult,
+  type SpawnProcessAndCaptureResultOptions,
+} from '#lib/utils/spawn.js'
+
+interface WorkspaceProject {
+  name: string
+  path: string
+}
 
 /**
  * The subset of `child_process.spawn` that this module needs.
@@ -24,21 +33,21 @@ export type SpawnFn = (
   command: string,
   args: readonly string[],
   options: SpawnOptions,
-) => ChildProcess;
+) => ChildProcess
 
 export interface AddOptions {
   /** Packages passed to a single `pnpm add` invocation. */
-  packageNames: string[];
+  packageNames: string[]
   /** Workspace root / current working directory for pnpm. */
-  cwd: string;
+  cwd: string
   /** Package name selected by the user; ignored for a root install. */
-  targetName: string | undefined;
+  targetName: string | undefined
   /** Whether the selected project is the workspace root. */
-  isRoot: boolean;
+  isRoot: boolean
   /** The dependency field into which pnpm should save the packages. */
-  dependencyField: "dependencies" | "devDependencies";
+  dependencyField: "dependencies" | "devDependencies"
   /** Named pnpm catalog that should receive the versions. */
-  catalogName: string;
+  catalogName: string
 }
 
 /**
@@ -50,12 +59,11 @@ export interface AddOptions {
  * user needs to approve build scripts and retry.
  */
 export class PnpmIgnoredBuildsError extends Error {
-  constructor() {
-    super("pnpm ignored build scripts for unapproved dependencies");
-    this.name = "PnpmIgnoredBuildsError";
+  public constructor() {
+    super("pnpm ignored build scripts for unapproved dependencies")
+    this.name = "PnpmIgnoredBuildsError"
   }
 }
-
 
 /**
  * Builds the exact argument vector passed to `pnpm add`.
@@ -65,25 +73,25 @@ export class PnpmIgnoredBuildsError extends Error {
  * without starting pnpm.
  */
 function buildArgs(options: AddOptions): string[] {
-  const args = ["add", ...options.packageNames];
+  const args = ["add", ...options.packageNames]
 
   if (options.isRoot) {
-    // pnpm normally protects a workspace root from accidental dependency
-    // installation. `-w` explicitly says that the root is the intended target.
-    args.push("-w");
+    // Pnpm normally protects a workspace root from accidental dependency
+    // Installation. `-w` explicitly says that the root is the intended target.
+    args.push("-w")
   } else if (options.targetName) {
     // For a non-root workspace project, pnpm's `--filter` selects the package.
-    args.push("--filter", options.targetName);
+    args.push("--filter", options.targetName)
   }
 
   if (options.dependencyField === "devDependencies") {
-    args.push("--save-dev");
+    args.push("--save-dev")
   }
 
   // The tool intentionally always uses a named catalog rather than pnpm's
-  // unnamed/default catalog. pnpm creates a new named catalog when necessary.
-  args.push("--save-catalog-name", options.catalogName);
-  return args;
+  // Unnamed/default catalog. pnpm creates a new named catalog when necessary.
+  args.push("--save-catalog-name", options.catalogName)
+  return args
 }
 
 /**
@@ -94,7 +102,7 @@ function buildArgs(options: AddOptions): string[] {
  * the user's terminal. The function returns pnpm's numeric exit status rather
  * than throwing for an ordinary non-zero exit.
  */
-export async function runPnpmAdd(
+export async function runPackageAddCommand(
   options: AddOptions,
   spawnImpl: SpawnFn = child_process.spawn,
 ): Promise<number> {
@@ -105,9 +113,9 @@ export async function runPnpmAdd(
     spawnImpl,
     stdin: "inherit",
     stdout: "inherit",
-  });
+  })
 
-  return result.code;
+  return result.code
 }
 
 /**
@@ -122,7 +130,7 @@ export async function runPnpmAdd(
  */
 export async function execPnpmInteractivePipe(
   args: readonly string[],
-  cwd: string,
+  cwd: string = process.cwd(),
   spawnImpl: SpawnFn = child_process.spawn,
 ): Promise<number> {
   const result = await spawn({
@@ -132,28 +140,45 @@ export async function execPnpmInteractivePipe(
     spawnImpl,
     stdin: "inherit",
     stdout: "pipe",
-  });
+  })
 
-  return result.code;
+  return result.code
 }
 
 /**
  * Runs an arbitrary pnpm command with captured stdout/stderr.
  */
-export function runPnpmCommandAndCaptureResult(
+export async function runPnpmCommandAndCaptureResult(
   args: readonly string[],
   cwd: string = process.cwd(),
   spawnImpl: SpawnFn = child_process.spawn,
-): Promise<string> {
-  return spawnProcessAndCaptureResult("pnpm", args, cwd, spawnImpl);
+) {
+  return spawnProcessAndCaptureResult({
+    command: "pnpm",
+    args: args,
+    cwd: cwd,
+    spawnImpl: spawnImpl,
+  })
 }
 
-export function getPnpmVerion() {
-  return spawnProcessAndCaptureResult("pnpm", ["--version"]);
+export async function checkIfPnpmIsAvailable() {
+  try {
+    const command = process.platform === "win32" ? `where` : `command`
+    const args =
+      process.platform === "win32" ? [SUPPORTED_PACKAGE_MANAGER] : ["-v", SUPPORTED_PACKAGE_MANAGER]
+    child_process.execFileSync(command, args, { stdio: "ignore", env: process.env })
+    return true
+  } catch {
+    return false
+  }
 }
 
-export function getPackageInfo(pkg: string) {
-  return spawnProcessAndCaptureResult("pnpm", ["view", pkg]);
+export async function getCurrentPnpmVersion(options?: Omit<SpawnProcessAndCaptureResultOptions, "command" | "args">) {
+  return spawnProcessAndCaptureResult({ command: "pnpm", args: ["--version"], ...options })
+}
+
+export async function getPackageInfo(pkg: string) {
+  return spawnProcessAndCaptureResult({ command: "pnpm", args: ["view", pkg] })
 }
 
 /**
@@ -161,31 +186,46 @@ export function getPackageInfo(pkg: string) {
  * pnpm's package-glob/negation resolution in this tool.
  */
 export async function getWorkspaceProjects(
-  cwd: string,
+  cwd: string = process.cwd(),
   spawnImpl: SpawnFn = child_process.spawn,
 ): Promise<WorkspaceProject[]> {
-  const args = ["list", "-r", "--depth", "-1", "--json"] as const;
-  const stdout = await spawnProcessAndCaptureResult("pnpm", args, cwd, spawnImpl);
+  const args = ["list", "-r", "--depth", "-1", "--json"] as const
+  const [stdout, error] = await spawnProcessAndCaptureResult({
+    command: "pnpm",
+    args: args,
+    cwd: cwd,
+    spawnImpl: spawnImpl,
+  })
+
+  if (error) {
+    throw error
+  }
 
   // JSON parsing intentionally happens after process-success validation. A
-  // malformed response therefore becomes a SyntaxError rather than being
-  // mistaken for a pnpm process failure.
-  const parsed = JSON.parse(stdout) as unknown;
+  // Malformed response therefore becomes a SyntaxError rather than being
+  // Mistaken for a pnpm process failure.
+  const parsed = JSON.parse(stdout) as unknown
 
   if (!Array.isArray(parsed)) {
-    throw new Error("pnpm list returned JSON, but the top-level value was not an array.");
+    throw new TypeError("pnpm list returned JSON, but the top-level value was not an array.")
   }
 
   return parsed
-  .filter((entry): entry is { name: string; path: string } => {
-    if (!entry || typeof entry !== "object") return false;
-    const value = entry as Record<string, unknown>;
-    return typeof value["name"] === "string" && value["name"].length > 0 && typeof value["path"] === "string";
-  })
-  .map((entry) => ({ name: entry.name, path: entry.path }));
+    .filter((entry): entry is { name: string; path: string } => {
+      if (!entry || typeof entry !== "object") {
+        return false
+      }
+      const value = entry as Record<string, unknown>
+      return (
+        typeof value["name"] === "string" &&
+        value["name"].length > 0 &&
+        typeof value["path"] === "string"
+      )
+    })
+    .map((entry) => ({ name: entry.name, path: entry.path }))
 }
 
 /** Returns a human-readable command string for the confirmation/status UI. */
 export function describePnpmAddCommand(options: AddOptions): string {
-  return ["pnpm", ...buildArgs(options)].join(" ");
+  return ["pnpm", ...buildArgs(options)].join(" ")
 }

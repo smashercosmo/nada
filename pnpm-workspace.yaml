@@ -1,8 +1,16 @@
+packages:
+  - src/*
+
 allowBuilds:
   node: true
+  node-pty: true
+autoDedupe: true
 
-saveExact: true
-hoist: false
+catalog:
+  '@pnpm/cli.utils': 1101.0.28
+  configs: 1.0.3
+  my: 0.3.3
+  myconfig: 0.0.3
 catalogMode: strict
 
 catalogs:
@@ -10,13 +18,36 @@ catalogs:
     "@clack/prompts": 1.8.1
     yaml: 2.9.1
   dev:
-    actions-up: 1.20.0
-    oxfmt: 0.68.0
-    oxlint: 1.83.0
+    '@pnpm/cli.utils': 1101.0.28
+    actions-up: 1.20.1
+    jiti: 2.7.0
+    oxfmt: 0.70.0
     tsdown: 0.23.0
     typescript: 7.0.2
+  lint:
+    '@eslint/json': 2.1.0
+    "@stylistic/eslint-plugin": 5.10.0
+    eslint: 10.11.0
+    eslint-plugin-package-json: 1.10.0
+    eslint-plugin-regexp: 3.3.1
+    oxlint: 1.85.0
+    oxlint-tsgolint: 7.0.2002
+  pnpm:
+    '@pnpm/cli.command': 1100.0.2
+    '@pnpm/cli.meta': 1100.1.0
+    '@pnpm/cli.utils': 1101.0.28
+    '@pnpm/types': 1102.1.0
+    '@types/semver': 7.8.0
+    semver: 7.8.5
   test:
-    vitest: 5.0.1
     "@vitest/coverage-v8": 5.0.1
+    cli-testing-library: 4.0.0
+    node-pty: 1.1.0
+    vitest: 5.0.1
   types:
-    "@types/node": 24.0.0
+    '@pnpm/types': 1102.1.0
+    "@types/node": 26.6.3
+    ts-extras: 1.3.0
+hoist: false
+
+saveExact: true

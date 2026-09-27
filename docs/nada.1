@@ -1,0 +1,42 @@
+.TH NADA 1 "September 2026" "nada" "User Commands"
+
+.SH NAME
+nada \- interactively install packages with pnpm
+
+.SH SYNOPSIS
+.B nada
+.RI [ packages ... ]
+
+.SH DESCRIPTION
+.B nada
+is an interactive CLI for installing packages with pnpm.
+
+It's not really useful in a single-package repos.
+Monorepos is where it really shines.
+
+Packages may be supplied as command-line arguments or entered
+interactively.
+
+.SH EXAMPLES
+.TP
+Install a package interactively:
+.PP
+.nf
+nada
+.fi
+
+.TP
+Install packages supplied on the command line:
+.PP
+.nf
+nada react lodash
+.fi
+
+.SH EXIT STATUS
+.TP
+.B 0
+The installation completed successfully.
+
+.TP
+.B 1
+The installation failed.

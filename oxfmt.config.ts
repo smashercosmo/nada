@@ -1,13 +1,17 @@
-import { defineConfig } from 'oxfmt'
+import { defineConfig } from "oxfmt"
 
 export default defineConfig({
   $schema: "./node_modules/oxfmt/configuration_schema.json",
-  printWidth: 80,
+  semi: false,
   singleQuote: false,
   jsxSingleQuote: false,
   trailingComma: "all",
-  arrowParens: "avoid",
-  sortPackageJson: true,
+  arrowParens: "always",
+  bracketSpacing: true,
+  /** Sorting is handled by eslint-plugin-package-json */
+  sortPackageJson: false,
+  experimentalOperatorPosition: "end",
+  proseWrap: "always",
   sortImports: {
     newlinesBetween: true,
     groups: [
@@ -20,4 +24,4 @@ export default defineConfig({
       "unknown",
     ],
   },
-});
+})

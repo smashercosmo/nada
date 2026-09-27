@@ -1,5 +1,8 @@
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
+import fs from "node:fs/promises"
+import path from "node:path"
+import child_process from 'child_process'
+
+import packageJson from "#root/package.json" with { type: "json" }
 
 /**
  * Confirms the root package.json declares pnpm via the modern
@@ -9,28 +12,26 @@ import path from 'node:path'
  * pnpm version counts as "new enough".
  */
 export async function assertPnpmProject(cwd: string): Promise<void> {
-  const pkgPath = path.join(cwd, "package.json");
+  const pkgPath = path.join(cwd, "package.json")
 
-  let raw: string;
+  let raw: string
   try {
-    raw = await readFile(pkgPath, "utf8");
+    raw = await fs.readFile(pkgPath, "utf8")
   } catch {
     throw new Error(
       `Could not find a package.json at ${pkgPath}. Run this tool from the workspace root.`,
-    );
+    )
   }
 
-  let pkg: Record<string, unknown>;
+  let pkg: Record<string, unknown>
   try {
-    pkg = JSON.parse(raw);
+    pkg = JSON.parse(raw)
   } catch {
-    throw new Error(`Could not parse ${pkgPath} as JSON.`);
+    throw new Error(`Could not parse ${pkgPath} as JSON.`)
   }
 
-  const devEngines = pkg["devEngines"] as
-    | { packageManager?: { name?: string } }
-    | undefined;
-  const name = devEngines?.packageManager?.name;
+  const devEngines = pkg["devEngines"] as { packageManager?: { name?: string } } | undefined
+  const name = devEngines?.packageManager?.name
 
   if (name !== "pnpm") {
     throw new Error(
@@ -40,6 +41,7 @@ export async function assertPnpmProject(cwd: string): Promise<void> {
         `  "devEngines": { "packageManager": { "name": "pnpm", "version": "<your version>", "onFail": "download" } }`,
         `This tool relies on that field instead of checking the pnpm version itself.`,
       ].join("\n"),
-    );
+    )
   }
 }
+

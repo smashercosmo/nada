@@ -1,75 +1,116 @@
 {
   "name": "nada",
   "version": "0.0.0",
+  "private": false,
   "description": "Simple CLI tool yjay makes it easier to install dependencies, especcially useful for monorepos.",
   "keywords": [
     "dependency management",
     "monorepos"
   ],
-  "license": "MIT",
-  "author": "Vladislav Shkodin <smashercosnmo@gmail.com>",
+  "bugs": "https://github.com/smashercosmo/nada/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/smashercosmo/nada.git",
-    "directory": "packages/nada"
+    "url": "git+https://github.com/smashercosmo/nada.git"
   },
-  "files": [
-    "dist"
-  ],
-  "type": "module",
-  "sideEffects": false,
-  "scripts": {
-    "build": "tsdown",
-    "typecheck": "pnpm --noEmit",
-    "format": "oxfmt",
-    "update:deps": "pnpm up --latest --interactive",
-    "nada": "node src/index.ts"
-  },
-  "dependencies": {
-    "@clack/prompts": "catalog:deps",
-    "yaml": "catalog:deps"
-  },
-  "devDependencies": {
-    "actions-up": "catalog:dev",
-    "oxfmt": "catalog:dev",
-    "oxlint": "catalog:dev",
-    "tsdown": "catalog:dev",
-    "typescript": "catalog:dev",
-    "vitest": "catalog:test",
-    "@vitest/coverage-v8": "catalog:test",
-    "@types/node": "catalog:types"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "v12.3.4",
-      "onFail": "download"
-    },
-    "runtime": {
-      "name": "node",
-      "version": "^24.0.0 || >=26.0.0",
-      "onFail": "download"
+  "license": "MIT",
+  "author": "Vladislav Shkodin <smashercosnmo@gmail.com>",
+  "contributors": [
+    {
+      "name": "Vladislav Shkodin",
+      "email": "smashercosnmo@gmail.com"
     }
-  },
-  "engines": {
-    "pnpm": ">=11.0.0",
-    "node": ">=24.0.0"
+  ],
+  "sideEffects": false,
+  "type": "module",
+  "imports": {
+    "#lib/*.js": "./src/lib/*.ts",
+    "#tests/*.js": "./src/tests/*.ts",
+    "#root/*": "./*"
   },
   "exports": {
     ".": "./src/index.ts",
     "./package.json": "./package.json"
   },
   "bin": {
-    "nada": "./src/index.ts"
+    "nada": "src/lib/index.ts"
   },
+  "man": [
+    "./docs/deps-install.1"
+  ],
+  "directories": {
+    "lib": "src/lib",
+    "test": "src/tests"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "clean:all": "pnpm clean:dist && pnpm clean:modules && pnpm clean:lock",
+    "clean:dist": "rm -rf dist",
+    "clean:lock": "rm -rf pnpm-lock.yaml",
+    "clean:modules": "pnpm clean",
+    "format": "oxfmt",
+    "lint": "oxlint --type-aware && eslint",
+    "lint:fix": "oxlint --type-aware --fix && eslint --fix",
+    "nada": "node src/lib/index.ts",
+    "test": "vitest run",
+    "typecheck": "pnpm --noEmit",
+    "update:deps": "pnpm up --latest --interactive"
+  },
+  "dependencies": {
+    "@clack/prompts": "catalog:deps",
+    "@pnpm/cli.meta": "catalog:pnpm",
+    "@pnpm/cli.utils": "catalog:pnpm",
+    "configs": "catalog:",
+    "my": "catalog:",
+    "myconfig": "catalog:",
+    "yaml": "catalog:deps"
+  },
+  "devDependencies": {
+    "@eslint/json": "catalog:lint",
+    "@pnpm/types": "catalog:types",
+    "@stylistic/eslint-plugin": "catalog:lint",
+    "@types/node": "catalog:types",
+    "@types/semver": "catalog:pnpm",
+    "@vitest/coverage-v8": "catalog:test",
+    "actions-up": "catalog:dev",
+    "cli-testing-library": "catalog:test",
+    "eslint": "catalog:lint",
+    "eslint-plugin-package-json": "catalog:lint",
+    "jiti": "catalog:dev",
+    "node-pty": "catalog:test",
+    "oxfmt": "catalog:dev",
+    "oxlint": "catalog:lint",
+    "oxlint-tsgolint": "catalog:lint",
+    "semver": "catalog:pnpm",
+    "ts-extras": "catalog:types",
+    "tsdown": "catalog:dev",
+    "typescript": "catalog:dev",
+    "vitest": "catalog:test"
+  },
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "devEngines": {
+      "packageManager": {
+        "name": "pnpm",
+        "version": "v12.6.0"
+      },
+      "runtime": {
+        "name": "node",
+        "version": "v26.10.0"
+      }
+    },
   "publishConfig": {
+    "bin": {
+      "nada": "./dist/index.mjs"
+    },
     "exports": {
       ".": "./dist/index.mjs",
       "./package.json": "./package.json"
-    },
-    "bin": {
-      "nada": "./dist/index.mjs"
     }
-  },
-  "packageManager": "pnpm@13.0.0"
+  }
 }

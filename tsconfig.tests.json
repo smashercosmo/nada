@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "."
+  },
+  "include": ["./src/tests", "vitest.config.ts", "oxlint.config.ts", "oxfmt.config.ts",
+    "eslint.config.ts",
+    "test.ts"
+  ],
+  "references": [{ "path": "./tsconfig.lib.json" }]
+}
