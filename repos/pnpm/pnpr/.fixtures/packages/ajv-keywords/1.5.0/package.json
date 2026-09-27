@@ -1,7 +1,0 @@
-{
-  "name": "ajv-keywords",
-  "version": "1.5.0",
-  "peerDependencies": {
-    "ajv": ">=4.10.0"
-  }
-}

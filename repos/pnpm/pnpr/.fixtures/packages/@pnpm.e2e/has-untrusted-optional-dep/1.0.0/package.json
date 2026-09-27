@@ -1,7 +1,0 @@
-{
-  "name": "@pnpm.e2e/has-untrusted-optional-dep",
-  "version": "1.0.0",
-  "optionalDependencies": {
-    "@pnpm/e2e.test-provenance": "0.0.5"
-  }
-}

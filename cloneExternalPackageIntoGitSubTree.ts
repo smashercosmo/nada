@@ -19,11 +19,12 @@ tokens
 const prefix = values.prefix;
 const repo = values.repo;
 
+child_process.execFileSync("git", ["subtree", "add", `--prefix=repos/pnpm`, "https://github.com/pnpm/pnpm.git", "v12.7.0", "--squash"])
 child_process.execFileSync("git", ["subtree", "pull", `--prefix=repos/pnpm`, "https://github.com/pnpm/pnpm.git", "v12.7.0", "--squash"])
 child_process.execFileSync("git", ["subtree", "add", `--prefix=repos/pnpm.io`, "https://github.com/pnpm/pnpm.io.git", "main", "--squash"])
 child_process.execFileSync("git", ["subtree", "pull", `--prefix=repos/pnpm.io`, "https://github.com/pnpm/pnpm.io.git", "main", "--squash"])
 child_process.execFileSync("git", ["subtree", "add", `--prefix=repos/node`, "https://github.com/nodejs/node.git", "v26.10.0", "--squash"])
 child_process.execFileSync("git", ["subtree", "pull", `--prefix=repos/node`, "https://github.com/nodejs/node.git", "v26.10.0", "--squash"])
-child_process.execFileSync("git", ["subtree", "add", `--prefix=repos/pnpm.io`, "https://github.com/nodejs/nodejs.org.git", "main", "--squash"])
-child_process.execFileSync("git", ["subtree", "pull", `--prefix=repos/pnpm.io`, "https://github.com/nodejs/nodejs.org.git", "main", "--squash"])
+child_process.execFileSync("git", ["subtree", "add", `--prefix=repos/nodejs.org`, "https://github.com/nodejs/nodejs.org.git", "main", "--squash"])
+child_process.execFileSync("git", ["subtree", "pull", `--prefix=repos/nodejs.org`, "https://github.com/nodejs/nodejs.org.git", "main", "--squash"])
 

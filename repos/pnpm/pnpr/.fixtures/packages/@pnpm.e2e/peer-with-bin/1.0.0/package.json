@@ -1,5 +1,0 @@
-{
-  "name": "@pnpm.e2e/peer-with-bin",
-  "version": "1.0.0",
-  "bin": "./index.js"
-}
