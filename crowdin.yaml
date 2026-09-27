@@ -1,0 +1,34 @@
+preserve_hierarchy: true
+
+languages_mapping: &languages_mapping
+  locale:
+    'es-ES': 'es'
+    'fr': 'fr'
+    'id': 'id'
+    'it': 'it'
+    'ja': 'ja'
+    'ko': 'ko'
+    'pt-BR': 'pt'
+    'ru': 'ru'
+    'uk': 'uk'
+    'tr': 'tr'
+    'zh-CN': 'zh'
+    'zh-TW': 'zh-TW'
+
+files:
+  -
+    source: '/docs/**/*'
+    translation: '/i18n/%locale%/docusaurus-plugin-content-docs/current/**/%original_file_name%'
+    languages_mapping: *languages_mapping
+  -
+    source: '/i18n/en/**/*'
+    translation: '/i18n/%locale%/**/%original_file_name%'
+    languages_mapping: *languages_mapping
+  -
+    source: '/blog/**/*'
+    translation: '/i18n/%locale%/docusaurus-plugin-content-blog/**/%original_file_name%'
+    languages_mapping: *languages_mapping
+  -
+    source: '/versioned_docs/**/*'
+    translation: '/i18n/%locale%/docusaurus-plugin-content-docs/**/%original_file_name%'
+    languages_mapping: *languages_mapping
