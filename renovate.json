@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "ignorePaths": ["**/fixtures/**", "src/.tmp/**"],
+  "pinVersions": false,
+  "packageRules": [
+    {
+      "packageNames": ["react", "react-dom"],
+      "allowedVersions": "^17.0.0"
+    }
+  ]
+}
