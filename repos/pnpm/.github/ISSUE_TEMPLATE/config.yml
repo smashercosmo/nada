@@ -1,0 +1,7 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question 🤷🏻‍♂️
+    url: https://github.com/pnpm/pnpm/discussions/new?category=q-a
+    about: Ask questions and discuss with other community members
+  - name: My company is migrating to pnpm and we have several issues/feature requests
+    url: https://github.com/pnpm/pnpm/discussions/3787
