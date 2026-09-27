@@ -1,0 +1,199 @@
+'use client';
+
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import * as SelectPrimitive from '@radix-ui/react-select';
+import classNames from 'classnames';
+import { useId, useMemo } from 'react';
+
+import Badge, { type BadgeKind } from '#ui/Common/Badge';
+import Skeleton from '#ui/Common/Skeleton';
+
+import type { FormattedMessage, LinkLike } from '#ui/types';
+import type { ReactElement, ReactNode } from 'react';
+
+import { mapValues } from './utils';
+
+import styles from './index.module.css';
+
+export type SelectValue<T extends string> = {
+  label: FormattedMessage | string;
+  value: T;
+  iconImage?: ReactElement<SVGSVGElement>;
+  badge?: {
+    label: FormattedMessage | string;
+    kind?: BadgeKind;
+  };
+  disabled?: boolean;
+};
+
+export type SelectGroup<T extends string> = {
+  label?: FormattedMessage | string;
+  items: Array<SelectValue<T>>;
+};
+
+export type SelectProps<T extends string> = {
+  values: Array<SelectGroup<T>> | Array<T> | Array<SelectValue<T>>;
+  value?: T;
+  placeholder?: string;
+  label?: string;
+  inline?: boolean;
+  onChange?: (value: T) => void;
+  className?: string;
+  /**
+   * Allows passing custom CSS classes to the dropdown container element.
+   * This is useful for overriding default styles, such as adjusting `max-height`.
+   * The dropdown is rendered within a `Portal`.
+   */
+  dropdownClassName?: string;
+  ariaLabel?: string;
+  loading?: boolean;
+  disabled?: boolean;
+  fallbackClass?: string;
+  as?: LinkLike | 'div';
+};
+
+const Select = <T extends string>({
+  values = [],
+  value,
+  placeholder,
+  label,
+  inline,
+  onChange,
+  className,
+  dropdownClassName,
+  ariaLabel,
+  loading = false,
+  disabled = false,
+  fallbackClass = '',
+}: SelectProps<T>): ReactNode => {
+  const id = useId();
+
+  const mappedValues = useMemo(() => mapValues(values), [values]) as Array<
+    SelectGroup<T>
+  >;
+
+  // We render the actual item slotted to fix/prevent the issue
+  // of the tirgger flashing on the initial render
+  const currentItem = useMemo(
+    () =>
+      mappedValues
+        .flatMap(({ items }) => items)
+        .find(item => item.value === value),
+    [mappedValues, value]
+  );
+
+  const memoizedMappedValues = useMemo(() => {
+    return mappedValues.map(({ label, items }, key) => (
+      <SelectPrimitive.Group key={label?.toString() ?? key}>
+        {label && (
+          <SelectPrimitive.Label
+            className={classNames(styles.item, styles.label)}
+          >
+            {label}
+          </SelectPrimitive.Label>
+        )}
+
+        {items.map(({ value, label, iconImage, badge, disabled }) => (
+          <SelectPrimitive.Item
+            key={value}
+            value={value}
+            disabled={disabled}
+            className={classNames(styles.item, styles.text)}
+          >
+            <SelectPrimitive.ItemText>
+              {iconImage}
+              <span>{label}</span>
+              {badge && (
+                <Badge size="small" kind={badge.kind} className={styles.badge}>
+                  {badge.label}
+                </Badge>
+              )}
+            </SelectPrimitive.ItemText>
+          </SelectPrimitive.Item>
+        ))}
+      </SelectPrimitive.Group>
+    ));
+    // We explicitly want to recalculate these values only when the values themselves changed
+    // This is to prevent re-rendering and re-calcukating the values on every render
+    // eslint-disable-next-line @eslint-react/exhaustive-deps
+  }, [JSON.stringify(values)]);
+
+  const handleChange = (value: T) => {
+    if (typeof onChange === 'function') {
+      onChange(value);
+    }
+  };
+
+  return (
+    <Skeleton loading={loading}>
+      <span
+        className={classNames(
+          styles.select,
+          { [styles.inline]: inline },
+          className,
+          fallbackClass
+        )}
+      >
+        {label && (
+          <label className={styles.label} htmlFor={id}>
+            {label}
+          </label>
+        )}
+
+        <SelectPrimitive.Root
+          value={currentItem !== undefined ? value : undefined}
+          onValueChange={handleChange}
+          disabled={disabled}
+        >
+          <SelectPrimitive.Trigger
+            className={styles.trigger}
+            aria-label={ariaLabel}
+            id={id}
+          >
+            <SelectPrimitive.Value placeholder={placeholder}>
+              {currentItem !== undefined && (
+                <>
+                  {currentItem.iconImage}
+                  <span>{currentItem.label}</span>
+                  {currentItem.badge && (
+                    <Badge
+                      size="small"
+                      kind={currentItem.badge.kind}
+                      className={styles.badge}
+                    >
+                      {currentItem.badge.label}
+                    </Badge>
+                  )}
+                </>
+              )}
+            </SelectPrimitive.Value>
+            <ChevronDownIcon className={styles.icon} />
+          </SelectPrimitive.Trigger>
+
+          <SelectPrimitive.Portal>
+            <SelectPrimitive.Content
+              position={inline ? 'popper' : 'item-aligned'}
+              className={classNames(
+                styles.dropdown,
+                { [styles.inline]: inline },
+                dropdownClassName
+              )}
+            >
+              <SelectPrimitive.ScrollUpButton>
+                <ChevronUpIcon className={styles.scrollIcon} />
+              </SelectPrimitive.ScrollUpButton>
+              <SelectPrimitive.Viewport>
+                {memoizedMappedValues}
+              </SelectPrimitive.Viewport>
+              <SelectPrimitive.ScrollDownButton>
+                <ChevronDownIcon className={styles.scrollIcon} />
+              </SelectPrimitive.ScrollDownButton>
+            </SelectPrimitive.Content>
+          </SelectPrimitive.Portal>
+        </SelectPrimitive.Root>
+      </span>
+    </Skeleton>
+  );
+};
+
+export default Select;

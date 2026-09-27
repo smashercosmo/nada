@@ -1,0 +1,73 @@
+{
+  "name": "nodejs-website",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "description": "Nodejs.org Website",
+  "homepage": "https://nodejs.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nodejs/nodejs.org.git"
+  },
+  "author": {
+    "name": "Node.js Website Team and Contributors"
+  },
+  "scripts": {
+    "build": "turbo build --filter=@node-core/website",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "deploy": "turbo deploy --filter=@node-core/website",
+    "dev": "turbo dev",
+    "format": "turbo //#prettier:fix prettier:fix lint:fix",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "lint:i18n": "eloqnt lint",
+    "lint:staged": "lint-staged",
+    "lint:types": "turbo lint:types",
+    "prepare": "husky",
+    "prettier": "prettier \"**/*.{js,mjs,ts,tsx,md,mdx,json,yml,css}\" --check --cache --cache-strategy=content --cache-location=.prettiercache",
+    "prettier:fix": "node --run prettier -- --write",
+    "release": "pnpm --filter './packages/*' --if-present run build && pnpm publish -r --access=public",
+    "scripts:release-post": "turbo scripts:release-post",
+    "start": "turbo start",
+    "storybook": "turbo storybook",
+    "storybook:build": "turbo storybook:build",
+    "test": "turbo test:unit",
+    "test:ci": "cross-env NODE_OPTIONS=\"--test-reporter=lcov --test-reporter-destination=lcov.info --test-reporter=junit --test-reporter-destination=junit.xml --test-reporter=@reporters/github --test-reporter-destination=stdout\" turbo test:unit"
+  },
+  "dependencies": {
+    "husky": "9.1.7",
+    "lint-staged": "17.3.0",
+    "turbo": "2.10.12"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^3.0.1",
+    "@eloqnt/cli": "^0.6.20",
+    "@eslint/js": "~10.0.1",
+    "@reporters/github": "^2.0.2",
+    "@testing-library/react": "~16.3.2",
+    "cross-env": "^10.1.0",
+    "eslint": "~10.9.1",
+    "eslint-import-resolver-typescript": "~4.4.5",
+    "eslint-plugin-import-x": "~4.17.1",
+    "globals": "^17.7.0",
+    "prettier": "3.9.6",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "typescript": "catalog:",
+    "typescript-eslint": "~8.68.0"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=v24.11.0",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.25.0",
+      "onFail": "error"
+    }
+  }
+}

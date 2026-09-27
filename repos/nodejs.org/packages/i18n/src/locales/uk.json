@@ -1,0 +1,269 @@
+{
+  "components": {
+    "header": {
+      "buttons": {
+        "theme": "Обрати тему",
+        "themeSystem": "Системна",
+        "themeLightMode": "Світла",
+        "themeDarkMode": "Темна"
+      }
+    },
+    "containers": {
+      "footer": {
+        "legal": "Авторські права <foundationName>OpenJS Foundation</foundationName> та учасників спільноти Node.js. Усі права захищено. <foundationName>OpenJS Foundation</foundationName> має зареєстровані торговельні марки та використовує торговельні марки. Аби побачити список торговельних марок <foundationName>OpenJS Foundation</foundationName>, перегляньте нашу <trademarkPolicy>політику торговельних марок</trademarkPolicy> та <trademarkList>список торговельних марок</trademarkList>. Торговельні марки та логотипи, не зазначені в <trademarkList>списку торговельних марок OpenJS Foundation</trademarkList>, є торговельними марками™ або зареєстрованими® торговельними марками їхніх відповідних власників. Їхнє використання не означає певну приналежність чи схвалення ними.",
+        "links": {
+          "foundationName": "OpenJS Foundation",
+          "aiCodingAssistantsPolicy": "Політика щодо ШІ-асистентів з кодування",
+          "termsOfUse": "Умови використання",
+          "privacyPolicy": "Політика конфіденційності",
+          "bylaws": "Статути",
+          "codeOfConduct": "Кодекс поведінки",
+          "trademarkPolicy": "Політика торговельних марок",
+          "trademarkList": "Список торговельних марок",
+          "cookiePolicy": "Політика cookie",
+          "security": "Політика безпеки"
+        },
+        "releasePills": {
+          "latestLTS": "Остання LTS",
+          "latestRelease": "Останній реліз"
+        }
+      },
+      "navBar": {
+        "controls": {
+          "toggle": "Перемкнути меню навігації"
+        },
+        "links": {
+          "about": "Про Node.js",
+          "download": "Завантажити",
+          "docs": "Документація",
+          "betaDocs": "Бета-документація",
+          "learn": "Навчання",
+          "certification": "Курси",
+          "blog": "Блог",
+          "contribute": "Долучитися"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Про Node.js",
+          "aboutSide": "Про Node.js®",
+          "branding": "Брендинг Node.js",
+          "governance": "Управління проєктом",
+          "releases": "Релізи Node.js",
+          "security": "Звітність про безпеку",
+          "partners": "Партнери й підтримувачі",
+          "eol": "Кінець підтримки (EOL)"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "Долучитися",
+          "collabSummit": "Саміт співпраці",
+          "upcomingEvents": "Майбутні події",
+          "contribute": "Внесок у Node.js",
+          "codeOfConduct": "Кодекс поведінки"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "Кодова назва",
+      "firstReleased": "Уперше випущено",
+      "lastUpdated": "Востаннє оновлено",
+      "status": "Статус",
+      "details": "Деталі"
+    },
+    "downloadsTable": {
+      "fileName": "Назва файлу",
+      "operatingSystem": "ОС",
+      "architecture": "Архітектура"
+    },
+    "releaseModal": {
+      "title": "Node.js v{version} ({codename})",
+      "titleWithoutCodename": "Node.js v{version}",
+      "minorVersions": "Мінорні версії",
+      "ltsVersionFeaturesNotice": "Бажаєте отримати нові функції швидше? Установіть <link>останню версію Node.js</link> та випробуйте останні покращення!"
+    },
+    "eolAlert": {
+      "message": "Комерційна підтримка для версій після фази Maintenance LTS доступна з нашими партнерами програми OpenJS Ecosystem Sustainability <link>HeroDevs</link>"
+    },
+    "eolChip": {
+      "severity": {
+        "unknown": "Невідома",
+        "low": "Низька",
+        "medium": "Середня",
+        "high": "Висока",
+        "critical": "Критична"
+      }
+    },
+    "eolModal": {
+      "title": "Node.js v{version} ({codename}) досягла кінця підтримки (EOL)",
+      "titleWithoutCodename": "Node.js v{version} досягла кінця підтримки (EOL)",
+      "vulnerabilitiesMessage": "Існує {count}+ відомих проблем із безпекою (CVE), пов'язаних із цим релізом Node.js. CVE (Common Vulnerabilities and Exposures) є ідентифікаторами для повідомлених публічно проблем із безпекою. Натиснувши на посилання CVE, ви дізнаєтеся її технічні деталі, наприклад, як працює вразливість.",
+      "noVulnerabilitiesMessage": "Наразі немає відомих CVE (Common Vulnerabilities and Exposures), пов'язані з цим релізом Node.js. Однак це не означає, що реліз повністю безпечний: деякі вразливості можуть бути невиявленими або неоголошеними публічно. Якщо цей реліз застарілий або непідтримуваний, краще оновити версію, щоб використовувати останні виправлення та покращення безпеки.",
+      "blogLinkText": "Блог",
+      "showUnknownSeverities": "Показати вразливості невідомої серйозності",
+      "table": {
+        "cves": "CVE(и)",
+        "severity": "Серйозність",
+        "overview": "Огляд",
+        "details": "Деталі"
+      }
+    },
+    "eolTable": {
+      "version": "Версія",
+      "codename": "Кодова назва",
+      "lastUpdated": "Востаннє оновлено",
+      "vulnerabilities": "Уразливості",
+      "details": "Деталі",
+      "hideNonLts": "Показати лише LTS-версії"
+    },
+    "minorReleasesTable": {
+      "version": "Версія",
+      "links": "Посилання",
+      "nApiVersion": "Версія N-API",
+      "npmVersion": "Версія npm",
+      "v8Version": "Версія V8",
+      "actions": {
+        "changelog": "Список змін",
+        "docs": "Документація"
+      }
+    },
+    "releaseOverview": {
+      "firstReleased": "Уперше випущено",
+      "lastUpdated": "Востаннє оновлено",
+      "minorVersions": "Мінорних версій",
+      "nApiVersion": "Версія N-API",
+      "npmVersion": "Версія npm",
+      "v8Version": "Версія V8"
+    },
+    "common": {
+      "alertBox": {
+        "info": "Інформація",
+        "warning": "Попередження"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "До головної"
+      },
+      "codebox": {
+        "copy": "Скопіювати в буфер обміну",
+        "copied": "Скопійовано!"
+      },
+      "pagination": {
+        "previous": "Назад",
+        "previousAriaLabel": "Попередня сторінка",
+        "next": "Далі",
+        "nextAriaLabel": "Наступна сторінка",
+        "defaultLabel": "Нумерація сторінок",
+        "pageLabel": "Перейти до {pageNumber} сторінки"
+      },
+      "sidebar": {
+        "title": "Змінити сторінку"
+      },
+      "languageDropdown": {
+        "label": "Обрати мову"
+      },
+      "skipToContent": "Перейти до вмісту"
+    },
+    "metabar": {
+      "lastUpdated": "Востаннє оновлено",
+      "readingTime": "Час на читання",
+      "author": "Автор",
+      "authors": "Автори",
+      "contribute": "Долучитися",
+      "contributeText": "Редагувати цю сторінку",
+      "tableOfContents": "Зміст",
+      "metadata": "Метадані статті"
+    },
+    "banner": {
+      "default": "Оголошення",
+      "warning": "Попередження",
+      "error": "Помилка",
+      "close": "Закрити банер"
+    },
+    "search": {
+      "searchPlaceholder": "Уведіть щось...",
+      "noResultsFoundFor": "Не знайдено результатів для",
+      "keyboardShortcuts": {
+        "select": ", щоб обрати",
+        "navigate": ", щоб гортати",
+        "close": ", щоб закрити"
+      }
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "Останні новини Node.js, посібники з міграцій та підсумки подій",
+        "rssLink": "RSS-канал"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "Блог",
+      "selectCategory": "Категорії",
+      "categories": {
+        "all": "Усе",
+        "announcements": "Оголошення",
+        "release": "Релізи",
+        "vulnerability": "Уразливості",
+        "community": "Спільнота",
+        "feature": "Функціонал",
+        "module": "Модулі",
+        "npm": "npm",
+        "uncategorized": "Без категорії",
+        "video": "Відео",
+        "weekly": "Щотижневі оновлення",
+        "wg": "Робочі групи",
+        "migrations": "Посібники з міграцій",
+        "events": "Події"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "Сторінку не знайдено",
+        "description": "На жаль, нам не вдалося знайти сторінку, яку ви шукаєте! Спробуйте почати знову з головної сторінки."
+      },
+      "internalServerError": {
+        "title": "Внутрішня помилка сервера",
+        "description": "На цій сторінці виникла невиправна помилка."
+      },
+      "backToHome": "До головної"
+    },
+    "download": {
+      "buttons": {
+        "installer": "Інсталятор {os} (.{extension})",
+        "binary": "Автономний бінарний файл (.{extension})"
+      },
+      "dropdown": {
+        "platform": "Платформа",
+        "os": "Операційна система",
+        "version": "Версія",
+        "packageManager": "Менеджер пакетів",
+        "unknown": "Невідомо",
+        "platformGroups": {
+          "official": "Рекомендовані (офіційні)",
+          "unofficial": "Спільнотні (неофіційні)"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "Ця версія більше не супроводжується. Будь ласка, використовуйте підтримувану версію. <link>Про кінець підтримки</link>.",
+        "communityPlatformInfo": "Методи установки, які включають ПЗ спільноти, підтримуються відповідними супроводжувачами.",
+        "externalSupportInfo": "Якщо виявите проблеми, відвідайте <link>вебсайт {platform}</link>",
+        "noScriptDetected": "Ця сторінка вимагає JavaScript. Завантажити Node.js без JavaScript можна, безпосередньо відвідавши <link>сторінку архівних завантажень</link>.",
+        "platformInfo": {
+          "default": "{platform} та його скрипти установки не супроводжуються проєктом Node.js.",
+          "nvm": "«nvm» — це кросплатформний менеджер версій Node.js.",
+          "fnm": "«fnm» — це кросплатформний менеджер версій Node.js.",
+          "brew": "Homebrew — це менеджер пакетів для macOS та Linux.",
+          "choco": "Chocolatey — це менеджер пакетів для Windows.",
+          "docker": "Docker — це платформа контейнеризації.",
+          "n": "«n» — це кросплатформний менеджер версій Node.js.",
+          "asdf": "«asdf» — це кросплатформний менеджер версій, який підтримує багато мов."
+        }
+      }
+    },
+    "logo": "Логотип Node.js"
+  }
+}

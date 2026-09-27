@@ -1,0 +1,120 @@
+{
+  "components": {
+    "containers": {
+      "footer": {
+        "links": {
+          "trademarkPolicy": "Ticari Marka Politikası",
+          "privacyPolicy": "Gizlilik Politikası",
+          "codeOfConduct": "Davranış Kuralları",
+          "security": "Güvenlik Politikası"
+        }
+      },
+      "navBar": {
+        "links": {
+          "about": "Hakkında",
+          "download": "İndir",
+          "docs": "Dokümanlar",
+          "learn": "Öğrenmek",
+          "certification": "Sertifikasyon",
+          "blog": "Blog"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Node.js Hakkında",
+          "aboutSide": "Node.js® Hakkında",
+          "branding": "Node.js'in markalaşması",
+          "governance": "Proje Yönetimi",
+          "releases": "Node.js Sürümleri",
+          "security": "Güvenlik Raporlaması"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "Katılın",
+          "collabSummit": "İş Birliği Zirvesi",
+          "upcomingEvents": "Yaklaşan Etkinlikler",
+          "contribute": "Node.js'ye katkıda bulunun",
+          "codeOfConduct": "Davranış Kuralları"
+        }
+      }
+    },
+    "common": {
+      "breadcrumbs": {
+        "navigateToHome": "Ana Sayfaya Git"
+      },
+      "codebox": {
+        "copy": "Panoya kopyala",
+        "copied": "Panoya kopyalandı!"
+      },
+      "pagination": {
+        "next": "Sonraki",
+        "nextAriaLabel": "Sonraki sayfa",
+        "defaultLabel": "Sayfalandırma",
+        "pageLabel": "{pageNumber}. sayfaya git"
+      },
+      "sidebar": {
+        "title": "Sayfayı değiştir"
+      },
+      "languageDropdown": {
+        "label": "Dil Seçiniz"
+      }
+    },
+    "metabar": {
+      "lastUpdated": "Son Güncelleme",
+      "readingTime": "Okuma Süresi",
+      "author": "Yazar",
+      "authors": "Yazarlar",
+      "contribute": "Katkıda bulunun",
+      "contributeText": "Bu sayfayı düzenleyin",
+      "tableOfContents": "İçindekiler"
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "En son Node.js haberleri, vaka çalışmaları, eğitimler ve kaynaklar.",
+        "rssLink": "RSS beslemesi"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "Blog",
+      "selectCategory": "Kategoriler",
+      "categories": {
+        "all": "Her şey",
+        "announcements": "Duyurular",
+        "release": "Sürümler",
+        "vulnerability": "Güvenlik Açıkları",
+        "community": "Topluluk",
+        "feature": "Özellik",
+        "module": "Modül",
+        "npm": "npm",
+        "uncategorized": "Kategorize Edilmemiş",
+        "video": "Video",
+        "weekly": "Haftalık Güncellemeler",
+        "wg": "Çalışma Grupları",
+        "events": "Etkinlikler"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "Sayfa bulunamadı",
+        "description": "Üzgünüz, aradığınız sayfayı bulamadık! Ana sayfadan tekrar başlamayı deneyin."
+      },
+      "internalServerError": {
+        "title": "Dahili Sunucu Hatası",
+        "description": "Bu sayfa kurtarılamaz bir hata verdi."
+      },
+      "backToHome": "Ana Sayfaya Geri Dön"
+    },
+    "download": {
+      "dropdown": {
+        "os": "İşletim Sistemi",
+        "version": "Versiyon",
+        "platform": "Platform"
+      }
+    }
+  }
+}

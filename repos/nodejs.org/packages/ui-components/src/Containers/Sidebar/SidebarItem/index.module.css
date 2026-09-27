@@ -1,0 +1,67 @@
+@reference '../../../styles/index.css';
+
+.item {
+  @apply font-regular
+    relative
+    z-20
+    flex
+    w-full
+    items-center
+    gap-1
+    overflow-hidden
+    rounded-md
+    text-sm
+    text-neutral-800
+    dark:text-neutral-200;
+
+  .label {
+    @apply font-regular
+      flex
+      items-center
+      gap-1.5
+      p-2
+      text-sm;
+  }
+
+  .icon {
+    @apply size-3
+      text-neutral-500
+      dark:text-neutral-200;
+  }
+
+  &:not(.active):hover {
+    /* Apply hover background to the full item width */
+    @apply bg-neutral-100
+      dark:bg-neutral-900;
+
+    /* Ensure text colors contrast with hover background */
+    .label {
+      @apply text-neutral-900
+        dark:text-neutral-100;
+    }
+
+    .icon {
+      @apply text-brand-600
+        dark:text-brand-400
+        scale-110;
+    }
+  }
+
+  &.active {
+    /* Full-width active background and readable text */
+    @apply bg-brand-600
+      text-white;
+
+    /* Remove pill background on the label; keep full-width bg on the item */
+    .label {
+      @apply rounded-none
+        bg-transparent
+        text-white;
+    }
+
+    /* Preserve active background on hover */
+    &:hover {
+      @apply bg-brand-600;
+    }
+  }
+}

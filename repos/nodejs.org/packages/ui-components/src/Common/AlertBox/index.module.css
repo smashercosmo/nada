@@ -1,0 +1,103 @@
+@reference "../../styles/index.css";
+
+.title {
+  @apply min-w-max;
+}
+
+.alertBox {
+  @apply flex
+    flex-row
+    items-center
+    gap-2
+    rounded-sm
+    px-4
+    py-3
+    text-sm
+    text-white;
+
+  * {
+    @apply text-white;
+  }
+
+  a {
+    @apply font-bold
+      text-white
+      underline
+      hover:text-white;
+
+    &:hover {
+      @apply no-underline;
+    }
+  }
+
+  &.small {
+    @apply gap-1
+      py-2
+      text-xs;
+
+    .title {
+      @apply px-1;
+    }
+  }
+
+  .title {
+    @apply rounded-xs
+      px-1.5;
+  }
+
+  svg {
+    @apply inline
+      size-5;
+  }
+
+  .content {
+    @apply wrap-anywhere;
+  }
+
+  &.info {
+    @apply bg-info-600;
+
+    .title {
+      @apply bg-info-700;
+    }
+  }
+
+  &.success {
+    @apply bg-brand-600;
+
+    .title {
+      @apply bg-brand-700;
+    }
+  }
+
+  &.warning {
+    @apply bg-warning-600;
+
+    .title {
+      @apply bg-warning-700;
+    }
+  }
+
+  &.danger {
+    @apply bg-danger-600;
+
+    .title {
+      @apply bg-danger-700;
+    }
+  }
+
+  &.neutral {
+    @apply bg-neutral-600;
+
+    .title {
+      @apply bg-neutral-700;
+    }
+  }
+
+  code {
+    /* Ignore the styles from `markdown.css` */
+    all: unset;
+
+    @apply font-ibm-plex-mono;
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "components": {
+    "containers": {
+      "footer": {
+        "links": {
+          "trademarkPolicy": "商標政策",
+          "privacyPolicy": "隱私政策",
+          "codeOfConduct": "行為準則",
+          "security": "安全性政策"
+        }
+      },
+      "navBar": {
+        "controls": {
+          "toggle": "切換導覽選單"
+        },
+        "links": {
+          "about": "關於",
+          "download": "下載",
+          "docs": "文件",
+          "learn": "學習資源",
+          "certification": "認證",
+          "blog": "部落格",
+          "contribute": "貢獻"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "關於 Node.js",
+          "aboutSide": "關於 Node.js®",
+          "branding": "Node.js 的品牌形象",
+          "governance": "專案治理",
+          "releases": "Node.js 版本",
+          "security": "安全性回報"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "加入我們",
+          "collabSummit": "協作高峰會",
+          "upcomingEvents": "近期活動",
+          "contribute": "為 Node.js 做出貢獻",
+          "codeOfConduct": "行為準則"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "代號",
+      "firstReleased": "首次釋出於",
+      "lastUpdated": "上次更新於",
+      "status": "狀態",
+      "details": "詳細資訊"
+    },
+    "releaseModal": {
+      "title": "Node.js {version} ({codename})",
+      "titleWithoutCodename": "Node.js {version}",
+      "minorVersions": "小版本"
+    },
+    "minorReleasesTable": {
+      "version": "版本",
+      "links": "連結",
+      "actions": {
+        "changelog": "更新紀錄",
+        "docs": "文件"
+      }
+    },
+    "releaseOverview": {
+      "firstReleased": "首次釋出於",
+      "lastUpdated": "上次更新於",
+      "minorVersions": "小版本",
+      "nApiVersion": "N-API 版本",
+      "npmVersion": "npm 版本",
+      "v8Version": "V8 版本"
+    },
+    "common": {
+      "alertBox": {
+        "info": "資訊",
+        "warning": "警告"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "返回首頁"
+      },
+      "codebox": {
+        "copy": "複製到剪貼簿",
+        "copied": "已複製到剪貼簿！"
+      },
+      "pagination": {
+        "next": "下一頁",
+        "nextAriaLabel": "下一頁",
+        "defaultLabel": "分頁",
+        "pageLabel": "前往頁面 {pageNumber}"
+      },
+      "sidebar": {
+        "title": "變更頁面"
+      },
+      "languageDropdown": {
+        "label": "選擇語言"
+      }
+    },
+    "metabar": {
+      "lastUpdated": "最後更新",
+      "readingTime": "閱讀時間",
+      "author": "作者",
+      "authors": "作者",
+      "contribute": "貢獻",
+      "contributeText": "編輯此頁面",
+      "tableOfContents": "目錄"
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "最新的 Node.js 動態、案例研究、教學和資源。",
+        "rssLink": "RSS 訂閱"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "部落格",
+      "selectCategory": "類別",
+      "categories": {
+        "all": "所有內容",
+        "announcements": "公告",
+        "release": "版本釋出",
+        "vulnerability": "漏洞",
+        "community": "社群",
+        "feature": "功能",
+        "module": "模塊",
+        "npm": "npm",
+        "uncategorized": "未歸類",
+        "video": "影片",
+        "weekly": "每週更新",
+        "wg": "工作小組",
+        "events": "活動"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "找不到頁面",
+        "description": "很抱歉，查無目標頁面！請從首頁重新開始。"
+      },
+      "internalServerError": {
+        "title": "內部伺服器錯誤",
+        "description": "此頁面發生了無法恢復的錯誤。"
+      },
+      "backToHome": "回到首頁"
+    },
+    "download": {
+      "buttons": {
+        "installer": "{os} 安裝程式 (.{extension})",
+        "binary": "獨立可執行檔 (.{extension})"
+      },
+      "dropdown": {
+        "platform": "平台",
+        "os": "作業系統",
+        "version": "版本",
+        "packageManager": "套件管理程式",
+        "unknown": "未知",
+        "platformGroups": {
+          "official": "推薦（官方）",
+          "unofficial": "社群（非官方）"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "此版本已不再維護，請改用現正支援的版本。<link>了解更新終止 (EOL) 支援</link>。",
+        "communityPlatformInfo": "涉及社群軟體的安裝方式由其維護團隊提供支援。",
+        "externalSupportInfo": "若您遇到任何問題，請造訪 <link>{platform} 網站</link>",
+        "noScriptDetected": "此網頁需要使用 JavaScript。您可以直接造訪 <link>發行網頁</link> 以下載 Node.js，無需 JavaScript。",
+        "platformInfo": {
+          "default": "{platform}與其安裝指令稿並非由 Node.js 專案維護。",
+          "nvm": "「nvm」是跨平台的 Node.js 版本管理程式。",
+          "fnm": "「fnm」是跨平台的 Node.js 版本管理程式。",
+          "brew": "Homebrew 是 macOS 及 Linux 的套件管理程式。",
+          "choco": "Chocolatey 是 Windows 的套件管理程式。",
+          "docker": "Docker 是一款容器化平台。",
+          "n": "「n」是跨平台的 Node.js 版本管理程式。"
+        }
+      }
+    },
+    "logo": "Node.js 標誌"
+  }
+}

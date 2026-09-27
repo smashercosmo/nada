@@ -1,0 +1,40 @@
+@reference "../../../styles/index.css";
+
+.item {
+  @apply ml:max-h-10
+    ml:max-w-10
+    flex
+    h-full
+    max-h-12
+    w-full
+    max-w-12
+    items-center
+    justify-center
+    rounded-full
+    border-2
+    border-transparent
+    bg-neutral-100
+    object-cover
+    text-xs
+    text-neutral-800
+    dark:bg-neutral-900
+    dark:text-neutral-300;
+}
+
+.avatar {
+  @apply size-8;
+
+  .wrapper {
+    @apply max-ml:block
+      max-ml:py-0;
+  }
+}
+
+.small {
+  @apply ml:size-8
+    size-10;
+}
+
+.medium {
+  @apply size-10;
+}

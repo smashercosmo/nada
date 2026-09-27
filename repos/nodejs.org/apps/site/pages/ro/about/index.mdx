@@ -1,0 +1,93 @@
+---
+title: Despre Node.js®
+layout: about
+---
+
+# Despre Node.js®
+
+Fiind un mediu de execuție JavaScript asincron și bazat pe evenimente, Node.js este conceput pentru a crea aplicații de rețea scalabile. În exemplul „hello world” de mai jos, multe conexiuni pot fi gestionate simultan. La fiecare conexiune, este declanșat un apel-invers, iar dacă nu există sarcini de procesat, Node.js intră într-o stare de așteptare.
+
+```cjs
+const { createServer } = require('node:http');
+
+const hostname = '127.0.0.1';
+const port = 3000;
+
+const server = createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Hello World');
+});
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
+```
+
+```mjs
+import { createServer } from 'node:http';
+
+const hostname = '127.0.0.1';
+const port = 3000;
+
+const server = createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Hello World');
+});
+
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
+```
+
+Această abordare diferă de modelul de concurență mai comun din zilele noastre, care utilizează fire de execuție (threads) ale sistemului de operare. Rețelele bazate pe fire de execuție sunt relativ ineficiente și dificile de gestionat. În plus, utilizatorii Node.js nu trebuie să își facă griji cu privire la blocarea procesului, deoarece nu există mecanisme de blocare. Aproape nicio funcție din Node.js nu efectuează direct operații de I/O, astfel încât procesul nu se blochează decât dacă se folosesc metode sincrone din biblioteca standard Node.js. Datorită acestui comportament, dezvoltarea sistemelor scalabile în Node.js este foarte fezabilă.
+
+Dacă unele dintre terminologii nu vă sunt familiare, există un articol complet despre [Blocant vs Non-Blocant](/learn/asynchronous-work/overview-of-blocking-vs-non-blocking).
+
+---
+
+Node.js are un design similar și este influențat de sisteme precum [Event Machine](https://github.com/eventmachine/eventmachine) din Ruby și [Twisted](https://twisted.org/) din Python. Totuși, Node.js duce modelul bazat pe evenimente un pas mai departe, prezentând event loop-ul ca o componentă a mediului de execuție, nu ca pe o bibliotecă externă. În alte sisteme, există întotdeauna un apel blocant pentru a porni event loop-ul. De obicei, comportamentul este definit prin callback-uri la începutul unui script, iar la final serverul este pornit printr-un apel blocant, precum EventMachine::run(). În Node.js, nu există un apel explicit pentru a porni event loop-ul. Node.js intră automat în event loop după ce execută scriptul primit ca intrare și iese din event loop atunci când nu mai există callback-uri de procesat. Acest comportament este similar cu cel din JavaScript-ul din browser, unde event loop-ul este ascuns de utilizator.
+
+HTTP este un cetățean de primă clasă în Node.js, fiind proiectat având în vedere streaming-ul și latența redusă. Acest lucru face din Node.js o bază ideală pentru crearea de biblioteci sau framework-uri web.
+
+Faptul că Node.js este conceput fără fire de execuție (threads) nu înseamnă că nu poți valorifica mai multe nuclee ale procesorului din mediul tău. Poți crea procese copil folosind API-ul [`child_process.fork()`](https://nodejs.org/api/child_process.html) și comunica ușor cu acestea. Pe baza aceleiași interfețe, modulul [`cluster`](https://nodejs.org/api/cluster.html) permite partajarea socket-urilor între procese, oferind posibilitatea de a distribui sarcina între nucleele tale.
+
+## Resursele oficiale Node.js
+
+Pentru a asigura autenticitatea și securitatea atunci când lucrezi cu Node.js, folosește întotdeauna surse oficiale. Evită să ai încredere în emailuri, fișiere binare sau descărcări din surse neoficiale.
+
+### Domeniile oficiale Node.js
+
+Pentru descărcarea fișierelor binare Node.js și accesarea documentației oficiale, folosește doar aceste domenii:
+
+- [nodejs.org](https://nodejs.org)
+- [nodejs.dev](https://nodejs.dev) _(redirecționează către https://nodejs.org)_
+- [iojs.org](https://iojs.org) _(redirecționează către https://nodejs.org)_
+
+### Pachetele oficiale npm
+
+Echipa Node.js întreține următoarele domenii oficiale pentru pachetele npm:
+
+- [`@node-core`](https://npmjs.com/~node-core)
+- [`@pkgjs`](https://npmjs.com/~pkgjs)
+
+De asemenea, echipa Node.js întreține pachetele publicate de contul npm [`nodejs-foundation`](https://npmjs.com/~nodejs-foundation), însă și alte pachete legate de Node.js (cum ar fi [`undici`](https://www.npmjs.com/package/undici)) pot fi întreținute de contributori strâns implicați în proiect.
+
+Utilizarea pachetelor de la echipa Node.js garantează că lucrezi cu componente Node.js acceptate oficial.
+
+### Organizațiile oficiale GitHub
+
+Node.js și proiectele conexe sunt întreținute sub aceste organizații oficiale GitHub:
+
+- [nodejs](https://github.com/nodejs)
+- [pkgjs](https://github.com/pkgjs)
+
+### Canalele oficiale de comunicare
+
+Node.js și Fundația OpenJS comunică prin diverse canale oficiale și susținute de comunitate. Poți găsi detalii despre cum să te implici pe pagina [Implică-te](https://nodejs.org/en/about/get-involved).
+
+### Raportarea problemelor și întreruperilor site-ului web
+
+Dacă întâmpini probleme cu site-ul web Node.js, raportează-le în [repozitoriul site-ului web Node.js](https://github.com/nodejs/nodejs.org/issues).
+Pentru actualizări în timp real despre întreruperi, vizitează [pagina de stare Node.js](https://status.nodejs.org).

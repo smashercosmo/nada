@@ -1,0 +1,298 @@
+main {
+  @apply max-ml:gap-4
+    flex
+    w-full
+    flex-col
+    gap-6;
+
+  hr {
+    @apply w-full
+      border-t
+      border-t-neutral-200
+      bg-white
+      dark:border-t-neutral-900
+      dark:bg-neutral-950;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  h4 {
+    @apply text-lg;
+  }
+
+  h5,
+  h6 {
+    @apply text-base;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply mt-4
+      font-semibold
+      text-neutral-900
+      first:mt-0
+      dark:text-white;
+
+    &[id] a {
+      @apply text-neutral-900
+        dark:text-white;
+    }
+
+    &[id] {
+      scroll-margin-top: calc(
+        var(--header-height) + var(--spacing, 0.25rem) * 6
+      );
+    }
+
+    &[id] .anchor {
+      @apply text-inherit
+        no-underline;
+    }
+
+    &[id] .anchor::after {
+      @apply ml-2
+        text-neutral-400
+        opacity-0
+        transition-opacity
+        content-['#']
+        dark:text-neutral-500;
+    }
+
+    &[id]:hover .anchor::after,
+    &[id]:focus-within .anchor::after {
+      @apply opacity-100;
+    }
+  }
+
+  strong {
+    @apply font-semibold;
+  }
+
+  code {
+    @apply font-ibm-plex-mono
+      rounded-xs
+      bg-neutral-100
+      px-1
+      text-base
+      font-semibold
+      text-neutral-900
+      dark:bg-neutral-900
+      dark:text-white;
+  }
+
+  /*
+   * Fenced code blocks use a system monospace stack instead of IBM Plex Mono.
+   * Plex has no glyphs for the Unicode Box Drawing block (U+2500–U+257F) and
+   * Google Fonts never serves that block, so the box-drawing characters in
+   * ASCII-art diagrams (e.g. the URL table in url.md) fall back per-glyph to
+   * the OS default monospace. On Windows that is Consolas (0.55em) while Plex
+   * letters are 0.60em; the mismatched advance widths shear the diagram out of
+   * alignment. Rendering the whole block in one system font keeps every glyph
+   * the same width — the same stack nodejs.org and the legacy-html generator
+   * already use. See https://github.com/nodejs/doc-kit/issues/909.
+   *
+   * This only overrides the variable within `pre`, so inline code and the rest
+   * of the UI keep IBM Plex Mono. The variable keeps its name because the
+   * compiled @node-core/ui-components CSS reads `var(--font-ibm-plex-mono)`.
+   */
+  pre {
+    --font-ibm-plex-mono:
+      'SFMono-Regular', 'Menlo', 'Consolas', 'Liberation Mono', 'Courier New',
+      monospace;
+  }
+
+  p {
+    @apply text-neutral-900
+      dark:text-white;
+  }
+
+  /* link that isn't inside a heading */
+  a:not(h1 > a):not(h2 > a):not(h3 > a):not(h4 > a):not(h5 > a):not(h6 > a) {
+    @apply max-ml:font-semibold
+      text-brand-600
+      dark:text-brand-400;
+
+    &:hover {
+      @apply text-brand-900
+        dark:text-brand-200;
+    }
+
+    &[role='button'] {
+      @apply max-ml:font-regular;
+    }
+
+    &:has(code) {
+      @apply max-ml:decoration-neutral-800
+        dark:max-ml:decoration-neutral-200;
+
+      code {
+        @apply text-inherit;
+      }
+    }
+  }
+
+  ul {
+    @apply max-ml:pr-3
+      max-ml:pl-5
+      list-disc
+      pr-4
+      pl-6
+      leading-6
+      text-neutral-900
+      dark:text-white;
+
+    li + li {
+      @apply mt-2;
+    }
+
+    li div:has(> pre) {
+      @apply my-1!;
+    }
+  }
+
+  ol {
+    @apply max-ml:pr-3
+      max-ml:pl-5
+      list-decimal
+      pr-4
+      pl-6
+      leading-6
+      text-neutral-900
+      dark:text-white;
+
+    li + li {
+      @apply mt-2;
+    }
+
+    li div:has(> pre) {
+      @apply my-1!;
+    }
+  }
+
+  table {
+    @apply mb-1
+      w-full
+      border-separate
+      border-spacing-0
+      rounded-xs
+      border
+      border-neutral-200
+      text-left
+      text-sm
+      dark:border-neutral-900;
+
+    /* Common border and text styles */
+    th,
+    td {
+      @apply max-ml:px-3
+        max-ml:py-1.5
+        border
+        border-t-0
+        border-r-0
+        border-neutral-200
+        px-4
+        py-2
+        wrap-break-word
+        text-neutral-900
+        dark:border-neutral-900
+        dark:text-white;
+
+      a + a {
+        @apply mr-2;
+      }
+    }
+
+    th {
+      @apply font-semibold;
+    }
+
+    tr:last-child > td {
+      @apply sm:border-b-0;
+
+      &:last-child {
+        @apply max-ml:border-b-0;
+      }
+    }
+
+    td:first-child,
+    th:first-child {
+      @apply sm:border-l-0;
+    }
+  }
+
+  /* Mobile-specific styles */
+  @media (max-width: 40rem) {
+    table:not([data-cards='false']) {
+      @apply block
+        border-0;
+
+      thead {
+        @apply sr-only;
+      }
+
+      tbody {
+        @apply block
+          space-y-4;
+      }
+
+      tr {
+        @apply block
+          rounded-xs
+          border
+          border-neutral-200
+          p-4
+          before:mb-2
+          before:text-sm
+          before:font-medium
+          before:text-neutral-500
+          before:content-[attr(data-label)]
+          dark:border-neutral-900
+          dark:before:text-neutral-400;
+      }
+
+      td {
+        @apply relative
+          block
+          border-0
+          border-b
+          px-0
+          py-2
+          pl-[33%]
+          text-right
+          text-neutral-600
+          before:absolute
+          before:top-1/2
+          before:left-0
+          before:w-1/3
+          before:-translate-y-1/2
+          before:text-left
+          before:font-medium
+          before:wrap-break-word
+          before:text-neutral-700
+          before:content-[attr(data-label)]
+          last:border-0
+          dark:border-neutral-900
+          dark:text-neutral-300
+          dark:before:text-neutral-200;
+      }
+
+      td div {
+        @apply justify-end;
+      }
+    }
+  }
+}

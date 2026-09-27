@@ -1,0 +1,198 @@
+@reference "../../styles/index.css";
+
+.button {
+  @apply relative
+    inline-flex
+    items-center
+    justify-center
+    gap-2
+    px-4.5
+    py-2.5
+    text-center
+    font-semibold;
+
+  svg {
+    @apply size-5;
+  }
+
+  &[aria-disabled='true'] {
+    @apply cursor-not-allowed;
+  }
+
+  &.small {
+    @apply px-3
+      py-2
+      text-sm;
+  }
+
+  &.neutral {
+    @apply rounded-sm
+      bg-neutral-100
+      text-neutral-900
+      dark:bg-neutral-900
+      dark:text-neutral-200;
+
+    &:hover:not([aria-disabled='true']) {
+      @apply bg-neutral-200
+        dark:bg-neutral-800;
+    }
+
+    &[aria-disabled='true'] {
+      @apply bg-neutral-100
+        opacity-50
+        dark:bg-neutral-900;
+    }
+
+    &:focus {
+      @apply bg-neutral-200
+        dark:bg-neutral-800;
+    }
+  }
+
+  &.primary {
+    @apply border-brand-600
+      bg-brand-600
+      rounded-sm
+      border
+      text-white
+      shadow-xs;
+
+    &:hover:not([aria-disabled='true']) {
+      @apply border-brand-700
+        bg-brand-700
+        text-white;
+    }
+
+    &:focus {
+      @apply border-brand-700
+        bg-brand-700;
+    }
+
+    &[aria-disabled='true'] {
+      @apply bg-brand-600
+        opacity-50;
+    }
+  }
+
+  &.secondary {
+    @apply rounded-lg
+      border
+      border-neutral-200
+      text-neutral-800
+      dark:border-neutral-900
+      dark:text-neutral-200;
+
+    &:hover:not([aria-disabled='true']) {
+      @apply bg-neutral-200
+        text-neutral-800
+        dark:bg-neutral-900
+        dark:text-neutral-200;
+    }
+
+    &[aria-disabled='true'] {
+      @apply bg-transparent
+        opacity-50;
+    }
+
+    &:focus {
+      @apply bg-neutral-100
+        text-neutral-800
+        dark:bg-neutral-900
+        dark:text-neutral-200;
+    }
+  }
+
+  &.special {
+    @apply before:bg-gradient-glow-backdrop
+      border-brand-600/30
+      bg-brand-600/10
+      after:from-brand-600/0
+      after:via-brand-600
+      after:to-brand-600/0
+      rounded-lg
+      border
+      text-white
+      shadow-xs
+      before:absolute
+      before:top-0
+      before:right-0
+      before:left-0
+      before:-z-10
+      before:mx-auto
+      before:h-full
+      before:w-full
+      before:opacity-30
+      before:content-['']
+      after:absolute
+      after:-top-px
+      after:right-0
+      after:left-0
+      after:mx-auto
+      after:h-px
+      after:w-2/5
+      after:bg-linear-to-r
+      after:content-[''];
+
+    &[aria-disabled='true'] {
+      @apply opacity-50;
+    }
+
+    &:hover:not([aria-disabled='true']) {
+      @apply bg-brand-600/20;
+    }
+
+    &:focus {
+      @apply bg-brand-600/20;
+    }
+  }
+
+  &.warning {
+    @apply border-warning-600
+      bg-warning-600
+      rounded-sm
+      border
+      text-white
+      shadow-xs;
+
+    &:hover:not([aria-disabled='true']) {
+      @apply border-warning-700
+        bg-warning-700
+        text-white;
+    }
+
+    &:focus {
+      @apply border-warning-700
+        bg-warning-700;
+    }
+
+    &[aria-disabled='true'] {
+      @apply bg-warning-600
+        opacity-50;
+    }
+  }
+
+  &.info {
+    @apply border-info-600
+      bg-info-600
+      rounded-sm
+      border
+      text-white
+      shadow-xs;
+
+    &:hover:not([aria-disabled='true']) {
+      @apply border-info-700
+        bg-info-700
+        text-white;
+    }
+
+    &:focus {
+      @apply border-info-700
+        bg-info-700;
+    }
+
+    &[aria-disabled='true'] {
+      @apply bg-info-600
+        opacity-50;
+    }
+  }
+}

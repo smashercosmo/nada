@@ -1,0 +1,37 @@
+import Banner from '#ui/Common/Banner';
+
+import type { Meta as MetaObj, StoryObj } from '@storybook/react-webpack5';
+
+type Story = StoryObj<typeof Banner>;
+type Meta = MetaObj<typeof Banner>;
+
+export const Default: Story = {
+  args: {
+    children: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    type: 'default',
+  },
+};
+
+export const Error: Story = {
+  args: {
+    children: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    type: 'error',
+  },
+};
+
+export const Warning: Story = {
+  args: {
+    children: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    type: 'warning',
+  },
+};
+
+export const Dismissible: Story = {
+  args: {
+    children: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    type: 'default',
+    onClose: () => {},
+  },
+};
+
+export default { component: Banner } as Meta;

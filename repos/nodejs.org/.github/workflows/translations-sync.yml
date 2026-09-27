@@ -1,0 +1,128 @@
+# This action automates the synchronization of our crowdin translations, so that a human does not need to kick it off from the crowdin UI
+# It also formats incoming content because it is often not adherent to our rules post-translation.
+
+# See translations-upload.yml for automation to upload our source content
+# See translations-pr-lint.yml for quality control we conduct on ingress of new translations.
+name: Crowdin Download
+
+on:
+  workflow_dispatch: # Allow running when we want to, for events such as urgent translation mistakes or 100% completed languages
+  schedule:
+    - cron: '0 5 * * 5' # At 05:00 on Fridays. This guarantees that we have the 72 hour weekend time to review translations.
+
+# Cancel any runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  BRANCH_NAME: chore/crowdin
+
+jobs:
+  synchronize-with-crowdin:
+    name: Synchronize with Crowdin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ secrets.CROWDIN_GITHUB_BOT_TOKEN }}
+          persist-credentials: false
+
+        # see all the options at https://github.com/crowdin/github-action
+      - name: Crowdin PR
+        uses: crowdin/github-action@8f01d54f70f1713ee3f09d82c2bbb2daeac28689 # v2.17.1
+        with:
+          # do not upload anything - this is a one-way operation download
+          upload_sources: false
+          upload_translations: false
+          # the rest of this controls how the PR comes in with new translations
+          download_translations: true
+          localization_branch_name: ${{ env.BRANCH_NAME }}
+          create_pull_request: true
+          pull_request_title: 'chore(i18n): sync translations from crowdin'
+          pull_request_body: 'New Crowdin translations from the [Node.js Crowdin project](https://crowdin.com/project/nodejs-web)'
+          commit_message: 'chore(i18n): sync translations from crowdin'
+        env:
+          GITHUB_TOKEN: ${{ secrets.CROWDIN_GITHUB_BOT_TOKEN }}
+          # A numeric ID, found at https://crowdin.com/project/nodejs-web/tools/api
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          # Created from https://crowdin.com/settings#api-key logged in using nodejs-crowdin-bot
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+  format_crowdin_pull_request:
+    name: Format Crowdin Pull Request
+    needs: synchronize-with-crowdin
+    runs-on: ubuntu-latest
+
+    permissions:
+      # This permission is required by `stefanzweifel/git-auto-commit-action`
+      contents: write
+
+    steps:
+      - uses: nodejs/web-team/actions/setup-environment@9f3c83af227d721768d9dbb63009a47ed4f4282f
+        with:
+          pnpm: true
+          use-version-file: true
+          ref: ${{ env.BRANCH_NAME }}
+          token: ${{ secrets.CROWDIN_GITHUB_BOT_TOKEN }}
+          fetch-depth: 2
+
+      - name: Restore Lint Cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            apps/site/.eslintmdcache
+            apps/site/.prettiercache
+          # We want to restore Turborepo Cache and ESlint and Prettier Cache
+          # The ESLint and Prettier cache's are useful to reduce the overall runtime of ESLint and Prettier
+          # as they will only run on files that have changed since the last cached run
+          # this might of course lead to certain files not being checked against the linter, but the chances
+          # of such situation from happening are very slim as the checksums of both files would need to match
+          key: cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/site/.eslintmdcache') }}
+          restore-keys: |
+            cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-
+            cache-lint-
+
+      - name: Add changeset if the files changed
+        run: |
+          CHANGED_FILES=$(git diff --name-only HEAD^1 HEAD)
+          if [ -n "$CHANGED_FILES" ]; then
+            cat > .changeset/crowdin-translations.md <<'EOF'
+          ---
+          '@node-core/website-i18n': patch
+          ---
+
+          Update translations from Crowdin.
+          EOF
+          fi
+
+      - name: Run ESLint
+        working-directory: apps/site
+        run: node --run lint:md -- --fix
+
+      - name: Run Prettier
+        run: node --run prettier:fix
+
+      - name: Push Changes back to Pull Request
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
+        with:
+          commit_options: '--no-verify --signoff'
+          commit_message: 'chore(i18n): format translated files'
+          branch: ${{ env.BRANCH_NAME }}
+
+      - name: Save Lint Cache
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            apps/site/.eslintmdcache
+            apps/site/.prettiercache
+          key: cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/site/.eslintmdcache') }}

@@ -1,0 +1,62 @@
+@reference "../../styles/index.css";
+
+.banner {
+  @apply animate-fade-and-slide-down
+    relative
+    grid
+    w-full
+    grid-rows-1
+    px-8
+    py-3
+    text-sm;
+
+  &,
+  a {
+    @apply text-white
+      dark:text-white;
+  }
+
+  a {
+    @apply w-fit
+      underline
+      decoration-white/50;
+  }
+
+  svg {
+    @apply size-4
+      text-white/50;
+  }
+}
+
+.bannerContent {
+  @apply flex
+    min-h-0
+    flex-row
+    items-center
+    justify-center
+    gap-2;
+}
+
+.default {
+  @apply bg-brand-600;
+}
+
+.error {
+  @apply bg-danger-600;
+}
+
+.warning {
+  @apply bg-warning-600;
+}
+
+.closeButton {
+  @apply absolute
+    right-4
+    text-lg;
+
+  span {
+    @apply text-white/60
+      transition-colors
+      hover:text-white;
+  }
+}

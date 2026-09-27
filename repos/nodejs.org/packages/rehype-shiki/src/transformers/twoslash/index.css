@@ -1,0 +1,38 @@
+@import '@shikijs/twoslash/style-rich.css';
+
+.twoslash-hover {
+  cursor: text;
+  user-select: text;
+}
+
+.twoslash-popup-code {
+  max-width: min(600px, 90vw);
+  display: block;
+  width: fit-content;
+  user-select: none;
+  overflow-wrap: break-word;
+}
+
+.twoslash-popup-code:not(:has(div)) {
+  min-width: 100%;
+  padding: 6px 12px;
+  white-space: pre-wrap;
+  color: var(--color-neutral-900);
+  background-color: var(--color-neutral-100);
+
+  span {
+    display: inline-block;
+  }
+}
+
+[data-theme='dark'] .twoslash-popup-code:not(:has(div)) {
+  color: var(--color-white);
+  background-color: var(--color-neutral-950);
+}
+
+.twoslash-completion-list {
+  display: block;
+  width: auto;
+  max-height: 100px;
+  overflow-x: auto;
+}

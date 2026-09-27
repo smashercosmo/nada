@@ -1,0 +1,73 @@
+@reference "../../../styles/index.css";
+
+.navItem {
+  @apply inline-flex
+    items-center
+    gap-2
+    rounded-sm
+    px-3
+    py-2
+    motion-safe:transition-colors;
+
+  .label {
+    @apply text-base
+      font-medium
+      lg:text-sm;
+  }
+
+  .icon {
+    @apply size-3
+      text-neutral-500
+      dark:text-neutral-200;
+  }
+
+  &:hover {
+    @apply bg-neutral-100
+      dark:bg-neutral-900;
+  }
+
+  &.nav {
+    .label {
+      @apply text-neutral-900
+        dark:text-white;
+    }
+
+    &.active {
+      @apply bg-brand-600;
+
+      .label {
+        @apply text-white;
+      }
+
+      .icon {
+        @apply text-white
+          opacity-50;
+      }
+    }
+  }
+
+  &.accent {
+    @apply bg-transparent
+      ring-1
+      ring-neutral-200
+      ring-inset
+      dark:ring-neutral-900;
+
+    &:hover {
+      @apply bg-neutral-200
+        dark:bg-neutral-900;
+    }
+  }
+
+  &.footer {
+    .label {
+      @apply text-neutral-800
+        dark:text-white;
+    }
+
+    &:hover {
+      @apply bg-neutral-100
+        dark:bg-neutral-900;
+    }
+  }
+}

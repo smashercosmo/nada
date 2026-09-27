@@ -1,0 +1,320 @@
+{
+  "Anna Henningsen": {
+    "id": 899444,
+    "name": "Anna Henningsen",
+    "website": "https://github.com/addaleax"
+  },
+  "Antoine du Hamel": {
+    "id": 14309773,
+    "name": "Antoine du Hamel",
+    "website": "https://github.com/aduh95"
+  },
+  "AugustinMauroy": {
+    "id": 97875033,
+    "name": "Augustin Mauroy",
+    "website": "https://github.com/AugustinMauroy"
+  },
+  "Aviv Keller": {
+    "id": 38299977,
+    "name": "Aviv Keller",
+    "website": "https://github.com/avivkeller"
+  },
+  "Ben Noordhuis": {
+    "id": 275871,
+    "name": "Ben Noordhuis",
+    "website": "https://github.com/bnoordhuis"
+  },
+  "Bethany Nicolle Griggs": {
+    "id": 8297234,
+    "name": "Bethany Nicolle Griggs",
+    "website": "https://github.com/BethGriggs"
+  },
+  "Brian Muenzenmeyer": {
+    "id": 298435,
+    "name": "Brian Muenzenmeyer",
+    "website": "https://github.com/bmuenzenmeyer"
+  },
+  "Bryan English": {
+    "id": 110455,
+    "name": "Bryan English",
+    "website": "https://github.com/bengl"
+  },
+  "Carl Vitullo": {
+    "id": 1551487,
+    "name": "Carl Vitullo",
+    "website": "https://github.com/vcarl"
+  },
+  "Charlie Robbins": {
+    "id": 4624,
+    "name": "Charlie Robbins",
+    "website": "https://github.com/indexzero"
+  },
+  "Chengzhong Wu": {
+    "id": 8500303,
+    "name": "Chengzhong Wu",
+    "website": "https://github.com/legendecas"
+  },
+  "Claudio Wunder": {
+    "id": 12037269,
+    "name": "Claudio Wunder",
+    "website": "https://github.com/ovflowd"
+  },
+  "Colin Ihrig": {
+    "id": 2512748,
+    "name": "Colin Ihrig",
+    "website": "https://github.com/cjihrig"
+  },
+  "Danielle Adams": {
+    "id": 6271256,
+    "name": "Danielle Adams",
+    "website": "https://github.com/danielleadams"
+  },
+  "Daniel Bevenius": {
+    "id": 432351,
+    "name": "Daniel Bevenius",
+    "website": "https://github.com/danbev"
+  },
+  "Dave Pacheco": {
+    "id": 70340013,
+    "name": "Dave Pacheco"
+  },
+  "Domenic Denicola": {
+    "id": 617481,
+    "name": "Domenic Denicola",
+    "website": "https://github.com/domenic"
+  },
+  "Emelia Smith": {
+    "id": 30827,
+    "name": "Emelia Smith",
+    "website": "https://github.com/thisismissem"
+  },
+  "Emily Rose": {
+    "id": 32688683,
+    "name": "Emily Rose",
+    "website": "https://github.com/emilyrose"
+  },
+  "Evan Lucas": {
+    "id": 677994,
+    "name": "Evan Lucas",
+    "website": "https://github.com/evanlucas"
+  },
+  "flakey5": {
+    "id": 73616808,
+    "name": "flakey5",
+    "website": "https://github.com/flakey5"
+  },
+  "Gibson Fahnestock": {
+    "id": 15943089,
+    "name": "Gibson Fahnestock",
+    "website": "https://github.com/gibfahn"
+  },
+  "Giovanny Gongora": {
+    "id": 1834718,
+    "name": "Giovanny Gongora",
+    "website": "https://github.com/Gioyik"
+  },
+  "Guilherme Araújo": {
+    "id": 68445491,
+    "name": "Guilherme Araújo",
+    "website": "https://github.com/araujogui"
+  },
+  "Isaac Schlueter": {
+    "id": 9287,
+    "name": "Isaac Schlueter",
+    "website": "https://github.com/isaacs"
+  },
+  "Italo Casas": {
+    "id": 6354455,
+    "name": "Italo Casas",
+    "website": "https://github.com/italoacasas"
+  },
+  "James M Snell": {
+    "id": 439929,
+    "name": "James M Snell",
+    "website": "https://github.com/jasnell"
+  },
+  "Jeremiah Senkpiel": {
+    "id": 1093990,
+    "name": "Jeremiah Senkpiel",
+    "website": "https://github.com/Fishrock123"
+  },
+  "Joe Sepi": {
+    "id": 143668,
+    "name": "Joe Sepi",
+    "website": "https://github.com/joesepi"
+  },
+  "Joyee Cheung": {
+    "id": 4299420,
+    "name": "Joyee Cheung",
+    "website": "https://github.com/joyeecheung"
+  },
+  "Juan José": {
+    "id": 17013303,
+    "name": "Juan José Arboleda",
+    "website": "https://github.com/juanarbol"
+  },
+  "Juan José Arboleda": {
+    "id": 17013303,
+    "name": "Juan José Arboleda",
+    "website": "https://github.com/juanarbol"
+  },
+  "Julián Duque": {
+    "id": 733877,
+    "name": "Julián Duque",
+    "website": "https://github.com/julianduque"
+  },
+  "Node.js Releasers": {
+    "id": 9950313,
+    "name": "Node.js Release Working Group",
+    "website": "https://github.com/nodejs/release"
+  },
+  "Node.js Technical Steering Committee": {
+    "id": 9950313,
+    "name": "Node.js Technical Steering Committee",
+    "website": "https://github.com/nodejs/tsc"
+  },
+  "Matteo Collina": {
+    "id": 52195,
+    "name": "Matteo Collina",
+    "website": "https://github.com/mcollina"
+  },
+  "Marco Ippolito": {
+    "id": 36735501,
+    "name": "Marco Ippolito",
+    "website": "https://github.com/marco-ippolito"
+  },
+  "Matt Cowley": {
+    "id": 12371363,
+    "name": "Matt Cowley",
+    "website": "https://github.com/MattIPv4"
+  },
+  "Michael Dawson": {
+    "id": 9373002,
+    "name": "Michael Dawson",
+    "website": "https://github.com/mhdawson"
+  },
+  "Michaël Zasso": {
+    "id": 2352663,
+    "name": "Michaël Zasso",
+    "website": "https://github.com/targos"
+  },
+  "Mike Dolan": {
+    "id": 7398917,
+    "name": "Mike Dolan",
+    "website": "https://github.com/mkdolan"
+  },
+  "Mikeal Rogers": {
+    "id": 579,
+    "name": "Mikeal Rogers",
+    "website": "https://github.com/mikeal"
+  },
+  "Minwoo Jung": {
+    "id": 4557258,
+    "name": "Minwoo Jung",
+    "website": "https://github.com/minwoo-jung"
+  },
+  "Myles Borins": {
+    "id": 498775,
+    "name": "Myles Borins",
+    "website": "https://github.com/mylesborins"
+  },
+  "piscisaureus": {
+    "id": 218257,
+    "name": "Bert Belder",
+    "website": "https://github.com/piscisaureus"
+  },
+  "Rafael Gonzaga": {
+    "id": 26234614,
+    "name": "Rafael Gonzaga",
+    "website": "https://github.com/RafaelGSS"
+  },
+  "Richard Lau": {
+    "id": 5445507,
+    "name": "Richard Lau",
+    "website": "https://github.com/richardlau"
+  },
+  "Robin Bender Ginn": {
+    "id": 4296937,
+    "name": "Robin Bender Ginn",
+    "website": "https://github.com/rginn"
+  },
+  "Rod Vagg": {
+    "id": 495647,
+    "name": "Rod Vagg",
+    "website": "https://github.com/rvagg"
+  },
+  "Ruben Bridgewater": {
+    "id": 8822573,
+    "name": "Ruben Bridgewater",
+    "website": "https://github.com/BridgeAR"
+  },
+  "Ruy Adorno": {
+    "id": 220900,
+    "name": "Ruy Adorno",
+    "website": "https://github.com/ruyadorno"
+  },
+  "Ryan Dahl": {
+    "id": 80,
+    "name": "Ryan Dahl",
+    "website": "https://github.com/ry"
+  },
+  "Sam Roberts": {
+    "id": 17607,
+    "name": "Sam Roberts",
+    "website": "https://github.com/sam-github"
+  },
+  "Scott Hammond": {
+    "id": 95775645,
+    "name": "Scott Hammond"
+  },
+  "Shelley Vohr": {
+    "id": 2036040,
+    "name": "Shelley Vohr",
+    "website": "https://github.com/codebytere"
+  },
+  "Stewart X Addison": {
+    "id": 6487691,
+    "name": "Stewart X Addison",
+    "website": "https://github.com/sxa"
+  },
+  "Steven Sinatra": {
+    "id": 5153378,
+    "name": "Steven Sinatra",
+    "website": "https://github.com/diagramatics"
+  },
+  "The Node.js Project": {
+    "id": 9950313,
+    "name": "The Node.js Project",
+    "website": "https://github.com/nodejs"
+  },
+  "Tierney Cyren": {
+    "id": 502396,
+    "name": "Tierney Cyren",
+    "website": "https://github.com/bnb"
+  },
+  "Timothy J Fontaine": {
+    "id": 146447,
+    "name": "Timothy J Fontaine",
+    "website": "https://github.com/tjfontaine"
+  },
+  "Tracy Hinds": {
+    "id": 1981088,
+    "name": "Tracy Hinds",
+    "website": "https://github.com/hackygolucky"
+  },
+  "Ulises Gascón": {
+    "id": 5110813,
+    "name": "Ulises Gascón",
+    "website": "https://github.com/UlisesGascon"
+  },
+  "Vladimir de Turckheim": {
+    "id": 7135896,
+    "name": "Vladimir de Turckheim",
+    "website": "https://github.com/vdeturckheim"
+  },
+  "Yosuke Furukawa": {
+    "id": 555645,
+    "name": "Yosuke Furukawa",
+    "website": "https://github.com/yosuke-furukawa"
+  }
+}

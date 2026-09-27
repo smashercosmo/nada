@@ -1,0 +1,6 @@
+@reference "../../styles/index.css";
+
+.nodejsLogo {
+  @apply h-6
+    w-20;
+}

@@ -1,0 +1,22 @@
+@reference "../../../styles/index.css";
+
+.link {
+  @apply max-w-fit
+    truncate;
+
+  &.active {
+    @apply bg-brand-800
+      rounded
+      px-2
+      py-1
+      font-semibold
+      text-white
+      motion-safe:transition-colors
+      dark:text-white;
+
+    &:hover {
+      @apply bg-brand-700
+        text-white;
+    }
+  }
+}

@@ -1,0 +1,70 @@
+@reference "../../styles/index.css";
+
+.root {
+  /* `forceMount` keeps every panel in the DOM, so hide the inactive ones here */
+  > [role='tabpanel'][data-state='inactive'] {
+    @apply hidden;
+  }
+
+  > [role='tabpanel'] > :first-child {
+    @apply rounded-t-none;
+  }
+
+  > div:nth-of-type(1) {
+    @apply flex
+      rounded-t
+      border-x
+      border-t
+      border-neutral-200
+      bg-neutral-100
+      px-2
+      pt-2
+      md:px-4
+      dark:border-neutral-900
+      dark:bg-neutral-950;
+
+    .trigger {
+      @apply border-b
+        border-b-transparent
+        px-1
+        text-neutral-800
+        dark:text-neutral-200;
+
+      &[data-state='active'] {
+        @apply border-b-brand-600
+          text-brand-700
+          dark:border-b-brand-400
+          dark:text-brand-400;
+      }
+    }
+
+    .link {
+      @apply hidden
+        items-center
+        gap-2
+        text-center
+        text-neutral-800
+        motion-safe:transition-colors
+        lg:flex
+        dark:text-neutral-200;
+
+      & > .icon {
+        @apply size-4
+          text-neutral-700
+          dark:text-neutral-300;
+      }
+
+      &:is(:link, :visited) {
+        &:hover {
+          @apply text-neutral-900
+            dark:text-neutral-400;
+
+          & > .icon {
+            @apply text-neutral-800
+              dark:text-neutral-600;
+          }
+        }
+      }
+    }
+  }
+}

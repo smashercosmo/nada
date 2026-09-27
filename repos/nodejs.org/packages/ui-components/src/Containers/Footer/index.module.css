@@ -1,0 +1,92 @@
+@reference "../../styles/index.css";
+
+.container {
+  @apply border-t
+    border-neutral-200
+    bg-white
+    py-4
+    text-neutral-500
+    sm:px-8
+    md:py-5
+    dark:border-neutral-900
+    dark:bg-neutral-950;
+
+  .innerContainer {
+    @apply max-w-10xl
+      3xl:max-w-12xl
+      mx-auto
+      flex
+      flex-col
+      items-center
+      gap-6
+      md:justify-between;
+
+    .row {
+      @apply flex
+        flex-col
+        items-center
+        gap-6
+        md:flex-row
+        md:justify-between
+        md:gap-0
+        md:self-stretch;
+
+      .sectionPrimary {
+        @apply flex
+          flex-wrap
+          content-start
+          items-center
+          justify-center
+          gap-1
+          self-stretch;
+
+        a {
+          @apply whitespace-nowrap;
+        }
+      }
+
+      .sectionSecondary {
+        @apply flex
+          flex-col
+          items-center
+          gap-1
+          md:flex-row;
+
+        .social {
+          @apply flex
+            items-center
+            gap-1;
+        }
+      }
+
+      &.legal {
+        @apply flex
+          flex-col
+          gap-2
+          px-4
+          text-center
+          text-xs
+          text-balance;
+
+        p {
+          @apply text-center
+            text-sm
+            text-neutral-800
+            dark:text-neutral-500;
+        }
+
+        a {
+          @apply max-ml:font-semibold
+            text-brand-600
+            dark:text-brand-400;
+
+          &:hover {
+            @apply text-brand-900
+              dark:text-brand-200
+              cursor-pointer;
+          }
+        }
+      }
+    }
+  }
+}

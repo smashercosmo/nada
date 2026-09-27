@@ -1,0 +1,106 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: monthly
+    labels:
+      - 'dependencies'
+      - 'github_actions'
+      - 'github_actions:pull-request'
+      - 'auto-merge'
+    commit-message:
+      prefix: chore(deps)
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: npm
+    directory: '/'
+    versioning-strategy: increase
+    schedule:
+      interval: monthly
+    labels:
+      - 'dependencies'
+      - 'javascript'
+      - 'github_actions:pull-request'
+      - 'auto-merge'
+    commit-message:
+      prefix: chore(deps)
+    cooldown:
+      default-days: 7
+    groups:
+      lint:
+        patterns:
+          - '@eslint/*'
+          - '@typescript-eslint/*'
+          - acorn
+          - eslint
+          - eslint-*
+          - lint-staged
+          - prettier
+          - prettier-*
+          - stylelint
+          - stylelint-*
+          - typescript-eslint
+          - unified
+        exclude-patterns:
+          - 'eslint-plugin-storybook'
+          - 'prettier-plugin-tailwindcss'
+      mdx:
+        patterns:
+          - '@vcarl/remark-headings'
+          - '@shikijs/*'
+          - '@mdx-js/*'
+          - hast-util-*
+          - rehype-*
+          - remark-*
+          - shiki
+          - sval
+          - unist-util-*
+          - vfile
+          - vfile-*
+          - reading-time
+          - twoslash
+      orama:
+        patterns:
+          - '@orama/*'
+          - '@oramacloud/*'
+      radix:
+        patterns:
+          - '@radix-ui/*'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+      storybook:
+        patterns:
+          - 'storybook'
+          - '@storybook/*'
+          - 'eslint-plugin-storybook'
+      styling:
+        patterns:
+          - '@savvywombat/tailwindcss-grid-areas'
+          - '@tailwindcss/*'
+          - 'prettier-plugin-tailwindcss'
+          - 'tailwindcss'
+      testing:
+        patterns:
+          - '@testing-library/*'
+          - '@reporters/*'
+          - global-jsdom
+          - jsdom
+          - tsx
+      vercel:
+        patterns:
+          - '@next/*'
+          - '@opentelemetry/*'
+          - '@vercel/*'
+          - next
+          - next-*
+          - turbo
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+    open-pull-requests-limit: 10

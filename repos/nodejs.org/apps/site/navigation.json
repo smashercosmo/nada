@@ -1,0 +1,174 @@
+{
+  "topNavigation": {
+    "learn": {
+      "link": "https://nodejs.org/learn",
+      "label": "components.containers.navBar.links.learn"
+    },
+    "about": {
+      "link": "/about",
+      "label": "components.containers.navBar.links.about"
+    },
+    "download": {
+      "link": "/download",
+      "label": "components.containers.navBar.links.download"
+    },
+    "blog": {
+      "link": "/blog",
+      "label": "components.containers.navBar.links.blog"
+    },
+    "docs": {
+      "link": "https://nodejs.org/docs/latest/api/",
+      "label": "components.containers.navBar.links.docs"
+    },
+    "betaDocs": {
+      "link": "https://beta.docs.nodejs.org/",
+      "label": "components.containers.navBar.links.betaDocs",
+      "target": "_blank",
+      "accent": true
+    },
+    "contribute": {
+      "link": "https://github.com/nodejs/node/blob/main/CONTRIBUTING.md",
+      "label": "components.containers.navBar.links.contribute",
+      "target": "_blank"
+    },
+    "certification": {
+      "link": "https://training.linuxfoundation.org/openjs/",
+      "label": "components.containers.navBar.links.certification",
+      "target": "_blank"
+    }
+  },
+  "footerLinks": [
+    {
+      "link": "https://openjsf.org/",
+      "text": "components.containers.footer.links.foundationName"
+    },
+    {
+      "link": "https://ai-coding-assistants-policy.openjsf.org/",
+      "text": "components.containers.footer.links.aiCodingAssistantsPolicy"
+    },
+    {
+      "link": "https://bylaws.openjsf.org/",
+      "text": "components.containers.footer.links.bylaws"
+    },
+    {
+      "link": "https://code-of-conduct.openjsf.org/",
+      "text": "components.containers.footer.links.codeOfConduct"
+    },
+    {
+      "link": "https://www.linuxfoundation.org/cookies/",
+      "text": "components.containers.footer.links.cookiePolicy"
+    },
+    {
+      "link": "https://privacy-policy.openjsf.org/",
+      "text": "components.containers.footer.links.privacyPolicy"
+    },
+    {
+      "link": "https://github.com/nodejs/node/security/policy",
+      "text": "components.containers.footer.links.security"
+    },
+    {
+      "link": "https://terms-of-use.openjsf.org/",
+      "text": "components.containers.footer.links.termsOfUse"
+    },
+    {
+      "link": "https://trademark-list.openjsf.org/",
+      "text": "components.containers.footer.links.trademarkList"
+    },
+    {
+      "link": "https://trademark-policy.openjsf.org/",
+      "text": "components.containers.footer.links.trademarkPolicy"
+    }
+  ],
+  "socialLinks": [
+    {
+      "icon": "github",
+      "link": "https://github.com/nodejs/node",
+      "alt": "GitHub"
+    },
+    {
+      "icon": "discord",
+      "link": "https://discord.gg/nodejs",
+      "alt": "Discord"
+    },
+    {
+      "icon": "bluesky",
+      "link": "https://bsky.app/profile/nodejs.org",
+      "alt": "Bluesky"
+    },
+    {
+      "icon": "twitter",
+      "link": "https://twitter.com/nodejs",
+      "alt": "Twitter"
+    },
+    {
+      "icon": "slack",
+      "link": "https://slack-invite.openjsf.org/",
+      "alt": "Slack"
+    },
+    {
+      "icon": "linkedin",
+      "link": "https://www.linkedin.com/company/node-js",
+      "alt": "LinkedIn"
+    }
+  ],
+  "sideNavigation": {
+    "about": {
+      "label": "components.navigation.about.links.about",
+      "items": {
+        "about": {
+          "link": "/about",
+          "label": "components.navigation.about.links.aboutSide"
+        },
+        "previousReleases": {
+          "link": "/about/previous-releases",
+          "label": "components.navigation.about.links.releases"
+        },
+        "securityReporting": {
+          "link": "/about/security-reporting",
+          "label": "components.navigation.about.links.security"
+        },
+        "governance": {
+          "link": "/about/governance",
+          "label": "components.navigation.about.links.governance"
+        },
+        "partners": {
+          "link": "/about/partners",
+          "label": "components.navigation.about.links.partners"
+        },
+        "branding": {
+          "link": "/about/branding",
+          "label": "components.navigation.about.links.branding"
+        },
+        "eol": {
+          "link": "/about/eol",
+          "label": "components.navigation.about.links.eol"
+        }
+      }
+    },
+    "getInvolved": {
+      "label": "components.navigation.getInvolved.links.getInvolved",
+      "items": {
+        "getInvolved": {
+          "link": "/about/get-involved",
+          "label": "components.navigation.getInvolved.links.getInvolved"
+        },
+        "collabSummit": {
+          "link": "/about/get-involved/collab-summit",
+          "label": "components.navigation.getInvolved.links.collabSummit"
+        },
+        "events": {
+          "link": "/about/get-involved/events",
+          "label": "components.navigation.getInvolved.links.upcomingEvents"
+        },
+        "contribute": {
+          "link": "https://github.com/nodejs/node/blob/main/CONTRIBUTING.md",
+          "label": "components.navigation.getInvolved.links.contribute"
+        },
+        "codeOfConduct": {
+          "link": "https://github.com/nodejs/admin/blob/main/CODE_OF_CONDUCT.md",
+          "label": "components.navigation.getInvolved.links.codeOfConduct"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,124 @@
+# Security Notes
+# Only selected Actions are allowed within this repository. Please refer to (https://github.com/nodejs/nodejs.org/settings/actions)
+# for the full list of available actions. If you want to add a new one, please reach out a maintainer with Admin permissions.
+# REVIEWERS, please always double-check security practices before merging a PR that contains workflow changes!!
+# AUTHORS, please only use actions with explicit SHA references, and avoid using `@master` or `@main` references or `@version` tags.
+
+name: Linting and Tests
+
+# This workflow should run either on `merge_group`, `pull_request`, or `push` events
+# since we want to run lint checks against any changes on pull requests, or the final patch on merge groups
+# or if direct pushes happen to main (or when changes in general land on the `main` (default) branch)
+# Note that the reason why we run this on pushes against `main` is that on rare cases, maintainers might do direct pushes against `main`
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+
+# The permissions specified below apply to workflows triggered by `merge_group`, `push`, and `pull_request` events that originate from the same repository (non-fork).
+# However, workflows triggered by `pull_request` events from forked repositories are treated differently for security reasons:
+# - These workflows **do not** have access to any secrets configured in the repository.
+# - They are also **not granted any permissions** to perform actions on the base repository.
+#
+# This is a deliberate security restriction designed to prevent potential abuse through malicious pull requests from forks.
+# For a deeper explanation and best practices for securing your GitHub Actions workflows, particularly against so-called "pwn requests",
+# refer to https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: nodejs/web-team/actions/setup-environment@9f3c83af227d721768d9dbb63009a47ed4f4282f
+        with:
+          pnpm: true
+          use-version-file: true
+
+      - name: Restore Lint Cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .turbo/cache
+            .eslintmdcache
+            .stylelintcache
+            .prettiercache
+          # We want to restore Turborepo Cache and ESlint and Prettier Cache
+          # The ESLint and Prettier cache's are useful to reduce the overall runtime of ESLint and Prettier
+          # as they will only run on files that have changed since the last cached run
+          # this might of course lead to certain files not being checked against the linter, but the chances
+          # of such situation from happening are very slim as the checksums of both files would need to match
+          key: cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('.turbo/cache/**') }}
+          restore-keys: |
+            cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-
+            cache-lint-
+
+      - name: Run quality checks with `turbo`
+        # We run the ESLint and Prettier commands on all Workflow triggers of the `Lint` job, besides if
+        # the Pull Request comes from a Crowdin Branch, as we don't want to run ESLint and Prettier on Crowdin PRs
+        # Note: Linting and Prettifying of files on Crowdin PRs is handled by the `translations-pr.yml` Workflow
+        if: |
+          (github.event_name == 'push' || github.event_name == 'merge_group') ||
+          (github.event_name == 'pull_request' && github.event.pull_request.head.ref != 'chore/crowdin')
+        run: node_modules/.bin/turbo lint lint:types prettier //#lint:i18n --cache-dir=.turbo/cache
+
+      - name: Save Lint Cache
+        # We only want to save caches on `push` events or `pull_request_target` events
+        # and if it is a `pull_request_target` event, we want to avoid saving the cache if the PR comes from Dependabot
+        # or if it comes from an automated Crowdin Pull Request
+        # The reason we save caches on `push` is because caches creates on `main` (default) branches can be reused within
+        # other Pull Requests and PRs coming from forks
+        if: |
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+            startsWith(github.event.pull_request.head.ref, 'dependabot/') == false &&
+            github.event.pull_request.head.ref != 'chore/crowdin')
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .turbo/cache
+            .eslintmdcache
+            .stylelintcache
+            .prettiercache
+          key: cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('.turbo/cache/**') }}
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: nodejs/web-team/actions/setup-environment@9f3c83af227d721768d9dbb63009a47ed4f4282f
+        with:
+          pnpm: true
+          use-version-file: true
+
+      - name: Run Unit Tests
+        # We want to run Unit Tests in every circumstance, including Crowdin PRs and Dependabot PRs to ensure
+        # that changes to dependencies or translations don't break the Unit Tests
+        run: node --run test:ci -- --cache-dir=.turbo/cache
+
+      - name: Upload test coverage to Codecov
+        if: ${{ !cancelled() && github.event_name != 'merge_group' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          files: ./apps/site/lcov.info,./packages/*/lcov.info
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && github.event_name != 'merge_group' }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          report_type: test_results
+          files: ./apps/site/junit.xml,./packages/*/junit.xml

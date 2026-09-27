@@ -1,0 +1,32 @@
+@reference "../../styles/index.css";
+
+.skeleton {
+  @apply dark:animate-pulse-dark
+    pointer-events-none
+    inline-flex
+    animate-pulse
+    cursor-default
+    rounded-md
+    border-none
+    bg-clip-border
+    align-middle
+    text-transparent
+    shadow-none
+    outline-hidden
+    select-none;
+}
+
+.skeleton[data-inline-skeleton] {
+  @apply leading-none;
+}
+
+.skeleton:empty {
+  @apply block
+    h-3;
+}
+
+.skeleton > *,
+.skeleton::after,
+.skeleton::before {
+  @apply invisible;
+}
