@@ -1,0 +1,36 @@
+name: Benchmark sync
+
+# The benchmarks are measured in https://github.com/pnpm/benchmarks, on its own
+# schedule. That repository publishes the numbers and nothing else; this job
+# redraws the charts under static/img/benchmarks/ from them
+# (`scripts/benchmarks/`), and is run by hand when the latest numbers should be
+# picked up. The charts are embedded by the README of pnpm/pnpm; the page at
+# /benchmarks reads the same repository at build time and needs no run of this.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # For the commit at the end of the job.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Node's built-ins are all the script needs, so the site's dependencies
+      # are not installed here.
+      - run: node scripts/update-benchmarks.mjs
+      - name: Commit & Push changes
+        # Pinned: this step is handed a token that can write to the repo, so
+        # what runs in it shouldn't be able to change without a commit here.
+        uses: actions-js/push@968f4695ca558093eadb24ad83cc5891f47e0cdc # v1.6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          message: "chore: update benchmarks"
+          branch: main
