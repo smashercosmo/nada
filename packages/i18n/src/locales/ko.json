@@ -1,0 +1,153 @@
+{
+  "components": {
+    "containers": {
+      "footer": {
+        "links": {
+          "trademarkPolicy": "상표 정책",
+          "privacyPolicy": "개인정보 처리방침",
+          "codeOfConduct": "행동 강령",
+          "security": "보안 정책"
+        }
+      },
+      "navBar": {
+        "links": {
+          "about": "소개",
+          "download": "다운로드",
+          "docs": "문서",
+          "learn": "학습",
+          "certification": "인증",
+          "blog": "블로그",
+          "contribute": "기여하기"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Node.js 소개",
+          "aboutSide": "Node.js®에 대하여",
+          "branding": "Node.js 브랜딩",
+          "governance": "프로젝트 거버넌스",
+          "releases": "Node.js 릴리스",
+          "security": "보안 보고"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "참여하기",
+          "collabSummit": "협업 정상 회담",
+          "upcomingEvents": "예정된 이벤트",
+          "contribute": "Node.js에 기여하기",
+          "codeOfConduct": "행동 강령"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "코드명"
+    },
+    "common": {
+      "alertBox": {
+        "info": "정보",
+        "warning": "경고"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "홈으로 이동"
+      },
+      "codebox": {
+        "copy": "클립보드에 복사",
+        "copied": "클립보드에 복사됨!"
+      },
+      "pagination": {
+        "next": "다음",
+        "nextAriaLabel": "다음 페이지",
+        "defaultLabel": "페이지네이션",
+        "pageLabel": "{pageNumber} 페이지로 이동"
+      },
+      "sidebar": {
+        "title": "페이지 변경"
+      },
+      "languageDropdown": {
+        "label": "언어 선택"
+      }
+    },
+    "metabar": {
+      "lastUpdated": "마지막 업데이트",
+      "readingTime": "읽는 데 걸리는 시간",
+      "author": "저자",
+      "authors": "저자들",
+      "contribute": "기여하기",
+      "contributeText": "이 페이지 수정",
+      "tableOfContents": "목차"
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "최신 Node.js 뉴스, 사례 연구, 튜토리얼 및 자료입니다.",
+        "rssLink": "RSS 피드"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "블로그",
+      "selectCategory": "카테고리",
+      "categories": {
+        "all": "모두",
+        "announcements": "공지사항",
+        "release": "릴리스",
+        "vulnerability": "취약점",
+        "community": "커뮤니티",
+        "feature": "기능",
+        "module": "모듈",
+        "npm": "npm",
+        "uncategorized": "분류되지 않음",
+        "video": "비디오",
+        "weekly": "주간 업데이트",
+        "wg": "워킹 그룹",
+        "events": "이벤트"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "페이지를 찾을 수 없습니다",
+        "description": "죄송합니다. 찾고 있는 페이지를 찾을 수 없습니다! 홈페이지에서 다시 시작해 보세요."
+      },
+      "internalServerError": {
+        "title": "Internal Server Error",
+        "description": "이 페이지에서 복구할 수 없는 오류가 발생했습니다."
+      },
+      "backToHome": "홈으로 돌아가기"
+    },
+    "download": {
+      "buttons": {
+        "installer": "{os} 설치 프로그램 (.{extension})",
+        "binary": "Standalone Binary (.{extension})"
+      },
+      "dropdown": {
+        "platform": "플랫폼",
+        "os": "운영 체제",
+        "version": "버전",
+        "packageManager": "패키지 관리자",
+        "unknown": "알 수 없음",
+        "platformGroups": {
+          "official": "권장됨 (공식)",
+          "unofficial": "커뮤니티 (비공식)"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "이 버전은 유지 관리가 종료되었습니다. 현재 지원되는 버전을 사용하세요. <link>EOL 지원 이해하기</link>",
+        "communityPlatformInfo": "커뮤니티 소프트웨어를 사용하는 설치 방법은 해당 소프트웨어를 유지 관리하는 팀에서 지원합니다.",
+        "externalSupportInfo": "문제가 발생하면 <link>{platform}'s 웹사이트</link>를 방문하세요.",
+        "noScriptDetected": "이 페이지는 JavaScript가 필요합니다. JavaScript 없이 Node.js를 다운로드하려면 <link>릴리스 페이지</link>를 직접 방문하세요.",
+        "platformInfo": {
+          "default": "{platform}과 설치 스크립트는 Node.js 프로젝트에서 유지 관리되지 않습니다.",
+          "nvm": "\"nvm\"은 플랫폼 간 Node.js 버전 관리자입니다.",
+          "fnm": "\"fnm\"은 플랫폼 간 Node.js 버전 관리자입니다.",
+          "brew": "Homebrew는 macOS와 Linux용 패키지 관리자입니다.",
+          "choco": "Chocolatey는 Windows용 패키지 관리자입니다.",
+          "docker": "Docker는 컨테이너화 플랫폼입니다. "
+        }
+      }
+    }
+  }
+}

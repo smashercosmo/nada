@@ -1,0 +1,57 @@
+@reference "../../../styles/index.css";
+
+.container {
+  @apply max-w-full
+    flex-1;
+}
+
+.subtitle {
+  @apply text-brand-600
+    dark:text-brand-400
+    mt-6
+    mb-2
+    inline-block
+    text-xs
+    font-semibold;
+}
+
+.title {
+  @apply mb-2
+    block
+    text-xl
+    font-semibold
+    text-neutral-900
+    dark:text-white;
+}
+
+.description {
+  @apply mb-6
+    line-clamp-3
+    text-sm
+    text-neutral-800
+    dark:text-neutral-200;
+}
+
+.footer {
+  @apply flex
+    gap-x-3;
+
+  div:first-child {
+    @apply overflow-visible;
+  }
+}
+
+.author {
+  p {
+    @apply text-sm
+      font-semibold
+      text-neutral-900
+      dark:text-white;
+  }
+
+  time {
+    @apply text-sm
+      text-neutral-800
+      dark:text-neutral-200;
+  }
+}

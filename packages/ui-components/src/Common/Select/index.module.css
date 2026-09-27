@@ -1,0 +1,215 @@
+@reference "../../styles/index.css";
+
+.select {
+  @apply inline-flex
+    flex-col
+    gap-1.5
+    align-middle;
+
+  .label {
+    @apply block
+      w-full
+      text-sm
+      font-medium
+      text-neutral-800
+      dark:text-neutral-200;
+  }
+
+  .trigger {
+    @apply inline-flex
+      h-11
+      w-full
+      min-w-[17rem]
+      items-center
+      justify-between
+      gap-2
+      rounded-sm
+      border
+      border-neutral-300
+      bg-white
+      px-3.5
+      py-2.5
+      text-left
+      text-base
+      font-medium
+      text-neutral-900
+      shadow-xs
+      outline-hidden
+      focus:border-neutral-500
+      focus:ring-1
+      focus:ring-neutral-500
+      data-placeholder:text-neutral-800
+      dark:border-neutral-800
+      dark:bg-neutral-950
+      dark:text-white
+      dark:focus:border-neutral-600
+      dark:focus:ring-neutral-600
+      dark:data-placeholder:text-neutral-200;
+  }
+
+  .trigger span {
+    @apply flex
+      h-5
+      items-center
+      gap-2;
+  }
+
+  .icon {
+    @apply size-5
+      text-neutral-600
+      dark:text-neutral-400;
+  }
+}
+
+.dropdown {
+  @apply max-h-48
+    max-w-xs
+    overflow-hidden
+    overflow-y-auto
+    rounded-md
+    border
+    border-neutral-200
+    bg-white
+    shadow-lg
+    dark:border-neutral-800
+    dark:bg-neutral-950;
+
+  .item {
+    @apply truncate
+      px-2.5
+      py-1.5
+      text-sm
+      font-medium
+      select-none;
+  }
+
+  .text {
+    @apply data-highlighted:bg-brand-500
+      dark:data-highlighted:bg-brand-600
+      text-neutral-800
+      data-highlighted:text-white
+      data-highlighted:outline-hidden
+      dark:text-neutral-200
+      dark:data-highlighted:text-white;
+  }
+
+  .text > span {
+    @apply flex
+      items-center
+      gap-2;
+  }
+
+  .text > span > span {
+    @apply max-w-64
+      truncate
+      text-wrap;
+  }
+
+  .label {
+    @apply text-neutral-600
+      dark:text-neutral-400;
+  }
+}
+
+.dropdown:has(.label) .text > span {
+  &:has(svg) > svg {
+    @apply ml-3;
+  }
+
+  &:not(&:has(svg)) > span {
+    @apply ml-3;
+  }
+}
+
+.inline {
+  .trigger {
+    @apply h-auto
+      min-w-fit
+      px-2.5
+      py-2
+      text-sm
+      font-medium;
+  }
+
+  .icon {
+    @apply size-4;
+  }
+
+  .text {
+    @apply text-neutral-900
+      data-disabled:text-neutral-600
+      data-highlighted:bg-neutral-100
+      data-highlighted:text-neutral-900
+      dark:text-white
+      dark:data-disabled:text-neutral-700
+      dark:data-highlighted:bg-neutral-900
+      dark:data-highlighted:text-white;
+  }
+
+  &.dropdown {
+    @apply mt-1
+      w-[calc(100%+1.5rem)]
+      rounded;
+  }
+}
+
+.scrollIcon {
+  @apply mx-auto
+    my-1
+    size-4
+    text-neutral-700
+    dark:text-neutral-200;
+}
+
+.badge {
+  @apply ml-auto;
+}
+
+.noscript {
+  @apply relative
+    cursor-pointer;
+
+  summary {
+    @apply flex
+      w-full
+      justify-between;
+
+    span {
+      @apply pl-0;
+    }
+  }
+
+  .trigger {
+    @apply block;
+  }
+
+  .dropdown {
+    @apply absolute
+      left-0
+      z-999
+      mt-4;
+  }
+
+  .text {
+    @apply hover:bg-brand-500
+      dark:hover:bg-brand-600
+      block
+      pl-4
+      whitespace-normal
+      text-neutral-800
+      hover:text-white
+      hover:outline-hidden
+      dark:text-neutral-200
+      dark:hover:text-white;
+
+    span {
+      @apply h-auto;
+    }
+  }
+
+  .inline {
+    .text {
+      @apply pl-2.5;
+    }
+  }
+}

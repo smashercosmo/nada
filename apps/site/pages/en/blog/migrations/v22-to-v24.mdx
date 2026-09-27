@@ -1,0 +1,295 @@
+---
+date: '2025-10-28T00:04:00.000Z'
+category: migrations
+title: Node.js v22 to v24
+layout: blog-post
+author: AugustinMauroy, Richard Lau
+---
+
+# Node.js v22 to v24
+
+<AlertBox level="info" title="!">
+  This article covers a part of the migration from Node.js v22 to v24. The
+  userland migrations team is working on more codemods to help you with the
+  migration.
+
+Missing codemods will be added over time. If you have specific needs.
+
+  <a href="https://github.com/nodejs/userland-migrations/issues/239">
+    Read this issue to learn where we are in the process and how to manually migrate your code.
+  </a>
+</AlertBox>
+
+With the release of [Node.js 24.11.0](https://nodejs.org/blog/release/v24.11.0), the Node.js 24 release line has entered Long-Term Support (LTS) and will continue to receive updates through to the end of April 2028.
+
+If you are migrating from Node.js 22 LTS, the following summarizes the breaking changes that came in [Node.js 23.0.0](https://nodejs.org/blog/release/v23.0.0) and [Node.js 24.0.0](https://nodejs.org/blog/release/v24.0.0).
+
+### Platform support
+
+Node.js no longer provides [pre-built binaries](https://nodejs.org/en/download) for:
+
+- 32-bit Windows (x86) as of Node.js 23.0.0.
+- 32-bit Linux on armv7 as of Node.js 24.0.0.
+
+Pre-built binaries for macOS now require a minimum of macOS 13.5.
+
+Pre-built binaries for Linux on arm64, ppc64le, s390x and x64 continue to be compatible with glibc 2.28 and above (no change from Node.js 22).
+
+Please refer to [additional notes if you are building Node.js from source](#building-nodejs-from-source).
+
+### Breaking changes
+
+### OpenSSL 3.5
+
+Pre-built binaries of Node.js 24 LTS, or builds using the default build configuration options, include OpenSSL 3.5. Node.js 24 LTS uses the default security level from OpenSSL 3.5 of `2`, which means that:
+
+- RSA, DSA and DH keys shorter than 2048 bits and ECC keys shorter than 224 bits are prohibited.
+- Any cipher suite using RC4 is also prohibited.
+
+If you rely on older keys or weak ciphers, test your workloads against Node.js 24 builds (or adjust key/cipher choices) before upgrading.
+
+### Other behavioral changes and argument validation
+
+The release includes a number of behavior and validation changes (stricter `fetch()` compliance, AbortSignal validation, stream/pipe errors now throwing, changes to Buffer behavior, path handling fixes on Windows, test runner defaults, and more).
+
+### C/C++ addons
+
+Addons linking against V8 APIs may need updates for V8 13.6; C++20 support may be required where previously C++17 was used. Where possible, prefer NODE-API to reduce rebuild churn.
+
+### Building Node.js from source
+
+If you are building Node.js from source, you may need to update your compiler toolchain:
+
+- For AIX and Linux platforms, the minimum supported version of [gcc](https://gcc.gnu.org/) is 12.2.
+- For macOS the minimum supported version of [Xcode](https://developer.apple.com/xcode/) is 16.1.
+
+Node.js' `configure` script will warn if you attempt to build Node.js with a compiler toolchain that does not meet the minimum supported version but will not actively prevent you from trying.
+
+## Available Codemods
+
+Some breaking changes or End of Life (EOL) deprecations in Node.js 23 and 24 have associated codemods to help you update your codebase. Below is a list of the available codemods for this migration:
+
+### `crypto-rsa-pss-update`
+
+In [DEP0154](https://nodejs.org/docs/latest/api/deprecations.html#DEP0154), the `generateKeyPair` and `generateKeyPairSync` methods in the `crypto` module deprecated the `hash`, `mgf1Hash`, and `saltLength` options for the `'rsa-pss'` key type in favor of `hashAlgorithm`, `mgf1HashAlgorithm`, and `saltLength` respectively.
+
+The source code for this codemod can be found in the [crypto-rsa-pss-update directory](https://github.com/nodejs/userland-migrations/tree/main/recipes/crypto-rsa-pss-update).
+
+You can find this codemod in the [Codemod Registry](https://app.codemod.com/registry/@nodejs/crypto-rsa-pss-update).
+
+```bash
+npx codemod run @nodejs/crypto-rsa-pss-update
+```
+
+#### Example
+
+```diff
+const crypto = require("node:crypto");
+
+crypto.generateKeyPair(
+  "rsa-pss",
+  {
+    modulusLength: 2048,
+-   hash: "sha256",
+-   mgf1Hash: "sha1",
++   hashAlgorithm: "sha256",
++   mgf1HashAlgorithm: "sha1",
+    saltLength: 32,
+  },
+  (err, publicKey, privateKey) => {
+    // callback
+  },
+);
+
+crypto.generateKeyPairSync("rsa-pss", {
+  modulusLength: 2048,
+- hash: "sha256",
++ hashAlgorithm: "sha256",
+});
+```
+
+### `dirent-path-to-parent-path`
+
+This codemod transforms the usage of `dirent.path` to use `dirent.parentPath`.
+
+See [DEP0178](https://nodejs.org/api/deprecations.html#DEP0178).
+
+The source code for this codemod can be found in the [dirent-path-to-parent-path directory](https://github.com/nodejs/userland-migrations/tree/main/recipes/dirent-path-to-parent-path).
+
+You can find this codemod in the [Codemod Registry](https://app.codemod.com/registry/@nodejs/dirent-path-to-parent-path).
+
+```bash
+npx codemod run @nodejs/dirent-path-to-parent-path
+```
+
+#### Examples
+
+### readdir
+
+```diff
+  const { readdir } = require('node:fs/promises');
+  const entries = await readdir('/some/path', { withFileTypes: true });
+  for (const dirent of entries) {
+- console.log(dirent.path);
++ console.log(dirent.parentPath);
+  }
+```
+
+### opendir
+
+```diff
+  import { opendir } from 'node:fs/promises';
+  const dir = await opendir('./');
+  for await (const dirent of dir) {
+-   console.log(`Found ${dirent.name} in ${dirent.path}`);
++   console.log(`Found ${dirent.name} in ${dirent.parentPath}`);
+  }
+```
+
+### `fs-access-mode-constants`
+
+The `fs` module introduced a runtime deprecation for `F_OK`, `R_OK`, `W_OK`, and `X_OK` getters exposed directly on `node:fs`. Get them from `fs.constants` or `fs.promises.constants` instead.
+
+This codemod handles [DEP0176](https://nodejs.org/api/deprecations.html#DEP0176).
+
+The source code for this codemod can be found in the [fs-access-mode-constants directory](https://github.com/nodejs/userland-migrations/tree/main/recipes/fs-access-mode-constants).
+
+You can find this codemod in the [Codemod Registry](https://app.codemod.com/registry/@nodejs/fs-access-mode-constants).
+
+```bash
+npx codemod run @nodejs/fs-access-mode-constants
+```
+
+#### Example
+
+```diff
+  const fs = require('node:fs');
+
+- fs.access('/path/to/file', fs.F_OK, callback);
++ fs.access('/path/to/file', fs.constants.F_OK, callback);
+- fs.access('/path/to/file', fs.R_OK | fs.W_OK, callback);
++ fs.access('/path/to/file', fs.constants.R_OK | fs.constants.W_OK, callback);
+```
+
+### `fs-truncate-fd-deprecation`
+
+The [`fs.truncate`](https://nodejs.org/api/fs.html#fs_fs_truncate_path_len_callback) function was deprecated ([DEP0081](https://nodejs.org/api/deprecations.html#DEP0081)) when used with a file descriptor. Use [`fs.ftruncate`](https://nodejs.org/api/fs.html#fs_fs_ftruncate_fd_len_callback) instead.
+
+The source code for this codemod can be found in the [fs-truncate-fd-deprecation directory](https://github.com/nodejs/userland-migrations/tree/main/recipes/fs-truncate-fd-deprecation).
+
+You can find this codemod in the [Codemod Registry](https://app.codemod.com/registry/@nodejs/fs-truncate-fd-deprecation).
+
+```bash
+npx codemod run @nodejs/fs-truncate-fd-deprecation
+```
+
+#### Example
+
+```diff
+- const { truncate, open, close } = require('node:fs');
++ const { ftruncate, open, close } = require('node:fs');
+
+  open('file.txt', 'w', (err, fd) => {
+    if (err) throw err;
+-   truncate(fd, 10, (err) => {
++   ftruncate(fd, 10, (err) => {
+      if (err) throw err;
+      close(fd, () => {});
+    });
+  });
+```
+
+### `http2-priority-signaling`
+
+This recipe removes HTTP/2 priority-related options and methods since priority signaling has been deprecated.
+
+See [DEP0194](https://nodejs.org/api/deprecations.html#DEP0194).
+
+The source code for this codemod can be found in the [http2-priority-signaling directory](https://github.com/nodejs/userland-migrations/tree/main/recipes/http2-priority-signaling).
+
+You can find this codemod in the [Codemod Registry](https://app.codemod.com/registry/@nodejs/http2-priority-signaling).
+
+```bash
+npx codemod run @nodejs/http2-priority-signaling
+```
+
+## What this codemod does
+
+- Removes the `priority` property from `http2.connect()` call options
+- Removes the `priority` property from `session.request()` call options
+- Removes entire `stream.priority()` method call statements
+- Removes the `priority` property from `client.settings()` call options
+- Handles both CommonJS (`require()`) and ESM (`import`) imports
+
+## Examples
+
+```diff
+import http2 from "node:http2";
+
+const session = http2.connect("https://example.com", {
+- priority: { weight: 16, parent: 0, exclusive: false }
+});
+
+const stream = session.request({
+  ":path": "/api/data",
+- priority: { weight: 32 }
+});
+- stream.priority({ exclusive: true, parent: 0, weight: 128 });
+
+const client = http2.connect("https://example.com");
+-client.settings({ enablePush: false, priority: true });
++client.settings({ enablePush: false });
+```
+
+### `process-assert-to-node-assert`
+
+In Node.js v23 the [DEP0100](https://nodejs.org/api/deprecations.html#DEP0100) deprecation reached End-of-Life, and `process.assert` was removed in favor of using the `assert` module directly. This codemod will help you replace any references to `process.assert` with the appropriate import of the `assert` module and usage of `assert()`.
+
+The source code for this codemod can be found in the [process-assert-to-node-assert directory](https://github.com/nodejs/userland-migrations/tree/main/recipes/process-assert-to-node-assert).
+
+You can find this codemod in the [Codemod Registry](https://app.codemod.com/registry/@nodejs/process-assert-to-node-assert).
+
+```bash
+npx codemod run @nodejs/process-assert-to-node-assert
+```
+
+#### Example
+
+```diff
++ import assert from "node:assert";
+- process.assert(condition, "Assertion failed");
++ assert(condition, "Assertion failed");
+```
+
+#### Additional Notes
+
+This codemod uses the [`fs` capability](https://docs.codemod.com/jssg/security) to read the `package.json` file and determine if the project is using ES modules or CommonJS. Based on this information, it adds the appropriate import statement for the `assert` module.
+
+### `tls-create-secure-pair-to-tls-socket`
+
+This recipe transforms the usage from the deprecated `createSecurePair()` to `TLSSocket()`.
+
+See [DEP0064](https://nodejs.org/api/deprecations.html#dep0064-tlscreatesecurepair).
+
+The source code for this codemod can be found in the [tls-create-secure-pair-to-tls-socket directory](https://github.com/nodejs/userland-migrations/tree/main/recipes/tls-create-secure-pair-to-tls-socket).
+
+You can find this codemod in the [Codemod Registry](https://app.codemod.com/registry/@nodejs/tls-create-secure-pair-to-tls-socket).
+
+```bash
+npx codemod run @nodejs/tls-create-secure-pair-to-tls-socket
+```
+
+## Examples
+
+```diff
+-const { createSecurePair } = require('node:tls');
++const { TLSSocket } = require('node:tls');
+
+-const pair = createSecurePair(credentials, true, true, false);
++const socket = new TLSSocket(underlyingSocket, {
++  secureContext: credentials,
++  isServer: true,
++  requestCert: true,
++  rejectUnauthorized: false
++});
+```

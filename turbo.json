@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "dangerouslyDisablePackageManagerCheck": true,
+  "tasks": {
+    "//#lint:i18n": {
+      "inputs": [".eloqnt/**", "apps/site/**", "packages/i18n/src/**"]
+    },
+    "//#prettier": {
+      "outputs": [".prettiercache"]
+    },
+    "//#prettier:fix": {
+      "outputs": [".prettiercache"]
+    },
+    "build": {
+      "dependsOn": ["^topo"],
+      "outputs": ["dist/**"]
+    },
+    "lint": {
+      "dependsOn": ["^topo"]
+    },
+    "prettier": {
+      "inputs": ["**/*.{js,mjs,ts,tsx,md,mdx,json,yml,css}"],
+      "outputs": [".prettiercache"]
+    },
+    "prettier:fix": {
+      "dependsOn": ["^prettier"]
+    },
+    "test": {
+      "dependsOn": ["^topo"]
+    },
+    "topo": {
+      "dependsOn": ["^topo"]
+    }
+  }
+}

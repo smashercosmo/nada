@@ -1,0 +1,43 @@
+@reference "../../../../styles/index.css";
+
+.link {
+  @apply focus-visible:border-brand-600
+    flex
+    items-center
+    gap-4
+    rounded-xl
+    border
+    border-transparent
+    bg-neutral-100
+    px-4
+    py-2
+    text-sm
+    text-neutral-900
+    outline-none
+    hover:bg-neutral-200
+    focus:bg-neutral-200
+    focus-visible:bg-transparent
+    motion-safe:transition-colors
+    dark:bg-zinc-950
+    dark:text-neutral-200
+    dark:hover:bg-neutral-900
+    lg:dark:bg-neutral-950;
+
+  svg {
+    @apply size-5
+      shrink-0;
+  }
+
+  > div {
+    @apply min-w-0;
+  }
+}
+
+.hitDescription {
+  @apply overflow-hidden
+    text-sm
+    text-ellipsis
+    whitespace-nowrap
+    text-neutral-600
+    dark:text-neutral-700;
+}

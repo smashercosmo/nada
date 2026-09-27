@@ -1,0 +1,104 @@
+@reference "../../styles/index.css";
+
+.root {
+  @apply w-full
+    max-w-full
+    overflow-x-hidden
+    rounded-sm
+    border
+    border-neutral-200
+    bg-white
+    dark:border-neutral-900
+    dark:bg-neutral-950;
+
+  .content {
+    @apply m-0
+      min-w-0
+      p-4;
+
+    code {
+      @apply font-ibm-plex-mono
+        font-regular
+        scrollbar-thin
+        grid
+        max-w-full
+        [grid-template-columns:minmax(0,1fr)]
+        overflow-x-auto
+        bg-transparent
+        p-0
+        text-sm
+        leading-snug
+        text-neutral-800
+        [counter-reset:line]
+        dark:text-neutral-400;
+
+      & > [class='line'] {
+        @apply relative
+          min-w-0
+          pl-8
+          [overflow-wrap:break-word];
+
+        &:not(:empty:last-child)::before {
+          @apply inline-block
+            content-[''];
+        }
+
+        &:not(:empty:last-child)::after {
+          @apply font-ibm-plex-mono
+            absolute
+            top-0
+            left-0
+            mr-4
+            w-4.5
+            text-right
+            text-neutral-700
+            [content:counter(line)]
+            [counter-increment:line]
+            dark:text-neutral-600;
+        }
+      }
+
+      &[class*='plain-text'] {
+        @apply font-ibm-plex-mono;
+      }
+    }
+
+    &[class*='no-line-numbers'] code > [class='line'] {
+      @apply pl-0;
+
+      &:not(:empty:last-child)::after {
+        @apply content-none
+          [counter-reset:none];
+      }
+    }
+  }
+
+  & > .footer {
+    @apply flex
+      items-center
+      justify-between
+      border-t
+      border-t-neutral-200
+      px-3
+      py-2
+      text-sm
+      font-medium
+      dark:border-t-neutral-900;
+
+    & > .language {
+      @apply text-neutral-800
+        dark:text-neutral-400;
+    }
+
+    & > .action {
+      @apply px-2.5
+        py-1
+        text-xs
+        font-medium;
+
+      > svg {
+        @apply size-4;
+      }
+    }
+  }
+}

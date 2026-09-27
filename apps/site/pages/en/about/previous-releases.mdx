@@ -1,0 +1,52 @@
+---
+title: Node.js Releases
+layout: about
+---
+
+# Node.js Releases
+
+<EOLAlertBox />
+
+Major Node.js versions enter _Current_ release status for six months, which gives library authors time to add support for them.
+Historically (up to Node.js 26), odd-numbered releases (9, 11, etc.) become unsupported after six months, and even-numbered releases (10, 12, etc.) move to _Active LTS_ status and are ready for general use.
+Starting with Node.js 27, the release cycle will be annual and every major version will move to _LTS_ status after its six-month _Current_ phase (and six additional months of _Alpha_ phase).
+_LTS_ release status is "long-term support", which typically guarantees that critical bugs will be fixed for a total of 30 months.
+Production applications should only use _Active LTS_ or _Maintenance LTS_ releases.
+
+## Release Schedule
+
+![Releases](https://raw.githubusercontent.com/nodejs/Release/main/schedule.svg?sanitize=true)
+
+Full details regarding the Node.js release schedule are available [on GitHub](https://github.com/nodejs/release#release-schedule).
+
+## Looking for the latest release of a version branch?
+
+<PreviousReleasesTable />
+
+## Official vs. Community Installation Methods
+
+The Node.js website provides several non-interactive installation methods, including command-line interfaces (CLIs), operating system (OS) package managers (e.g., `brew`), and Node.js version managers (e.g., `nvm`).
+
+To highlight and promote community contributions, the Node.js project introduced a revised Downloads page categorizing installation methods as either “Official” or “Community.” This provides users with increased flexibility and choice. To ensure clarity, we’ve defined criteria for each category.
+
+### Official Installation Methods
+
+Installation methods designated as “Official” must meet the following requirements:
+
+| Requirements (Official Installation Methods)                                                                                     |
+| :------------------------------------------------------------------------------------------------------------------------------- |
+| New Node.js releases must be available simultaneously with the official release.                                                 |
+| Project maintainers must have a close relationship with the Node.js project, including direct communication channels.            |
+| Installation method must download official binaries bundled by the Node.js project.                                              |
+| Installation method must not build from source when pre-built binaries are available, nor should it alter the official binaries. |
+
+### Community Installation Methods
+
+Community installation methods included on the self-service download page (located at /download) must also adhere to a minimum set of criteria:
+
+- **Version Support:** Must support all currently supported, non-End-of-Life (EOL) Node.js versions.
+- **OS Compatibility:** Must function on at least one officially supported Operating System (OS).
+- **Broad OS Support:** Cannot be limited to a subset of OS distributions or versions.
+  - For example, an installation method claiming compatibility with “Windows” must function on “Windows 10”, “Windows 11”, and all their editions (including server versions).
+  - Similarly, an installation method claiming compatibility with “Linux” must be installable on all major Linux distributions, not just a specific subset. It cannot rely on distribution-specific package managers like `apt` or `dnf`.
+- **Free and Open Source:** Must be free to use and open source, must not be sold as a commercial product, and must not be a paid service.

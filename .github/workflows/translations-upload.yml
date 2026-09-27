@@ -1,0 +1,47 @@
+# This action automates the upload of our source content to crowdin.
+# See translations-sync.yml for the automation to download new translations on a schedule
+# See translations-pr-lint.yml for quality control we conduct on ingress of new translations.
+name: Crowdin Upload
+
+on:
+  push:
+    branches: [main]
+
+# Cancel any runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  upload-to-crowdin:
+    name: Upload to Crowdin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+        # see all the options at https://github.com/crowdin/github-action
+      - name: crowdin action
+        uses: crowdin/github-action@8f01d54f70f1713ee3f09d82c2bbb2daeac28689 # v2.17.1
+        with:
+          # only upload sources, ensuring this is a one-way operation
+          upload_sources: true
+          upload_translations: false
+          download_translations: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A numeric ID, found at https://crowdin.com/project/nodejs-web/tools/api
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          # Created from https://crowdin.com/settings#api-key logged in using nodejs-crowdin-bot
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}

@@ -1,0 +1,72 @@
+# Security Notes
+# Only selected Actions are allowed within this repository. Please refer to (https://github.com/nodejs/nodejs.org/settings/actions)
+# for the full list of available actions. If you want to add a new one, please reach out a maintainer with Admin permissions.
+# REVIEWERS, please always double-check security practices before merging a PR that contains Workflow changes!!
+# AUTHORS, please only use actions with explicit SHA references, and avoid using `@master` or `@main` references or `@version` tags.
+
+name: Chromatic
+
+on:
+  merge_group:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/ui-components/**
+      - .github/workflows/chromatic.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - packages/ui-components/**
+      - .github/workflows/chromatic.yml
+  workflow_dispatch:
+
+defaults:
+  run:
+    # This ensures that the working directory is the root of the repository
+    working-directory: ./
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  chromatic:
+    # We only need to run Storybook Builds and Storybook Visual Regression Tests within Pull Requests that actually
+    # introduce changes to the Storybook. Hence, we skip running these on Crowdin PRs and Dependabot PRs
+    if: |
+      github.event_name != 'pull_request' ||
+      (
+        github.actor != 'dependabot[bot]' &&
+        github.event.pull_request.head.ref != 'chore/crowdin'
+      )
+
+    name: Chromatic
+    runs-on: ubuntu-latest
+
+    environment:
+      name: Storybook
+      url: ${{ steps.chromatic-deploy.outputs.storybookUrl }}
+
+    steps:
+      - uses: nodejs/web-team/actions/setup-environment@9f3c83af227d721768d9dbb63009a47ed4f4282f
+        with:
+          pnpm: true
+          use-version-file: true
+          fetch-depth: 0
+
+      - name: Start Visual Regression Tests (Chromatic)
+        # This assigns the Environment Deployment for Storybook
+        id: chromatic-deploy
+        uses: chromaui/action@fd5e7e8b66d1a6862ed8866c21e93788217f7cf7 # v18.6.0
+        with:
+          workingDir: packages/ui-components
+          buildScriptName: storybook:build
+          projectToken: ${{ vars.CHROMATIC_PROJECT_TOKEN }}
+          exitOnceUploaded: true
+          onlyChanged: true

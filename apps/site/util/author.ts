@@ -1,0 +1,85 @@
+import { authors } from '#site/next.json.mjs';
+import { getGitHubAvatarUrl } from '#site/util/github';
+import { getAcronymFromString } from '#site/util/string';
+
+import type { AuthorProps } from '#site/types';
+
+// Extracts the GitHub username from an author's profile URL, since the numeric
+// `id` is only used to build a stable avatar URL and no longer holds the handle
+const getGitHubUsername = (website?: string) => website?.split('/').pop();
+
+export const mapAuthorToCardAuthors = (author: string) => {
+  // Clears text in parentheses
+  const cleanedAuthor = author.replace(/\s*\(.*?\)\s*/g, '').trim();
+
+  // Defines the separators such as (",", "and", ";", "&", "prepared by", "by")
+  const separators = /,|\band\b|;|&| prepared by | by /i;
+
+  return cleanedAuthor
+    .split(separators)
+    .map(name => name.trim())
+    .filter(Boolean);
+};
+
+export const getAuthorWithId = (usernames: Array<string>, hasUrl: boolean) => {
+  const mapIdToAuthor = (username: string) => {
+    const author = Object.values(authors).find(
+      ({ website }) =>
+        getGitHubUsername(website)?.toLowerCase() === username.toLowerCase()
+    );
+
+    if (author) {
+      const { id, name, website } = author;
+
+      return {
+        image: getGitHubAvatarUrl(id),
+        name,
+        nickname: getGitHubUsername(website) ?? name,
+        fallback: getAcronymFromString(name),
+        url: hasUrl ? website : undefined,
+      };
+    }
+
+    return {
+      image: getGitHubAvatarUrl(username, true),
+      nickname: username,
+      fallback: getAcronymFromString(username),
+      url: hasUrl ? `https://github.com/${username}` : undefined,
+    };
+  };
+
+  return usernames.map(mapIdToAuthor);
+};
+
+export const getAuthorWithName = (names: Array<string>, hasUrl: boolean) => {
+  const mapNameToAuthor = (username: string) => {
+    if (Object.keys(authors).includes(username)) {
+      if (username in authors) {
+        const { id, name, website } = authors[username];
+
+        return {
+          image: getGitHubAvatarUrl(id),
+          name,
+          nickname: getGitHubUsername(website) ?? name,
+          fallback: getAcronymFromString(name),
+          url: hasUrl ? website : undefined,
+        };
+      }
+    }
+
+    return {
+      nickname: username,
+      fallback: getAcronymFromString(username),
+    };
+  };
+
+  return names.map(mapNameToAuthor);
+};
+
+export const getAuthors = ({ usernames, names, clickable }: AuthorProps) => {
+  if (usernames) {
+    return getAuthorWithId(usernames, clickable ?? true);
+  }
+
+  return getAuthorWithName(names || [], clickable ?? true);
+};

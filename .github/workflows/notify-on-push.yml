@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+      - main
+
+name: Notify on Push
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  notify_on_push:
+    name: Notify on any direct push to `main`
+    if: >
+      github.repository == 'nodejs/nodejs.org' &&
+      github.actor != 'github-merge-queue[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: nodejs/web-team/actions/notify-on-push@9f3c83af227d721768d9dbb63009a47ed4f4282f
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}

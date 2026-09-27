@@ -1,0 +1,42 @@
+import type { LinkLike } from '#ui/types';
+import type { FC } from 'react';
+
+import styles from './index.module.css';
+
+export type PaginationListItemProps = {
+  url: string;
+  pageNumber: number;
+  // One-based number of the current page
+  currentPage: number;
+  totalPages: number;
+  as?: LinkLike;
+  label: string;
+};
+
+const PaginationListItem: FC<PaginationListItemProps> = ({
+  url,
+  pageNumber,
+  currentPage,
+  totalPages,
+  as: Component = 'a',
+  label,
+}) => {
+  return (
+    <li
+      aria-setsize={totalPages}
+      aria-posinset={pageNumber}
+      className={styles.listItemWrapper}
+    >
+      <Component
+        href={url}
+        aria-label={label}
+        className={styles.listItem}
+        {...(pageNumber === currentPage && { 'aria-current': 'page' })}
+      >
+        <span>{pageNumber}</span>
+      </Component>
+    </li>
+  );
+};
+
+export default PaginationListItem;

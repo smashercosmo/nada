@@ -1,0 +1,8 @@
+# Docker provee instrucciones dedicadas para cada sistema operativo.
+# Por favor consulta la documentación oficial en https://www.docker.com/get-started/
+
+# Descarga la imagen de Docker de Node.js:
+docker pull node:${props.release.major}-slim
+
+# Crea un contenedor de Node.js e inicia una sesión shell:
+docker run -it --rm --entrypoint sh node:${props.release.major}-slim

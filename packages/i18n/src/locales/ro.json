@@ -1,0 +1,234 @@
+{
+  "components": {
+    "containers": {
+      "footer": {
+        "links": {
+          "trademarkPolicy": "Politică de mărci comerciale",
+          "privacyPolicy": "Politică de confidențialitate",
+          "codeOfConduct": "Cod de conduită",
+          "security": "Politica de securitate"
+        },
+        "releasePills": {
+          "latestLTS": "Ultima versiune LTS",
+          "latestRelease": "Ultima lansare"
+        }
+      },
+      "navBar": {
+        "controls": {
+          "toggle": "Comută meniul de navigare"
+        },
+        "links": {
+          "about": "Despre",
+          "download": "Descarcă",
+          "docs": "Documentație",
+          "learn": "Învață",
+          "certification": "Certificări",
+          "blog": "Blog",
+          "contribute": "Contribuie"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Despre Node.js",
+          "aboutSide": "Despre Node.js®",
+          "branding": "Brandul Node.js",
+          "governance": "Guvernarea proiectului",
+          "releases": "Lansări Node.js",
+          "security": "Raportare de securitate",
+          "eol": "End-of-Life (EOL)"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "Implică-te",
+          "collabSummit": "Summit de colaborare",
+          "upcomingEvents": "Evenimente viitoare",
+          "contribute": "Contribuie la Node.js",
+          "codeOfConduct": "Cod de conduită"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "Nume de cod",
+      "firstReleased": "Prima lansare",
+      "lastUpdated": "Ultima actualizare",
+      "status": "Stare",
+      "details": "Detalii"
+    },
+    "downloadsTable": {
+      "fileName": "Nume fișier",
+      "operatingSystem": "Sistem de operare",
+      "architecture": "Arhitectură"
+    },
+    "releaseModal": {
+      "title": "Node.js v{version} ({codename})",
+      "titleWithoutCodename": "Node.js v{version}",
+      "minorVersions": "Versiuni minore",
+      "ltsVersionFeaturesNotice": "Vrei funcționalități noi mai devreme? Instalează <link>cea mai recentă versiune Node.js</link> și testează cele mai noi îmbunătățiri!"
+    },
+    "eolAlert": {
+      "message": "Asistența comercială pentru versiunile care au depășit faza de întreținere LTS este disponibilă prin intermediul <link>partenerului nostru HeroDevs din cadrul Programului de sustenabilitate a ecosistemului OpenJS</link>"
+    },
+    "eolChip": {
+      "severity": {
+        "unknown": "Necunoscută",
+        "low": "Scazută",
+        "medium": "Medie",
+        "high": "Ridicată",
+        "critical": "Critică"
+      }
+    },
+    "eolModal": {
+      "title": "Node.js v{version} ({codename}) a ajuns la EOL",
+      "titleWithoutCodename": "Node.js v{version} a ajuns la EOL",
+      "vulnerabilitiesMessage": "Există {count}+ probleme de securitate cunoscute (CVE-uri) asociate cu această versiune de Node.js. CVE-urile (Common Vulnerabilities and Exposures) sunt identificatori pentru vulnerabilități de securitate raportate public. Dacă dai click pe un link CVE, vei fi direcționat către detalii tehnice suplimentare, cum ar fi modul în care funcționează vulnerabilitatea.",
+      "noVulnerabilitiesMessage": "În prezent, nu există CVE-uri (Common Vulnerabilities and Exposures) cunoscute asociate cu această versiune de Node.js. Totuși, asta nu înseamnă că este complet sigură — unele vulnerabilități pot să nu fi fost încă descoperite sau făcute publice. Dacă această versiune este învechită sau nu mai este susținută, este totuși o idee bună să iei în considerare actualizarea pentru a beneficia de cele mai recente remedieri și îmbunătățiri de securitate.",
+      "blogLinkText": "Blog",
+      "showUnknownSeverities": "Afișează vulnerabilități le cu severitate necunoscută",
+      "table": {
+        "cves": "CVE(urile)",
+        "severity": "Gravitate",
+        "overview": "Prezentare generală",
+        "details": "Detalii"
+      }
+    },
+    "eolTable": {
+      "version": "Versiune",
+      "codename": "Nume de cod",
+      "lastUpdated": "Ultima actualizare",
+      "vulnerabilities": "Vulnerabilități",
+      "details": "Detalii"
+    },
+    "minorReleasesTable": {
+      "version": "Versiune",
+      "links": "Legături",
+      "nApiVersion": "Versiune N-API",
+      "npmVersion": "Versiune npm",
+      "v8Version": "Versiune V8",
+      "actions": {
+        "changelog": "Istoric de modificări",
+        "docs": "Documentație"
+      }
+    },
+    "releaseOverview": {
+      "firstReleased": "Prima lansare",
+      "lastUpdated": "Ultima actualizare",
+      "minorVersions": "Versiuni minore",
+      "nApiVersion": "Versiune N-API",
+      "npmVersion": "Versiune npm",
+      "v8Version": "Versiune V8"
+    },
+    "common": {
+      "alertBox": {
+        "info": "Informații",
+        "warning": "Avertizare"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "Navighează la prima pagină"
+      },
+      "codebox": {
+        "copy": "Copiază în clipbord",
+        "copied": "Copiat în clipbord!"
+      },
+      "pagination": {
+        "next": "Înainte",
+        "nextAriaLabel": "Pagina următoare",
+        "defaultLabel": "Paginare",
+        "pageLabel": "Mergi la pagina {pageNumber}"
+      },
+      "sidebar": {
+        "title": "Schimbă pagina"
+      },
+      "languageDropdown": {
+        "label": "Alege limba"
+      }
+    },
+    "metabar": {
+      "lastUpdated": "Ultima actualizare",
+      "readingTime": "Durată de citire",
+      "author": "Autor",
+      "authors": "Autori",
+      "contribute": "Contribuie",
+      "contributeText": "Editează această pagină",
+      "tableOfContents": "Cuprins"
+    },
+    "search": {
+      "searchPlaceholder": "Începe să tastezi...",
+      "noResultsFoundFor": "Niciun rezultat găsit pentru"
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "Cele mai recente știri, studii de caz, tutoriale și resurse Node.js.",
+        "rssLink": "Flux RSS"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "Blog",
+      "selectCategory": "Categorii",
+      "categories": {
+        "all": "Toate",
+        "announcements": "Anunțuri",
+        "release": "Lansări",
+        "vulnerability": "Vulnerabilități",
+        "community": "Comunitate",
+        "feature": "Funcționalitate",
+        "module": "Modul",
+        "npm": "npm",
+        "uncategorized": "Fără categorie",
+        "video": "Video",
+        "weekly": "Actualizări săptămânale",
+        "wg": "Grupuri de lucru",
+        "events": "Evenimente"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "Pagina nu a putut fi găsită",
+        "description": "Regret, nu am putut găsi pagina pe care o cauți! Încearcă să începi din nou de pe prima pagină."
+      },
+      "internalServerError": {
+        "title": "Eroare internă de server",
+        "description": "Această pagină a generat o eroare nerecuperabilă."
+      },
+      "backToHome": "Înapoi la prima pagină"
+    },
+    "download": {
+      "buttons": {
+        "installer": "Instalator {os} (.{extension})",
+        "binary": "Binar autonom (.{extension})"
+      },
+      "dropdown": {
+        "platform": "Platformă",
+        "os": "Sistem de operare",
+        "version": "Versiune",
+        "packageManager": "Manager de pachete",
+        "unknown": "Necunoscut",
+        "platformGroups": {
+          "official": "Recomandat (oficial)",
+          "unofficial": "Comunitate (neoficial)"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "Această versiune nu mai este întreținută. Te rog să utilizezi o versiune acceptată în prezent. <link>Află mai multe despre suportul EOL.</link>",
+        "communityPlatformInfo": "Metodele de instalare care implică software comunitar sunt acceptate de echipele care întrețin acel software.",
+        "externalSupportInfo": "Dacă întâmpini orice problemă, te rog să vizitezi site-ul web <link>{platform}</link>",
+        "noScriptDetected": "Această pagină necesită JavaScript. Poți descărca Node.js fără JavaScript, vizitând direct <link>pagina arhivei de descărcări</link>.",
+        "platformInfo": {
+          "default": "{platform} și scripturile lor de instalare nu sunt întreținute de proiectul Node.js.",
+          "nvm": "„nvm” este un manager de versiuni Node.js multiplatformă.",
+          "fnm": "„fnm” este un manager de versiuni Node.js multiplatformă.",
+          "brew": "Homebrew este un manager de pachete pentru macOS și Linux.",
+          "choco": "Chocolatey este un manager de pachete pentru Windows.",
+          "docker": "Docker este o platformă de containerizare.",
+          "n": "„n” este un manager de versiuni Node.js multiplatformă."
+        }
+      }
+    },
+    "logo": "Logo-ul Node.js"
+  }
+}

@@ -1,0 +1,46 @@
+import AlertBox from '@node-core/ui-components/Common/AlertBox';
+import { useTranslations } from 'next-intl';
+
+import Link from '#site/components/Link';
+
+import type { NodeReleaseStatus } from '#site/types';
+import type { FC } from 'react';
+
+type WithReleaseAlertBoxProps = {
+  status: NodeReleaseStatus;
+};
+
+const WithReleaseAlertBox: FC<WithReleaseAlertBoxProps> = ({ status }) => {
+  const t = useTranslations();
+
+  switch (status) {
+    case 'EOL':
+      return (
+        <AlertBox
+          title={t('components.common.alertBox.warning')}
+          level="warning"
+          size="small"
+        >
+          {t.rich('layouts.download.codeBox.unsupportedVersionWarning', {
+            link: text => <Link href="/about/eol">{text}</Link>,
+          })}
+        </AlertBox>
+      );
+    case 'LTS':
+      return (
+        <AlertBox
+          title={t('components.common.alertBox.info')}
+          level="success"
+          size="small"
+        >
+          {t.rich('components.releaseModal.ltsVersionFeaturesNotice', {
+            link: text => <Link href="/download/current">{text}</Link>,
+          })}
+        </AlertBox>
+      );
+    default:
+      return null;
+  }
+};
+
+export default WithReleaseAlertBox;

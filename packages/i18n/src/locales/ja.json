@@ -1,0 +1,269 @@
+{
+  "components": {
+    "header": {
+      "buttons": {
+        "theme": "テーマを選択",
+        "themeSystem": "システム",
+        "themeLightMode": "ライト",
+        "themeDarkMode": "ダーク"
+      }
+    },
+    "containers": {
+      "footer": {
+        "legal": "Copyright <foundationName>OpenJS Foundation</foundationName> and Node.js contributors. All rights reserved. The <foundationName>OpenJS Foundation</foundationName> has registered trademarks and uses trademarks.  For a list of trademarks of the <foundationName>OpenJS Foundation</foundationName>, please see our <trademarkPolicy>Trademark Policy</trademarkPolicy> and <trademarkList>Trademark List</trademarkList>.  Trademarks and logos not indicated on the <trademarkList>list of OpenJS Foundation trademarks</trademarkList> are trademarks™ or registered® trademarks of their respective holders. Use of them does not imply any affiliation with or endorsement by them.",
+        "links": {
+          "foundationName": "OpenJS Foundation",
+          "aiCodingAssistantsPolicy": "AI生成コードの利用に関するポリシー",
+          "termsOfUse": "利用規約",
+          "privacyPolicy": "プライバシーポリシー",
+          "bylaws": "定款",
+          "codeOfConduct": "行動規範",
+          "trademarkPolicy": "商標ポリシー",
+          "trademarkList": "商標リスト",
+          "cookiePolicy": "クッキーポリシー",
+          "security": "セキュリティーポリシー"
+        },
+        "releasePills": {
+          "latestLTS": "LTS版",
+          "latestRelease": "最新版"
+        }
+      },
+      "navBar": {
+        "controls": {
+          "toggle": "メニューを切り替える"
+        },
+        "links": {
+          "about": "はじめに",
+          "download": "ダウンロード",
+          "docs": "ドキュメント",
+          "betaDocs": "ベータ版ドキュメント",
+          "learn": "学ぶ",
+          "certification": "コース",
+          "blog": "ブログ",
+          "contribute": "貢献"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Node.jsについて",
+          "aboutSide": "Node.js®について",
+          "branding": "Node.jsのブランド",
+          "governance": "プロジェクトの管理体制",
+          "releases": "Node.js リリース",
+          "security": "セキュリティーレポート",
+          "partners": "パートナーとサポーター",
+          "eol": "サポート終了（EOL）"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "参加しよう",
+          "collabSummit": "コラボレーションサミット",
+          "upcomingEvents": "今後のイベント",
+          "contribute": "開発への協力",
+          "codeOfConduct": "行動規範"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "コードネーム",
+      "firstReleased": "最初のリリース",
+      "lastUpdated": "最終更新日",
+      "status": "ステータス",
+      "details": "詳細"
+    },
+    "downloadsTable": {
+      "fileName": "ファイル名",
+      "operatingSystem": "OS",
+      "architecture": "アーキテクチャー"
+    },
+    "releaseModal": {
+      "title": "Node.js v{version} ({codename})",
+      "titleWithoutCodename": "Node.js v{version}",
+      "minorVersions": "マイナーバージョン",
+      "ltsVersionFeaturesNotice": "すぐに最新の機能を試したいですか？<link>最新バージョンのNode.js</link>を代わりにインストールして最新の機能を試してください！"
+    },
+    "eolAlert": {
+      "message": "Maintenance LTS期間を過ぎたバージョンの商用サポートは<link>OpenJSエコシステム持続可能性プログラムパートナー</link>を通して利用できます。"
+    },
+    "eolChip": {
+      "severity": {
+        "unknown": "不明",
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+        "critical": "深刻"
+      }
+    },
+    "eolModal": {
+      "title": "Node.js v{version} ({codename})はEOLとなりました",
+      "titleWithoutCodename": "Node.js v{version}はEOLとなりました",
+      "vulnerabilitiesMessage": "このNode.jsのバージョンには{count}件以上の既知のセキュリティ問題（CVE）が関連付けられています。CVE（Common Vulnerabilities and Exposures）は公開されたセキュリティ脆弱性を識別するための識別子です。CVEのリンクをクリックすると脆弱性の詳細な技術情報（脆弱性の動作方法など）を確認できます。",
+      "noVulnerabilitiesMessage": "現在、このNode.jsのバージョンに関連する既知のCVE（Common Vulnerabilities and Exposures）は存在しません。ただし、これが完全に安全であることを意味するわけではありません。一部の脆弱性がまだ発見されていないか、公開されていない可能性があります。このバージョンが古くなっていたり、サポート対象外の場合、最新の修正やセキュリティ強化の恩恵を受けるため、アップグレードを検討することをおすすめします。",
+      "blogLinkText": "ブログ",
+      "showUnknownSeverities": "未知の重大度の脆弱性を表示する",
+      "table": {
+        "cves": "CVE",
+        "severity": "重大度",
+        "overview": "概要",
+        "details": "詳細"
+      }
+    },
+    "eolTable": {
+      "version": "バージョン",
+      "codename": "コードネーム",
+      "lastUpdated": "最終更新日",
+      "vulnerabilities": "脆弱性",
+      "details": "詳細",
+      "hideNonLts": "LTSバージョン以外を隠す"
+    },
+    "minorReleasesTable": {
+      "version": "バージョン",
+      "links": "リンク",
+      "nApiVersion": "N-APIのバージョン",
+      "npmVersion": "npmのバージョン",
+      "v8Version": "V8のバージョン",
+      "actions": {
+        "changelog": "変更履歴",
+        "docs": "ドキュメント"
+      }
+    },
+    "releaseOverview": {
+      "firstReleased": "最初のリリース",
+      "lastUpdated": "最終更新日",
+      "minorVersions": "マイナーバージョン",
+      "nApiVersion": "N-APIのバージョン",
+      "npmVersion": "npmのバージョン",
+      "v8Version": "V8のバージョン"
+    },
+    "common": {
+      "alertBox": {
+        "info": "補足",
+        "warning": "注意"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "ホームに移動する"
+      },
+      "codebox": {
+        "copy": "クリップボードにコピー",
+        "copied": "クリップボードにコピーされました！"
+      },
+      "pagination": {
+        "previous": "前へ",
+        "previousAriaLabel": "前のページ",
+        "next": "次へ",
+        "nextAriaLabel": "次のページ",
+        "defaultLabel": "ページネーション",
+        "pageLabel": "{pageNumber}ページ目に移動"
+      },
+      "sidebar": {
+        "title": "ページを変更する"
+      },
+      "languageDropdown": {
+        "label": "言語を選択"
+      },
+      "skipToContent": "コンテンツにスキップ"
+    },
+    "metabar": {
+      "lastUpdated": "最終更新日",
+      "readingTime": "所要時間",
+      "author": "著者",
+      "authors": "著者",
+      "contribute": "編集への協力",
+      "contributeText": "このページを編集",
+      "tableOfContents": "目次",
+      "metadata": "記事のメタデータ"
+    },
+    "banner": {
+      "default": "お知らせ",
+      "warning": "警告通知",
+      "error": "エラー通知",
+      "close": "バナーを閉じる"
+    },
+    "search": {
+      "searchPlaceholder": "入力を開始...",
+      "noResultsFoundFor": "該当する結果が見つかりませんでした",
+      "keyboardShortcuts": {
+        "select": "選ぶ",
+        "navigate": "移動",
+        "close": "閉じる"
+      }
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "最新のNode.jsニュース、移行ガイド、イベント概要",
+        "rssLink": "RSSフィード"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "ブログ",
+      "selectCategory": "カテゴリー",
+      "categories": {
+        "all": "すべて",
+        "announcements": "お知らせ",
+        "release": "リリース",
+        "vulnerability": "脆弱性",
+        "community": "コミュニティー",
+        "feature": "機能",
+        "module": "モジュール",
+        "npm": "npm",
+        "uncategorized": "未分類",
+        "video": "ビデオ",
+        "weekly": "週間更新",
+        "wg": "作業グループ",
+        "migrations": "移行ガイド",
+        "events": "イベント"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "ページが見つかりませんでした",
+        "description": "申し訳ありませんが、探しているページが見つかりませんでした！ ホームページからやり直してください。"
+      },
+      "internalServerError": {
+        "title": "内部サーバーエラー",
+        "description": "このページで回復不可能なエラーが発生しました。"
+      },
+      "backToHome": "ホームに戻る"
+    },
+    "download": {
+      "buttons": {
+        "installer": "{os} インストーラー (.{extension})",
+        "binary": "スタンドアローンのバイナリー (.{extension})"
+      },
+      "dropdown": {
+        "platform": "プラットフォーム",
+        "os": "オペレーティングシステム",
+        "version": "バージョン",
+        "packageManager": "パッケージマネージャー",
+        "unknown": "不明",
+        "platformGroups": {
+          "official": "推奨（公式）",
+          "unofficial": "コミュニティー（非公式）"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "このバージョンのメンテナンスは終了しています。現在サポートされているバージョンを利用してください。<link>EOLのサポートについて。</link>",
+        "communityPlatformInfo": "コミュニティーソフトウェアを含むインストール方法はそのソフトウェアを管理しているチームによってサポートされます。",
+        "externalSupportInfo": "もし何らかの問題を見つけた場合は<link>{platform}のウェブサイト</link>を参照してください。",
+        "noScriptDetected": "このページはJavaScriptが必要です。JavaScriptなしでも<link>アーカイブページ</link>から直接Node.jsをダウンロードできます。",
+        "platformInfo": {
+          "default": "{platform}とそのインストールスクリプトはNode.jsプロジェクトによって管理されていません。",
+          "nvm": "\"nvm\"はクロスプラットフォームに対応したNode.jsのバージョンマネージャーです。",
+          "fnm": "\"fnm\"はクロスプラットフォームに対応したNode.jsのバージョンマネージャーです。",
+          "brew": "HomebrewはmacOS用およびLinux用のパッケージマネージャーです。",
+          "choco": "ChocolateyはWIndows用のパッケージマネージャーです。",
+          "docker": "Dockerはコンテナー化に関するプラットフォームです。",
+          "n": "\"n\"はクロスプラットフォームに対応したNode.jsのバージョンマネージャーです。",
+          "asdf": "「asdf」は数多くのプログラミング言語に対応したクロスプラットフォームのバージョン管理ツールです。"
+        }
+      }
+    },
+    "logo": "Node.jsロゴ"
+  }
+}

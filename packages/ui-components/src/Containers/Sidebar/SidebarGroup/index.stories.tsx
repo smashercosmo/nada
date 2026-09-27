@@ -1,0 +1,59 @@
+import SidebarGroup from '#ui/Containers/Sidebar/SidebarGroup';
+
+import type { Meta as MetaObj, StoryObj } from '@storybook/react-webpack5';
+
+type Story = StoryObj<typeof SidebarGroup>;
+type Meta = MetaObj<typeof SidebarGroup>;
+
+export const Default: Story = {
+  args: {
+    groupName: 'Example Group',
+    items: [
+      { label: 'Item 1', link: '/item1' },
+      { label: 'Item 2', link: '/item2' },
+      { label: 'Item 3', link: '/item3' },
+    ],
+  },
+};
+
+export const CustomGroup: Story = {
+  args: {
+    groupName: 'Custom Group',
+    items: [
+      { label: 'Custom Item 1', link: '/custom-item1' },
+      { label: 'Custom Item 2', link: '/custom-item2' },
+    ],
+  },
+};
+
+export const EmptyGroup: Story = {
+  args: {
+    groupName: 'Empty Group',
+    items: [],
+  },
+};
+
+export const NestedGroup: Story = {
+  args: {
+    groupName: 'Nested Group',
+    pathname: '/nested/folder-b/leaf-2',
+    items: [
+      { label: 'Flat Item', link: '/nested/flat' },
+      {
+        label: 'Folder A',
+        link: '/nested/folder-a',
+        items: [{ label: 'Leaf A.1', link: '/nested/folder-a/leaf-1' }],
+      },
+      {
+        label: 'Folder B',
+        link: '/nested/folder-b',
+        items: [
+          { label: 'Leaf B.1', link: '/nested/folder-b/leaf-1' },
+          { label: 'Leaf B.2 (Active)', link: '/nested/folder-b/leaf-2' },
+        ],
+      },
+    ],
+  },
+};
+
+export default { component: SidebarGroup } as Meta;

@@ -1,0 +1,85 @@
+@reference "../../styles/index.css";
+
+.summary {
+  @apply flex
+    h-9
+    cursor-pointer
+    items-center
+    gap-2
+    rounded-md
+    border
+    border-neutral-200
+    p-2
+    text-sm
+    text-neutral-700
+    outline-hidden
+    select-none
+    motion-safe:transition-colors
+    dark:border-neutral-900
+    dark:text-neutral-300;
+
+  &:hover,
+  &:focus-visible {
+    @apply bg-neutral-100
+      dark:bg-neutral-900;
+  }
+}
+
+.dropdownContentWrapper {
+  @apply absolute
+    top-full
+    right-0
+    z-50
+    mt-1
+    max-h-80
+    w-max
+    max-w-[min(26rem,calc(100vw-2rem))]
+    min-w-[min(12rem,calc(100vw-2rem))]
+    overflow-hidden
+    rounded-sm
+    border
+    border-neutral-200
+    bg-white
+    shadow-lg
+    dark:border-neutral-900
+    dark:bg-neutral-950;
+}
+
+.dropdownContentInner {
+  @apply max-h-80
+    w-full
+    overflow-y-auto;
+}
+
+.dropdownItem {
+  @apply block
+    px-2.5
+    py-1.5
+    text-sm
+    font-medium
+    text-neutral-800
+    no-underline
+    outline-hidden
+    motion-safe:transition-colors
+    dark:text-white;
+
+  &:hover,
+  &:focus-visible {
+    @apply bg-brand-600
+      text-white!;
+  }
+}
+
+.dropdownLabel {
+  @apply block
+    text-sm
+    leading-tight
+    font-medium;
+}
+
+.dropdownVersions {
+  @apply block
+    text-xs
+    leading-tight
+    opacity-75;
+}

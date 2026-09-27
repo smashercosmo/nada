@@ -1,0 +1,124 @@
+{
+  "components": {
+    "containers": {
+      "footer": {
+        "links": {
+          "trademarkPolicy": "Política de Marcas Registradas",
+          "privacyPolicy": "Política de Privacidad",
+          "codeOfConduct": "Código de Conducta",
+          "security": "Política de Seguridad"
+        }
+      },
+      "navBar": {
+        "links": {
+          "about": "Acerca de",
+          "download": "Descargar",
+          "docs": "Documentación",
+          "learn": "Aprender",
+          "certification": "Certificación",
+          "blog": "Blog",
+          "contribute": "Contribuir"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Sobre Node.js",
+          "aboutSide": "Sobre Node.js®",
+          "branding": "Marca de Node.js",
+          "governance": "Gobernanza del proyecto",
+          "releases": "Lanzamientos de Node.js",
+          "security": "Reporte de Seguridad"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "Colaborar",
+          "collabSummit": "Cumbre de Colaboradores",
+          "upcomingEvents": "Próximos Eventos",
+          "contribute": "Contribuir a Node.js",
+          "codeOfConduct": "Código de Conducta"
+        }
+      }
+    },
+    "common": {
+      "breadcrumbs": {
+        "navigateToHome": "Ir al inicio"
+      },
+      "codebox": {
+        "copy": "Copiar al portapapeles",
+        "copied": "¡Copiado al portapapeles!"
+      },
+      "pagination": {
+        "next": "Siguiente",
+        "nextAriaLabel": "Página siguiente",
+        "defaultLabel": "Paginación",
+        "pageLabel": "Ir a la página {pageNumber}"
+      },
+      "sidebar": {
+        "title": "Cambiar página"
+      },
+      "languageDropdown": {
+        "label": "Seleccionar idioma"
+      }
+    },
+    "metabar": {
+      "lastUpdated": "Última Actualización",
+      "readingTime": "Tiempo de Lectura",
+      "author": "Autor",
+      "authors": "Autores",
+      "contribute": "Contribuir",
+      "contributeText": "Editar esta página",
+      "tableOfContents": "Tabla de Contenidos"
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "Las últimas noticias de Node.js, estudios de caso, tutoriales y recursos.",
+        "rssLink": "Fuente RSS"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "Blog",
+      "selectCategory": "Categorías",
+      "categories": {
+        "all": "Todo",
+        "announcements": "Anuncios",
+        "release": "Lanzamientos",
+        "vulnerability": "Vulnerabilidades",
+        "community": "Comunidad",
+        "feature": "Característica",
+        "module": "Módulo",
+        "npm": "npm",
+        "uncategorized": "Sin categoría",
+        "video": "Video",
+        "weekly": "Actualizaciones semanales",
+        "wg": "Grupos de trabajo",
+        "events": "Eventos"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "No se pudo encontrar la página",
+        "description": "Lo siento, no pudimos encontrar la página que buscas. Intenta nuevamente desde la página de inicio."
+      },
+      "internalServerError": {
+        "title": "Error interno del servidor",
+        "description": "Esta página ha generado un error no recuperable."
+      },
+      "backToHome": "Volver al inicio"
+    },
+    "download": {
+      "dropdown": {
+        "os": "Sistema Operativo",
+        "version": "Versión",
+        "platform": "Plataforma"
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "Esta versión está fuera de mantenimiento. Utilice una versión con soporte vigente. <link>Conozca el soporte EOL.</link>"
+      }
+    }
+  }
+}

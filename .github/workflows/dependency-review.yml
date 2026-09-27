@@ -1,0 +1,18 @@
+name: Review Dependencies
+
+on:
+  pull_request:
+    branches:
+      - main
+
+# Cancel any runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    uses: nodejs/web-team/.github/workflows/dependency-review.yml@9f3c83af227d721768d9dbb63009a47ed4f4282f

@@ -1,0 +1,33 @@
+@reference "../../styles/index.css";
+
+.wrapper {
+  @apply ml:max-w-xs
+    ml:overflow-auto
+    ml:border-r
+    ml:pb-10
+    scrollbar-thin
+    z-0
+    flex
+    w-full
+    flex-col
+    gap-8
+    border-r-0
+    border-neutral-200
+    bg-white
+    px-4
+    pt-6
+    2xl:px-6
+    dark:border-neutral-900
+    dark:bg-neutral-950;
+
+  .navigation {
+    @apply ml:flex
+      hidden;
+  }
+
+  .mobileSelect {
+    @apply ml:hidden
+      flex
+      w-full;
+  }
+}

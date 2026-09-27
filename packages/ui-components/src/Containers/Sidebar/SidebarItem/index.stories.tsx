@@ -1,0 +1,15 @@
+import SidebarItem from '#ui/Containers/Sidebar/SidebarItem';
+
+import type { Meta as MetaObj, StoryObj } from '@storybook/react-webpack5';
+
+type Story = StoryObj<typeof SidebarItem>;
+type Meta = MetaObj<typeof SidebarItem>;
+
+export const Default: Story = {
+  args: {
+    label: 'Example Item',
+    link: '/example',
+  },
+};
+
+export default { component: SidebarItem } as Meta;

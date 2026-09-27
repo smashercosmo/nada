@@ -1,0 +1,158 @@
+{
+  "components": {
+    "containers": {
+      "footer": {
+        "links": {
+          "trademarkPolicy": "商标政策",
+          "privacyPolicy": "隐私政策",
+          "codeOfConduct": "行为准则",
+          "security": "安全政策"
+        }
+      },
+      "navBar": {
+        "controls": {
+          "toggle": "切换导航菜单"
+        },
+        "links": {
+          "about": "关于",
+          "download": "下载",
+          "docs": "文档",
+          "learn": "学习",
+          "certification": "认证",
+          "blog": "博客",
+          "contribute": "贡献"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "关于 Node.js",
+          "aboutSide": "关于 Node.js®",
+          "branding": "Node.js 的品牌化",
+          "governance": "项目管理",
+          "releases": "Node.js 版本",
+          "security": "安全报告"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "参与贡献",
+          "collabSummit": "协作者峰会",
+          "upcomingEvents": "近期活动",
+          "contribute": "为Node.js做出贡献",
+          "codeOfConduct": "行为准则"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "代号"
+    },
+    "common": {
+      "alertBox": {
+        "info": "提示",
+        "warning": "警告"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "导航到首页"
+      },
+      "codebox": {
+        "copy": "复制到剪贴板",
+        "copied": "已复制到剪贴板！"
+      },
+      "pagination": {
+        "next": "下一页",
+        "nextAriaLabel": "下一页",
+        "defaultLabel": "分页",
+        "pageLabel": "跳转到第 {pageNumber} 页"
+      },
+      "sidebar": {
+        "title": "更改页面"
+      },
+      "languageDropdown": {
+        "label": "选择语言"
+      }
+    },
+    "metabar": {
+      "lastUpdated": "最后更新",
+      "readingTime": "阅读时间",
+      "author": "作者",
+      "authors": "作者",
+      "contribute": "贡献",
+      "contributeText": "编辑此页",
+      "tableOfContents": "目录"
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "最新的 Node.js 新闻、研究案例、教程和资源。",
+        "rssLink": "RSS订阅"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "博客",
+      "selectCategory": "分类",
+      "categories": {
+        "all": "所有内容",
+        "announcements": "公告",
+        "release": "版本发布",
+        "vulnerability": "漏洞",
+        "community": "社区",
+        "feature": "功能",
+        "module": "模块",
+        "npm": "npm",
+        "uncategorized": "未分类",
+        "video": "视频",
+        "weekly": "每周构建",
+        "wg": "工作组",
+        "events": "活动"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "未找到页面",
+        "description": "抱歉，我们无法找到您要找的页面！请返回首页重试。"
+      },
+      "internalServerError": {
+        "title": "服务器内部错误",
+        "description": "该页面出现了不可恢复的错误。"
+      },
+      "backToHome": "回到首页"
+    },
+    "download": {
+      "buttons": {
+        "installer": "{os} 安装程序(.{extension})",
+        "binary": "独立文件(.{extension})"
+      },
+      "dropdown": {
+        "platform": "平台",
+        "os": "操作系统",
+        "version": "版本",
+        "packageManager": "包管理器",
+        "unknown": "未知",
+        "platformGroups": {
+          "official": "推荐（官方）",
+          "unofficial": "社区（非官方）"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "该版本已停止维护。请使用当前支持的版本。<link>了解 EOL.</link>",
+        "communityPlatformInfo": "涉及社区软件的安装方法由维护该软件的团队提供支持。",
+        "externalSupportInfo": "如果遇到任何问题，请访问 <link>{platform}的网站</link>",
+        "noScriptDetected": "本页面需要 JavaScript。您可以直接访问<link>发布页面</link>在无需 JavaScript 的条件下下载 Node.js。",
+        "platformInfo": {
+          "default": "Node.js 项目不维护 {platform} 及其安装脚本。",
+          "nvm": "\"nvm\" 是一个跨平台的 Node.js 版本管理器。",
+          "fnm": "\"fnm\" 是一个跨平台的 Node.js 版本管理器。",
+          "brew": "Homebrew 是一款适用于 macOS 和 Linux 的软件包管理器。",
+          "choco": "Chocolatey 是一款 Windows 软件包管理器。",
+          "docker": "Docker 是一个容器化平台。",
+          "n": "\"n\" 是一个跨平台的 Node.js 版本管理器。"
+        }
+      }
+    },
+    "logo": "Node.js 徽标"
+  }
+}

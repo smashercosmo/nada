@@ -1,0 +1,103 @@
+name: Publish Packages
+
+# Changesets opens or updates a version PR when release notes are present. Once that PR is merged,
+# this workflow publishes the versioned packages to npm.
+
+on:
+  push:
+    # For security reasons, this should never be set to anything but `main`
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  COMMIT_SHA: ${{ github.sha }}
+
+jobs:
+  release:
+    name: Create Release PR or Publish
+    runs-on: ubuntu-latest
+    # Never attempt to publish from forks (no trusted-publisher match / secrets).
+    if: github.repository == 'nodejs/nodejs.org'
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Verify commit authenticity
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get commit data from GitHub API to verify its authenticity
+          COMMIT_DATA=$(gh api repos/${{ github.repository }}/commits/$COMMIT_SHA)
+          # Check if commit signature is verified (GPG signed)
+          VERIFIED=$(echo "$COMMIT_DATA" | jq -r '.commit.verification.verified')
+          # Check if commit was made through GitHub's web interface (merge queue)
+          COMMITTER=$(echo "$COMMIT_DATA" | jq -r '.commit.committer.email')
+
+          # Security checks to ensure we only publish from verified and trusted sources
+          if [[ "$VERIFIED" != "true" ]]; then
+            echo "❌ Unverified commit! Aborting."
+            exit 1
+          fi
+
+          if [[ "$COMMITTER" != "noreply@github.com" ]]; then
+            echo "❌ Not merged with the merge queue! Aborting."
+            exit 1
+          fi
+
+          echo "✅ Commit is verified and trusted."
+
+      - uses: nodejs/web-team/actions/setup-environment@9f3c83af227d721768d9dbb63009a47ed4f4282f
+        with:
+          pnpm: true
+          use-version-file: true
+          registry-url: 'https://registry.npmjs.org'
+          fetch-depth: 0
+
+      - name: Create release pull request or publish packages
+        id: changesets
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+        with:
+          commit-message: 'chore: version packages'
+          pr-title: 'chore: version packages'
+          version-script: node --run changeset:version
+          publish-script: node --run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Format published packages
+        if: steps.changesets.outputs.published == 'true'
+        id: notification
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+        run: |
+          {
+            echo 'packages<<EOF'
+            jq -r '.[] | ":package: *Package*: `\(.name)@\(.version)` (<https://www.npmjs.com/package/\(.name)/v/\(.version)|View on npm>)"' <<< "$PUBLISHED_PACKAGES"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Notify
+        if: steps.changesets.outputs.published == 'true'
+        uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2.4.0
+        env:
+          SLACK_COLOR: '#43853D'
+          SLACK_ICON: https://github.com/nodejs.png?size=48
+          SLACK_TITLE: ':rocket: Packages Published'
+          SLACK_MESSAGE: |
+            ${{ steps.notification.outputs.packages }}
+            :bust_in_silhouette: *Published by*: ${{ github.triggering_actor }}
+            :octocat: *Commit*: <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>
+          SLACK_USERNAME: nodejs-bot
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

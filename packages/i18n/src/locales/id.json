@@ -1,0 +1,269 @@
+{
+  "components": {
+    "header": {
+      "buttons": {
+        "theme": "Pilih tema",
+        "themeSystem": "Sistem",
+        "themeLightMode": "Terang",
+        "themeDarkMode": "Gelap"
+      }
+    },
+    "containers": {
+      "footer": {
+        "legal": "Hak cipta <foundationName>OpenJS Foundation</foundationName> dan kontributor Node.js. Hak cipta dilindungi. <foundationName>OpenJS Foundation</foundationName> telah mendaftarkan merek dagang dan menggunakan merek dagang. Untuk daftar hak dagang <foundationName>OpenJS Foundation</foundationName>, harap melihat <trademarkPolicy>Kebijakan Merek Dagang</trademarkPolicy> dan <trademarkList>Daftar Merek Dagang</trademarkList> kami. Merek dagang dan logo yang tidak tercantum dalam <trademarkList>daftar merek dagang OpenJS Foundation</trademarkList> merupakan merek dagang™ atau merek dagang terdaftar® dari pemiliknya masing-masing. Penggunaan hal tersebut tidak berarti adanya afiliasi dengan atau dukungan oleh mereka.",
+        "links": {
+          "foundationName": "OpenJS Foundation",
+          "aiCodingAssistantsPolicy": "Kebijakan Asisten Pemrograman AI",
+          "termsOfUse": "Ketentuan Penggunaan",
+          "privacyPolicy": "Kebijakan Privasi",
+          "bylaws": "Anggaran Rumah Tangga",
+          "codeOfConduct": "Pedoman Perilaku",
+          "trademarkPolicy": "Kebijakan Merek Dagang",
+          "trademarkList": "Daftar Merek Dagang",
+          "cookiePolicy": "Kebijakan Cookie",
+          "security": "Kebijakan Keamanan"
+        },
+        "releasePills": {
+          "latestLTS": "LTS Terbaru",
+          "latestRelease": "Versi Terbaru"
+        }
+      },
+      "navBar": {
+        "controls": {
+          "toggle": "Beralih menu navigasi"
+        },
+        "links": {
+          "about": "Tentang",
+          "download": "Unduh",
+          "docs": "Dokumentasi",
+          "betaDocs": "Dokumentasi Beta",
+          "learn": "Pelajari",
+          "certification": "Kursus",
+          "blog": "Artikel",
+          "contribute": "Kontribusi"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Tentang Node.js",
+          "aboutSide": "Tentang Node.js®",
+          "branding": "Pencitraan Node.js",
+          "governance": "Tata Kelola Proyek",
+          "releases": "Rilisan Node.js",
+          "security": "Pelaporan Keamanan",
+          "partners": "Mitra & Pendukung",
+          "eol": "Akhir Masa Dukungan (EOL)"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "Mari Berpartisipasi",
+          "collabSummit": "KTT Kolaborasi",
+          "upcomingEvents": "Event Mendatang",
+          "contribute": "Berkontribusi pada Node.js",
+          "codeOfConduct": "Kode Etik"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "Kode nama",
+      "firstReleased": "Perilisan Pertama",
+      "lastUpdated": "Pembaruan Terakhir",
+      "status": "Status",
+      "details": "Rincian"
+    },
+    "downloadsTable": {
+      "fileName": "Nama Berkas",
+      "operatingSystem": "OS",
+      "architecture": "Arsitektur"
+    },
+    "releaseModal": {
+      "title": "Node.js v{version} ({codename})",
+      "titleWithoutCodename": "Node.js v{version}",
+      "minorVersions": "Versi minor",
+      "ltsVersionFeaturesNotice": "Ingin mencoba fitur baru lebih cepat? Dapatkan <link>versi Node.js terbaru</link> dan coba peningkatan terbarunya!"
+    },
+    "eolAlert": {
+      "message": "Dukungan komersial untuk versi yang telah melewati fase Maintenance LTS tersedia melalui para mitra dalam <link>Program Keberlanjutan Ekosistem OpenJS</link>"
+    },
+    "eolChip": {
+      "severity": {
+        "unknown": "Tak diketahui",
+        "low": "Rendah",
+        "medium": "Sedang",
+        "high": "Tinggi",
+        "critical": "Kritis"
+      }
+    },
+    "eolModal": {
+      "title": "Dukungan resmi untuk Node.js v{version} ({codename}) telah berakhir",
+      "titleWithoutCodename": "Dukungan resmi untuk Node.js v{version} telah berakhir",
+      "vulnerabilitiesMessage": "Terdapat lebih dari {count} masalah keamanan (CVE) yang diketahui terkait dengan rilis Node.js ini.\nCVE (Common Vulnerabilities and Exposures) adalah pengidentifikasi untuk kerentanan keamanan yang dilaporkan secara publik.\nMengklik tautan CVE akan membawa mu ke detail teknis yang lebih lengkap, seperti bagaimana kerentanan tersebut bekerja.",
+      "noVulnerabilitiesMessage": "Saat ini tidak ada CVE (Common Vulnerabilities and Exposures) yang diketahui terkait dengan rilis Node.js ini.\nNamun, hal tersebut tidak berarti rilis ini sepenuhnya aman—beberapa kerentanan mungkin belum ditemukan atau belum dipublikasikan secara terbuka.\nJika rilis ini sudah usang atau tidak lagi didukung, tetap disarankan untuk mempertimbangkan pembaruan agar Anda mendapatkan perbaikan dan peningkatan keamanan terbaru.",
+      "blogLinkText": "Artikel",
+      "showUnknownSeverities": "Tampilkan kerentanan dengan tingkat keparahan tidak diketahui",
+      "table": {
+        "cves": "CVE",
+        "severity": "Tingkat keparahan",
+        "overview": "Ringkasan",
+        "details": "Rincian"
+      }
+    },
+    "eolTable": {
+      "version": "Versi",
+      "codename": "Kode nama",
+      "lastUpdated": "Pembaruan Terakhir",
+      "vulnerabilities": "Kerentanan",
+      "details": "Rincian",
+      "hideNonLts": "Sembunyikan versi non-LTS"
+    },
+    "minorReleasesTable": {
+      "version": "Versi",
+      "links": "Tautan",
+      "nApiVersion": "Versi N-API",
+      "npmVersion": "versi npm",
+      "v8Version": "V8 versi",
+      "actions": {
+        "changelog": "Log Perubahan",
+        "docs": "Dokumentasi"
+      }
+    },
+    "releaseOverview": {
+      "firstReleased": "Perilisan Pertama",
+      "lastUpdated": "Pembaruan Terakhir",
+      "minorVersions": "Versi minor",
+      "nApiVersion": "Versi N-API",
+      "npmVersion": "versi npm",
+      "v8Version": "V8 versi"
+    },
+    "common": {
+      "alertBox": {
+        "info": "Info",
+        "warning": "Peringatan"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "Navigasi ke Beranda"
+      },
+      "codebox": {
+        "copy": "Salin ke papan klip",
+        "copied": "Disalin ke papan klip!"
+      },
+      "pagination": {
+        "previous": "Sebelumnya",
+        "previousAriaLabel": "Halaman Sebelumnya",
+        "next": "Berikutnya",
+        "nextAriaLabel": "Halaman selanjutnya",
+        "defaultLabel": "Penyusunan Halaman",
+        "pageLabel": "Pergi ke halaman {pageNumber}"
+      },
+      "sidebar": {
+        "title": "Ubah halaman"
+      },
+      "languageDropdown": {
+        "label": "Pilih Bahasa"
+      },
+      "skipToContent": "Loncat ke konten"
+    },
+    "metabar": {
+      "lastUpdated": "Pembaruan Terakhir",
+      "readingTime": "Waktu Membaca",
+      "author": "Penulis",
+      "authors": "Penulis",
+      "contribute": "Kontribusi",
+      "contributeText": "Sunting halaman ini",
+      "tableOfContents": "Daftar isi",
+      "metadata": "Artikel metadata"
+    },
+    "banner": {
+      "default": "Pengumuman",
+      "warning": "Pemberitahuan peringatan",
+      "error": "Pemberitahuan kesalahan",
+      "close": "Tutup banner"
+    },
+    "search": {
+      "searchPlaceholder": "Mulai mengetik...",
+      "noResultsFoundFor": "Tidak ada hasil ditemukan untuk",
+      "keyboardShortcuts": {
+        "select": "memilih",
+        "navigate": "untuk menavigasi",
+        "close": "untuk menutup"
+      }
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "Berita terbaru seputar Node.js, panduan migrasi, dan ringkasan acara",
+        "rssLink": "RSS feed"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "Artikel",
+      "selectCategory": "Kategori",
+      "categories": {
+        "all": "Semuanya",
+        "announcements": "Pengumuman",
+        "release": "Rilis",
+        "vulnerability": "Kerentanan",
+        "community": "Komunitas",
+        "feature": "Fitur",
+        "module": "Modul",
+        "npm": "npm",
+        "uncategorized": "Tidak dikategorikan",
+        "video": "Video",
+        "weekly": "Pembaruan mingguan",
+        "wg": "Kelompok Kerja",
+        "migrations": "Panduan Migrasi",
+        "events": "Event"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "Halaman tidak dapat ditemukan",
+        "description": "Maaf, kami tidak dapat menemukan halaman yang kamu cari! Coba memulai kembali dari halaman beranda."
+      },
+      "internalServerError": {
+        "title": "Kesalahan Server Internal",
+        "description": "Halaman ini mengalami error yang tidak dapat diperbaiki."
+      },
+      "backToHome": "Kembali ke Beranda"
+    },
+    "download": {
+      "buttons": {
+        "installer": "Penginstal {os} (.{extension})",
+        "binary": "Biner Standalone (.{extension})"
+      },
+      "dropdown": {
+        "platform": "Platform",
+        "os": "Sistem Operasi",
+        "version": "Versi",
+        "packageManager": "Manajer paket",
+        "unknown": "Tak diketahui",
+        "platformGroups": {
+          "official": "Direkomendasikan (Resmi)",
+          "unofficial": "Komunitas (Tidak Resmi)"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "Versi ini sudah tidak dalam tahap pemeliharaan. Harap gunakan versi yang saat ini didukung. <link>Pahami dukungan EOL.</link>",
+        "communityPlatformInfo": "Metode instalasi yang melibatkan perangkat lunak komunitas didukung oleh tim yang memelihara perangkat lunak tersebut.",
+        "externalSupportInfo": "Jika kamu mengalami masalah, silakan kunjungi situs web <link>{platform}</link>",
+        "noScriptDetected": "Halaman ini memerlukan JavaScript.\nKamu tetap dapat mengunduh Node.js tanpa mengaktifkan JavaScript dengan langsung mengunjungi <link>halaman arsip unduhan</link>.",
+        "platformInfo": {
+          "default": "{platform} dan skrip instalasinya tidak dikelola oleh proyek Node.js.",
+          "nvm": "\"nvm\" adalah manajer versi Node.js lintas-platform.",
+          "fnm": "\"fnm\" adalah manajer versi Node.js lintas-platform.",
+          "brew": "Homebrew adalah manajer paket untuk macOS dan Linux.",
+          "choco": "Chocolatey adalah manajer paket untuk Windows.",
+          "docker": "Docker adalah platform kontainerisasi.",
+          "n": "\"n\" adalah manajer versi Node.js lintas-platform.",
+          "asdf": "\"asdf\" adalah manajer versi lintas platform yang mendukung berbagai bahasa."
+        }
+      }
+    },
+    "logo": "Logo Node.js"
+  }
+}

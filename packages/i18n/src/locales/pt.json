@@ -1,0 +1,157 @@
+{
+  "components": {
+    "containers": {
+      "footer": {
+        "links": {
+          "trademarkPolicy": "Política da Marca Comercial",
+          "privacyPolicy": "Política de Privacidade",
+          "codeOfConduct": "Código de Conduta",
+          "security": "Política de Segurança"
+        }
+      },
+      "navBar": {
+        "controls": {
+          "toggle": "Alternar menu de navegação"
+        },
+        "links": {
+          "about": "Sobre",
+          "download": "Descarregar",
+          "docs": "Documentação",
+          "learn": "Estudar",
+          "certification": "Certificação",
+          "blog": "Blogue",
+          "contribute": "Colaborar"
+        }
+      }
+    },
+    "navigation": {
+      "about": {
+        "links": {
+          "about": "Sobre a Node.js",
+          "aboutSide": "Sobre a Node.js®",
+          "branding": "Marca da Node.js",
+          "governance": "Gestão do Projeto",
+          "releases": "Lançamentos da Node.js",
+          "security": "Relatórios de Segurança"
+        }
+      },
+      "getInvolved": {
+        "links": {
+          "getInvolved": "Participar",
+          "collabSummit": "Cimeira de Colaboração",
+          "upcomingEvents": "Próximos Eventos",
+          "contribute": "Colaborar com a Node.js",
+          "codeOfConduct": "Código de Conduta"
+        }
+      }
+    },
+    "downloadReleasesTable": {
+      "version": "Node.js",
+      "codename": "Nome de código"
+    },
+    "common": {
+      "alertBox": {
+        "info": "Informação",
+        "warning": "Aviso"
+      },
+      "breadcrumbs": {
+        "navigateToHome": "Navegar para a Página Inicial"
+      },
+      "codebox": {
+        "copy": "Copiar para a área de transferência",
+        "copied": "Copiado para a área de transferência!"
+      },
+      "pagination": {
+        "next": "Próximo",
+        "nextAriaLabel": "Próxima página",
+        "defaultLabel": "Paginação",
+        "pageLabel": "Ir para a página {pageNumber}"
+      },
+      "sidebar": {
+        "title": "Mudar de página"
+      },
+      "languageDropdown": {
+        "label": "Selecionar o idioma"
+      }
+    },
+    "metabar": {
+      "lastUpdated": "Última Atualização",
+      "readingTime": "Duração da Leitura",
+      "author": "Autor(a)",
+      "authors": "Autores",
+      "contribute": "Colaborar",
+      "contributeText": "Editar esta página",
+      "tableOfContents": "Índice"
+    },
+    "blog": {
+      "blogHeader": {
+        "subtitle": "As últimas notícias, estudos de caso, tutoriais e recursos da Node.js.",
+        "rssLink": "RSS feed"
+      }
+    }
+  },
+  "layouts": {
+    "blog": {
+      "title": "Blogue",
+      "selectCategory": "Categorias",
+      "categories": {
+        "all": "Tudo",
+        "announcements": "Anúncios",
+        "release": "Lançamentos",
+        "vulnerability": "Vulnerabilidades",
+        "community": "Comunidade",
+        "feature": "Funcionalidade",
+        "module": "Módulo",
+        "npm": "npm",
+        "uncategorized": "Sem categoria",
+        "video": "Vídeo",
+        "weekly": "Atualizações Semanais",
+        "wg": "Grupos de Trabalho",
+        "events": "Eventos"
+      }
+    },
+    "error": {
+      "notFound": {
+        "title": "Não foi possível encontrar a página",
+        "description": "Lamentamos, mas não conseguimos encontrar a página que procuravas! Tente começar de novo a partir da página inicial."
+      },
+      "internalServerError": {
+        "title": "Erro Interno do Servidor",
+        "description": "Esta página registou um erro irrecuperável."
+      },
+      "backToHome": "Voltar à Página Inicial"
+    },
+    "download": {
+      "buttons": {
+        "installer": "{os} Instalador (.{extension})",
+        "binary": "Binário Autónomo (.{extension})"
+      },
+      "dropdown": {
+        "platform": "Plataforma",
+        "os": "Sistema Operativo",
+        "version": "Versão",
+        "packageManager": "Gestor de Pacote",
+        "unknown": "Desconhecido",
+        "platformGroups": {
+          "official": "Recomendado (Oficial)",
+          "unofficial": "Comunidade (Não Oficial)"
+        }
+      },
+      "codeBox": {
+        "unsupportedVersionWarning": "Esta versão está fora de manutenção. Usar uma versão suportada atualmente. <link>Entender o Suporte do Fim da Vida.</link>",
+        "communityPlatformInfo": "Os métodos de instalação que envolvem software da comunidade são apoiados pelas equipas que mantêm esse software.",
+        "externalSupportInfo": "Se encontrarmos quaisquer problemas, podemos visitar o <link>sítio da {platform}</link>",
+        "noScriptDetected": "Esta página requer JavaScript. Nós podemos descarregar a Node.js sem JavaScript ao visitar diretamente a <link>página de lançamentos</link>.",
+        "platformInfo": {
+          "default": "{platform} e os seus programas de instalação não são mantidos pelo projeto Node.js.",
+          "nvm": "\"nvm\" é um gestor de versão de Node.js multiplataforma.",
+          "fnm": "\"fnm\" é um gestor de versão de Node.js multiplataforma.",
+          "brew": "Homebrew é um gestor de pacote para macOS e Linux.",
+          "choco": "Chocolatey é um gestor de pacote para Windows.",
+          "docker": "Docker é uma plataforma de contentorização."
+        }
+      }
+    },
+    "logo": "Logótipo da Node.js"
+  }
+}

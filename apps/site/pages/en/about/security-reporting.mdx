@@ -1,0 +1,97 @@
+---
+title: Security Reporting
+layout: about
+---
+
+# Security Reporting
+
+For more details on active Security Policies, checkout [this page](https://github.com/nodejs/node/security/policy).
+
+## Reporting a bug in Node.js
+
+Report security bugs in Node.js via [HackerOne](https://hackerone.com/nodejs).
+
+> **Note:** Submitting a report through HackerOne requires a minimum
+> [Signal](https://docs.hackerone.com/en/articles/8369891-signal-impact) score of **1.0**.
+> If your Signal score is below this threshold, please reach out to the Node.js
+> security release stewards directly via the
+> [OpenJS Foundation Slack](https://slack-invite.openjsf.org/) instead.
+
+Normally, your report will be acknowledged within 5 days, and you'll receive
+a more detailed response to your report within 10 days indicating the
+next steps in handling your submission. These timelines may extend when
+our triage volunteers are away on holiday, particularly at the end of the
+year.
+
+After the initial reply to your report, the security team will endeavor to keep
+you informed of the progress being made towards a fix and full announcement,
+and may ask for additional information or guidance surrounding the reported
+issue.
+
+### Node.js bug bounty program
+
+The Node.js project engages in an official bug bounty program for security
+researchers and responsible public disclosures. The program is managed through
+the HackerOne platform. See [https://hackerone.com/nodejs](https://hackerone.com/nodejs) for further details.
+
+## Reporting a bug in a third party module
+
+Security bugs in third party modules should be reported to their respective
+maintainers.
+
+## Disclosure policy
+
+Here is the security disclosure policy for Node.js
+
+- The security report is received and is assigned a primary handler. This
+  person will coordinate the fix and release process. The problem is validated
+  against all supported Node.js versions. Once confirmed, a list of all affected
+  versions is determined. Code is audited to find any potential similar
+  problems. Fixes are prepared for all supported releases.
+  These fixes are not committed to the public repository but rather held locally
+  pending the announcement.
+
+- A suggested embargo date for this vulnerability is chosen and a CVE (Common
+  Vulnerabilities and Exposures (CVE®)) is requested for the vulnerability.
+
+- On the embargo date, a copy of the announcement is sent to the Node.js
+  security mailing list. The changes are pushed to the public repository and new
+  builds are deployed to nodejs.org. Within 6 hours of the mailing list being
+  notified, a copy of the advisory will be published on the Node.js blog.
+
+- Typically, the embargo date will be set 72 hours from the time the CVE is
+  issued. However, this may vary depending on the severity of the bug or
+  difficulty in applying a fix.
+
+- This process can take some time, especially when we need to coordinate with
+  maintainers of other projects. We will try to handle the bug as quickly as
+  possible; however, we must follow the release process above to ensure that we
+  handle disclosure consistently.
+
+## Receiving security updates
+
+Security notifications will be distributed via the following methods.
+
+- [Google Group](https://groups.google.com/group/nodejs-sec)
+- [Node.js Blog](/blog)
+
+## Comments on this policy
+
+If you have suggestions on how this process could be improved, please visit
+the [nodejs/security-wg](https://github.com/nodejs/security-wg)
+repository.
+
+## OpenSSF Best Practices
+
+<a
+  href="https://bestpractices.coreinfrastructure.org/projects/29"
+  style={{ display: 'inline-flex' }}
+>
+  <img
+    alt="OpenSSF Badge"
+    src="https://bestpractices.coreinfrastructure.org/projects/29/badge"
+    style={{ display: 'inline' }}
+  />
+</a>
+
+The Open Source Security Foundation (OpenSSF) [Best Practices badge](https://github.com/coreinfrastructure/best-practices-badge) is a way for Free/Libre and Open Source Software (FLOSS) projects to show that they follow best practices. Projects can voluntarily self-certify how they follow each best practice. Consumers of the badge can quickly assess which FLOSS projects are following best practices and as a result are more likely to produce higher-quality secure software.

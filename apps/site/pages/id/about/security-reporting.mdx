@@ -1,0 +1,73 @@
+---
+title: Laporan Keamanan
+layout: about
+---
+
+# Laporan Keamanan
+
+For more details on active Security Policies, checkout [this page](https://github.com/nodejs/node/security/policy).
+
+## Melaporkan bug di Node.js
+
+Laporkan bug keamanan di Node.js melalui [HackerOne](https://hackerone.com/nodejs).
+
+> **Catatan:** Mengirimkan laporan melalui HackerOne mensyaratkan skor
+> [Signal](https://docs.hackerone.com/en/articles/8369891-signal-impact) minimal **1,0**.
+> Jika skor Signal Anda berada di bawah ambang batas ini, silakan hubungi langsung
+> pengelola rilis keamanan Node.js melalui
+> [Slack OpenJS Foundation](https://slack-invite.openjsf.org/).
+
+Biasanya, laporan mu akan diakui dalam waktu 5 hari, dan Anda akan menerima tanggapan yang lebih detail dalam waktu 10 hari yang menjelaskan langkah selanjutnya dalam penanganan laporan tersebut. Waktu ini dapat lebih lama jika para relawan triase sedang berlibur, terutama di akhir tahun.
+
+Setelah balasan awal atas laporan mu, tim keamanan akan berusaha memberi mu informasi tentang kemajuan yang dicapai menuju pengumuman perbaikan dan lengkap, dan mungkin meminta informasi atau panduan tambahan seputar masalah yang dilaporkan.
+
+### Program hadiah bug Node.js
+
+Proyek Node.js terlibat dalam program bug bounty resmi untuk peneliti keamanan dan pengungkapan publik yang bertanggung jawab. Program ini dikelola melalui platform HackerOne. Lihat [https://hackerone.com/nodejs](https://hackerone.com/nodejs) untuk detail lebih lanjut.
+
+## Melaporkan bug di modul pihak ketiga
+
+Bug keamanan di modul pihak ketiga harus dilaporkan ke pengelola masing-masing.
+
+## Kebijakan pengungkapan
+
+Berikut adalah kebijakan pengungkapan keamanan untuk Node.js
+
+- Laporan keamanan diterima dan ditugaskan ke penanggung jawab utama.
+  Orang ini akan mengoordinasikan proses perbaikan dan rilis.
+  Masalah tersebut divalidasi pada semua versi Node.js yang masih didukung.
+  Setelah dikonfirmasi, ditentukan daftar semua versi yang terdampak.
+  Kode kemudian diaudit untuk menemukan potensi masalah serupa.
+  Perbaikan disiapkan untuk semua rilis yang masih didukung.Perbaikan ini tidak langsung dikomit ke repositori publik, tetapi disimpan secara lokal sampai pengumuman dilakukan.
+
+- Tanggal embargo yang disarankan untuk kerentanan ini dipilih dan CVE (Common Vulnerabilities and Exposures (CVE®)) diminta untuk kerentanan tersebut.
+
+- Pada tanggal embargo, salinan pengumuman dikirim ke daftar surel keamanan Node.js.
+  Perubahan kemudian dipush ke repositori publik dan build baru dirilis di nodejs.org.
+  Dalam waktu maksimal 6 jam setelah daftar surel menerima pemberitahuan, salinan advis tersebut akan dipublikasikan di blog Node.js.
+
+- Biasanya, tanggal embargo akan ditetapkan 72 jam sejak CVE diterbitkan.
+  Namun, hal ini bisa berubah tergantung tingkat keparahan bug atau kesulitan dalam menerapkan perbaikan.
+
+- Proses ini bisa memakan waktu, terutama jika perlu koordinasi dengan para maintainer proyek lain.
+  Kami akan berusaha menangani bug secepat mungkin; namun, kami tetap harus mengikuti proses rilis di atas untuk memastikan penanganan pengungkapan dilakukan secara konsisten.
+
+## Menerima pembaruan keamanan
+
+Pemberitahuan keamanan akan didistribusikan melalui metode berikut.
+
+- [Google Grup](https://groups.google.com/group/nodejs-sec)
+- [Blog Node.js](/blog)
+
+## Komentar tentang kebijakan ini
+
+Kalau kamu punya saran tentang bagaimana proses ini dapat ditingkatkan, silakan kunjungi repositori [nodejs/security-wg](https://github.com/nodejs/security-wg).
+
+## Praktik Terbaik OpenSSF
+
+<a href="" style={{ display: 'inline-flex' }}>
+
+  <img alt="OpenSSF Badge" src="https://bestpractices.coreinfrastructure.org/projects/29/badge" style={{ display: 'inline' }} />
+</a>
+
+[Best Practices badge](https://github.com/coreinfrastructure/best-practices-badge) Open Source Security Foundation (OpenSSF) adalah cara bagi proyek Free/Libre dan Open Source Software (FLOSS) untuk menunjukkan bahwa mereka mengikuti praktik terbaik. Proyek dapat secara sukarela melakukan sertifikasi sendiri bagaimana mereka mengikuti setiap praktik terbaik. Konsumen yang tersertifikasi dapat dengan cepat menilai proyek FLOSS mana yang mengikuti praktik terbaik dan sebagai hasilnya, mereka lebih cenderung menghasilkan perangkat lunak aman berkualitas lebih tinggi.

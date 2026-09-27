@@ -1,0 +1,42 @@
+@reference "../../styles/index.css";
+
+.tabsList {
+  @apply font-open-sans
+    mt-10
+    mb-6
+    flex
+    gap-2
+    border-b
+    border-b-neutral-200
+    max-md:hidden
+    dark:border-b-neutral-800;
+
+  .tabsTrigger {
+    @apply border-b-2
+      border-b-transparent
+      px-1
+      pb-[11px]
+      text-sm
+      font-semibold
+      text-neutral-800
+      dark:text-neutral-200;
+
+    &:not([data-state='active']):hover {
+      @apply border-b-neutral-900
+        text-neutral-900
+        dark:border-b-neutral-300
+        dark:text-neutral-300;
+    }
+
+    &[data-state='active'] {
+      @apply border-b-brand-600
+        text-brand-600
+        dark:border-b-brand-400
+        dark:text-brand-400;
+    }
+  }
+}
+
+.tabsSelect {
+  @apply md:hidden!;
+}
