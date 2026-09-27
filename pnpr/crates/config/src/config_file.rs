@@ -10,8 +10,6 @@ use super::{
 pub(super) struct RoutesFile {
     #[serde(default)]
     pub(super) public: Vec<PublicRouteFile>,
-    #[serde(default)]
-    pub(super) allowed_private_networks: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]

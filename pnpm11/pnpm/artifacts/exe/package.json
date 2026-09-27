@@ -21,12 +21,14 @@
     "prepare.js",
     "dist/",
     "pn.cmd",
+    "pn.ps1",
     "pnpx.cmd",
-    "pnx.cmd"
+    "pnpx.ps1",
+    "pnx.cmd",
+    "pnx.ps1"
   ],
   "scripts": {
     "preinstall": "node setup.js",
-    "postinstall": "node setup.js",
     "prepare": "node prepare.js",
     "build-artifacts": "pn --filter=pnpm prepublishOnly && node ./scripts/build-artifacts.ts",
     ".test": "cross-env NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules --disable-warning=ExperimentalWarning --disable-warning=DEP0169\" jest",

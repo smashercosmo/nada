@@ -23,9 +23,6 @@
     },
     {
       "path": "../../core/types"
-    },
-    {
-      "path": "../../fs/graceful-fs"
     }
   ]
 }

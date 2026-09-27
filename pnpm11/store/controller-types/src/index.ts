@@ -171,12 +171,6 @@ export interface RequestPackageOptions {
    * to the one the store controller was created with.
    */
   nodeVersion?: string
-  /**
-   * When this returns true under `engineStrict`, `engines` are not checked
-   * yet. A patch applied later may change them; the build phase checks the
-   * patched manifest.
-   */
-  deferEnginesCheck?: (manifest: { name?: string, version?: string }) => boolean
   preferredVersions: PreferredVersions
   preferWorkspacePackages?: boolean
   sideEffectsCache?: boolean
@@ -261,8 +255,6 @@ export interface ImportOptions {
   filesMap: FilesMap
   force: boolean
   resolvedFrom: ResolvedFrom
-  /** See `PackageFilesResponse['sourceExists']`. */
-  sourceExists?: boolean
   keepModulesDir?: boolean
   safeToSkip?: boolean
 }

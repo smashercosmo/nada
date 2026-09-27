@@ -363,19 +363,16 @@ where
 /// per round would let the root's own hoisted peers become candidates
 /// for the importers hoisted after it.
 fn share_root_deps(states: &mut [ImporterHoistState]) -> Result<(), ResolveImporterError> {
-    let root_state = states
-        .iter()
-        .find(|state| state.importer_id() == pnpm_lockfile::Lockfile::ROOT_IMPORTER_KEY);
     let root_deps = Arc::new(
-        root_state
+        states
+            .iter()
+            .find(|state| state.importer_id() == pnpm_lockfile::Lockfile::ROOT_IMPORTER_KEY)
             .map(ImporterHoistState::hoistable_root_deps)
             .transpose()?
             .unwrap_or_default(),
     );
-    let root_dep_versions =
-        Arc::new(root_state.map(ImporterHoistState::direct_dep_versions).unwrap_or_default());
     for state in states.iter_mut() {
-        state.set_workspace_root_deps(Arc::clone(&root_deps), Arc::clone(&root_dep_versions));
+        state.set_workspace_root_deps(Arc::clone(&root_deps));
     }
     Ok(())
 }
@@ -521,61 +518,16 @@ where
     Chain: Resolver + ?Sized,
 {
     loop {
-        if !hoist_optional_wave(resolver, states).await? {
+        let mut any_hoisted = false;
+        for state in &mut *states {
+            any_hoisted |= state.hoist_optional_round(resolver).await?;
+        }
+        if !any_hoisted {
             return Ok(());
         }
         for state in &mut *states {
             state.run_required_round(resolver, peer_discovery).await?;
         }
-    }
-}
-
-async fn hoist_optional_wave<Chain>(
-    resolver: &Chain,
-    states: &mut [ImporterHoistState],
-) -> Result<bool, ResolveImporterError>
-where
-    Chain: Resolver + ?Sized,
-{
-    refresh_root_dep_versions(states);
-    let mut any_hoisted = hoist_root_optional(resolver, states).await?;
-    if any_hoisted {
-        refresh_root_dep_versions(states);
-    }
-    for state in states.iter_mut() {
-        if state.importer_id() != pnpm_lockfile::Lockfile::ROOT_IMPORTER_KEY {
-            any_hoisted |= state.hoist_optional_round(resolver).await?;
-        }
-    }
-    Ok(any_hoisted)
-}
-
-async fn hoist_root_optional<Chain>(
-    resolver: &Chain,
-    states: &mut [ImporterHoistState],
-) -> Result<bool, ResolveImporterError>
-where
-    Chain: Resolver + ?Sized,
-{
-    match states
-        .iter_mut()
-        .find(|state| state.importer_id() == pnpm_lockfile::Lockfile::ROOT_IMPORTER_KEY)
-    {
-        Some(root) => root.hoist_optional_round(resolver).await,
-        None => Ok(false),
-    }
-}
-
-fn refresh_root_dep_versions(states: &mut [ImporterHoistState]) {
-    let root_dep_versions = Arc::new(
-        states
-            .iter()
-            .find(|state| state.importer_id() == pnpm_lockfile::Lockfile::ROOT_IMPORTER_KEY)
-            .map(ImporterHoistState::direct_dep_versions)
-            .unwrap_or_default(),
-    );
-    for state in states.iter_mut() {
-        state.set_workspace_root_dep_versions(Arc::clone(&root_dep_versions));
     }
 }
 

@@ -4,24 +4,19 @@ import util from 'node:util'
 
 import { formatWarn } from '@pnpm/cli.default-reporter'
 import { packageManager } from '@pnpm/cli.meta'
-import { DEFAULT_REGISTRIES_BY_SCOPE, normalizeRegistriesByScope } from '@pnpm/config.normalize-registries'
 import { type CliOptions, type Config, type ConfigContext, getConfig as _getConfig } from '@pnpm/config.reader'
-import { PnpmError } from '@pnpm/error'
 import { requireHooks } from '@pnpm/hooks.pnpmfile'
 import { resolveAndInstallConfigDeps } from '@pnpm/installing.env-installer'
 import { logger } from '@pnpm/logger'
 import { createStoreController } from '@pnpm/store.connection-manager'
 import { lexCompare } from '@pnpm/text.ordinal-comparator'
 import type { ConfigDependencies } from '@pnpm/types'
-import camelcase from 'camelcase'
-import { equals } from 'ramda'
 
 export async function getConfig (
   cliOptions: CliOptions,
   opts: {
     excludeReporter: boolean
     globalDirShouldAllowWrite?: boolean
-    skipGlobalBinDirCheck?: boolean
     workspaceDir: string | undefined
     onlyInheritDlxSettingsFromLocal?: boolean
     forSelfUpdate?: boolean
@@ -31,7 +26,6 @@ export async function getConfig (
   const { config, context, warnings } = await _getConfig({
     cliOptions,
     globalDirShouldAllowWrite: opts.globalDirShouldAllowWrite,
-    skipGlobalBinDirCheck: opts.skipGlobalBinDirCheck,
     packageManager,
     workspaceDir: opts.workspaceDir,
     onlyInheritDlxSettingsFromLocal: opts.onlyInheritDlxSettingsFromLocal,
@@ -78,7 +72,7 @@ export async function installConfigDepsAndLoadHooks (
   }
 ): Promise<{ config: Config, context: ConfigContext }> {
   if (config.configDependencies) {
-    const store = await createStoreController({ ...config, ...context, skipBypassedHomeStoreWarning: true })
+    const store = await createStoreController({ ...config, ...context })
     try {
       await resolveAndInstallConfigDeps(config.configDependencies, {
         ...config,
@@ -116,83 +110,14 @@ export async function installConfigDepsAndLoadHooks (
     context.hooks = hooks
     context.finders = finders
     config.pnpmfile = resolvedPnpmfilePaths
-    if (context.hooks?.updateConfig?.length) {
-      const routingBeforeHooks = {
-        registry: config.registry,
-        registriesByScope: { ...config.registriesByScope },
-      }
-      const cliSettings = pickCliSettings(config, context.cliOptions)
+    if (context.hooks?.updateConfig) {
       for (const updateConfig of context.hooks.updateConfig) {
         const updateConfigResult = updateConfig(config)
         config = updateConfigResult instanceof Promise ? await updateConfigResult : updateConfigResult // eslint-disable-line no-await-in-loop
       }
-      applyRegistryRoutingChanges(config, routingBeforeHooks)
-      restoreCliSettings(config, cliSettings)
-      if (DERIVED_CONFIG_INPUTS.some((setting) => cliSettings.settings.has(setting))) {
-        applyDerivedConfig(config)
-      }
     }
   }
   return { config, context }
-}
-
-/**
- * The settings the command line set, read off `config` after the config
- * reader resolved them. The command line outranks every other layer, the
- * `updateConfig` hooks included, so these go back over whatever the hooks
- * return. `--registry` and `--@<scope>:registry` are kept as the registry
- * routes they resolved to, because a hook may replace the whole routing map.
- */
-interface CliSettings {
-  settings: Map<string, unknown>
-  registriesByScope: Map<string, string>
-}
-
-function cloneCliSetting<T> (value: T): T {
-  if (value === null || typeof value !== 'object') {
-    return value
-  }
-  try {
-    return structuredClone(value)
-  } catch {
-    if (Array.isArray(value)) {
-      return value.slice() as unknown as T
-    }
-    return { ...value }
-  }
-}
-
-function pickCliSettings (config: Config, cliOptions: Record<string, unknown>): CliSettings {
-  const settings = new Map<string, unknown>()
-  const registriesByScope = new Map<string, string>()
-  for (const [key, value] of Object.entries(cliOptions)) {
-    if (value === undefined) continue
-    if (key.startsWith('@') && key.endsWith(':registry')) {
-      const scope = key.slice(0, -':registry'.length)
-      registriesByScope.set(scope, config.registriesByScope[scope])
-      continue
-    }
-    const setting = camelcase(key, { locale: 'en-US' })
-    if (Object.hasOwn(config, setting)) {
-      settings.set(setting, cloneCliSetting((config as unknown as Record<string, unknown>)[setting]))
-    }
-    if (setting === 'registry') {
-      registriesByScope.set('default', config.registriesByScope.default)
-    }
-  }
-  return { settings, registriesByScope }
-}
-
-function restoreCliSettings (config: Config, { settings, registriesByScope }: CliSettings): void {
-  for (const [setting, value] of settings) {
-    (config as unknown as Record<string, unknown>)[setting] = cloneCliSetting(value)
-  }
-  for (const [scope, registry] of registriesByScope) {
-    config.registriesByScope[scope] = registry
-    if (config.packageManagerRegistries) {
-      config.packageManagerRegistries[scope] = registry
-    }
-  }
 }
 
 export function * calcPnpmfilePathsOfPluginDeps (configModulesDir: string, configDependencies: ConfigDependencies): Generator<string> {
@@ -219,79 +144,6 @@ function isPluginName (configDepName: string): boolean {
   if (configDepName[0] !== '@') return false
   return configDepName.startsWith('@pnpm/plugin-') || configDepName.includes('/pnpm-plugin-')
 }
-
-interface RegistryRouting {
-  registry: string | undefined
-  registriesByScope: Record<string, string>
-}
-
-/**
- * Applies what the `updateConfig` hooks changed about registry routing, then re-establishes what the config
- * reader guarantees: `registriesByScope` holds normalized URLs including the `default` and `@jsr` routes, and
- * `registry` is the `default` route.
- *
- * Only a changed value counts, and a value the hooks removed is unchanged. A changed
- * `registriesByScope` replaces the scope routes, and its `default` entry, if any, the default registry. A
- * changed `registry` is applied after it, so it wins. A dropped `default` keeps the registry configured before
- * the hooks, and a dropped `@jsr` falls back to the built-in JSR registry.
- */
-function applyRegistryRoutingChanges (config: Config, before: RegistryRouting): void {
-  let registry = before.registry
-  let routes = before.registriesByScope
-  const hookRoutes: unknown = config.registriesByScope
-  if (hookRoutes !== undefined) {
-    const changedRoutes = readHookRegistryRoutes(hookRoutes)
-    if (!equals(changedRoutes, before.registriesByScope)) {
-      routes = changedRoutes
-      registry = routes.default ?? registry
-    }
-  }
-  const hookRegistry: unknown = config.registry
-  if (hookRegistry !== before.registry && hookRegistry !== undefined) {
-    if (hookRegistry === null) {
-      registry = DEFAULT_REGISTRIES_BY_SCOPE.default
-    } else if (typeof hookRegistry === 'string') {
-      registry = hookRegistry
-    } else {
-      throw invalidHookResult('registry')
-    }
-  }
-  config.registriesByScope = normalizeRegistriesByScope({
-    ...routes,
-    ...(registry != null ? { default: registry } : {}),
-  })
-  config.registry = registry === before.registry ? before.registry : config.registriesByScope.default
-}
-
-/** An `undefined` route is one the hook removed, as it would be once serialized. */
-function readHookRegistryRoutes (routes: unknown): Record<string, string> {
-  if (!isPlainObject(routes)) {
-    throw invalidHookResult('registriesByScope')
-  }
-  const result: Record<string, string> = {}
-  for (const [scope, registry] of Object.entries(routes)) {
-    if (registry === undefined) continue
-    if (typeof registry !== 'string') {
-      throw invalidHookResult('registriesByScope')
-    }
-    result[scope] = registry
-  }
-  return result
-}
-
-function isPlainObject (value: unknown): value is Record<string, unknown> {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return false
-  }
-  const proto = Object.getPrototypeOf(value)
-  return proto === null || proto === Object.prototype
-}
-
-function invalidHookResult (key: string): PnpmError {
-  return new PnpmError('INVALID_UPDATE_CONFIG_RESULT', `The updateConfig hook produced an invalid ${key} value`)
-}
-
-const DERIVED_CONFIG_INPUTS = ['hoist', 'shamefullyHoist', 'symlink']
 
 // Apply derived config settings (hoist, shamefullyHoist, symlink)
 function applyDerivedConfig (config: Config): void {

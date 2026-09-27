@@ -162,20 +162,11 @@ fn materialization_failure_on_incomplete_slot_is_fatal() {
         scripts: crate::BuildScriptOptions {
             extra_env: &HashMap::new(),
             user_agent: "pnpm/test",
-            path: crate::ScriptPath {
-                prepend_node_path: ScriptsPrependNodePath::Never,
-                extra_bin_paths: &[],
-                private_hoisting: false,
-            },
+            prepend_node_path: ScriptsPrependNodePath::Never,
             shell: None,
             shell_emulator: false,
             unsafe_perm: true,
             ignore: false,
-            patched_engines: crate::PatchedEngineCheck {
-                engine_strict: false,
-                node_version: None,
-                virtual_store_dir: None,
-            },
         },
 
         allow_build_policy: &policy,
@@ -252,20 +243,11 @@ fn side_effects_cache_disabled_bypasses_the_gate() {
         scripts: crate::BuildScriptOptions {
             extra_env: &HashMap::new(),
             user_agent: "pnpm/test",
-            path: crate::ScriptPath {
-                prepend_node_path: ScriptsPrependNodePath::Never,
-                extra_bin_paths: &[],
-                private_hoisting: false,
-            },
+            prepend_node_path: ScriptsPrependNodePath::Never,
             shell: None,
             shell_emulator: false,
             unsafe_perm: true,
             ignore: false,
-            patched_engines: crate::PatchedEngineCheck {
-                engine_strict: false,
-                node_version: None,
-                virtual_store_dir: None,
-            },
         },
 
         allow_build_policy: &policy,
@@ -429,20 +411,11 @@ async fn write_path_populates_side_effects_row() {
         scripts: crate::BuildScriptOptions {
             extra_env: &HashMap::new(),
             user_agent: "pnpm/test",
-            path: crate::ScriptPath {
-                prepend_node_path: ScriptsPrependNodePath::Never,
-                extra_bin_paths: &[],
-                private_hoisting: false,
-            },
+            prepend_node_path: ScriptsPrependNodePath::Never,
             shell: None,
             shell_emulator: false,
             unsafe_perm: true,
             ignore: false,
-            patched_engines: crate::PatchedEngineCheck {
-                engine_strict: false,
-                node_version: None,
-                virtual_store_dir: None,
-            },
         },
 
         allow_build_policy: &policy,

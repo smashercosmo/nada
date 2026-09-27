@@ -10,8 +10,7 @@ use crate::{
     },
     shim::{
         ScriptRuntime, generate_cmd_shim, generate_pwsh_shim, generate_sh_shim,
-        is_sh_shim_basedir_anchor_current, is_sh_shim_hardened, is_shim_pointing_at,
-        search_script_runtime,
+        is_sh_shim_hardened, is_shim_pointing_at, search_script_runtime,
     },
 };
 use derive_more::{Display, Error};
@@ -112,9 +111,14 @@ impl PackageBinSource {
     }
 }
 
-/// Origin of a [`PackageBinSource`] determining precedence during conflict resolution:
-/// direct dependencies take precedence over publicly hoisted packages, which take precedence
-/// over auto-installed peers.
+/// Whether a [`PackageBinSource`] came from a project's direct
+/// dependencies or from a transitive dep that the hoister lifted to
+/// `node_modules/<name>` / `node_modules/.pnpm/node_modules/<name>`.
+///
+/// Used by `pick_winner` (private) as the highest-precedence tier
+/// in the conflict-resolution rule: a direct dep's bin always wins
+/// over a hoisted dep's bin with the same name — direct candidates
+/// are kept and hoisted candidates with a name collision are dropped.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum BinOrigin {
     /// The candidate is a direct dependency of the importer
@@ -128,9 +132,6 @@ pub enum BinOrigin {
     /// from these candidates are dropped when a same-named
     /// [`Self::Direct`] candidate is also present.
     Hoisted,
-    /// An auto-installed peer exposed to a project; its bin must not
-    /// replace a directly installed or publicly hoisted command.
-    Peer,
 }
 
 /// Error type for [`link_bins_of_packages`].
@@ -476,7 +477,7 @@ where
                     node_path: &node_path,
                     options,
                     make_powershell_shim: wants_powershell_shim(pkg_name),
-                    paths: &paths,
+                    relocatable_root: paths.relocatable_root.as_deref(),
                     bin_dir,
                 },
                 cache,
@@ -523,10 +524,8 @@ fn wants_powershell_shim(pkg_name: &str) -> bool {
 /// Return `true` when `candidate` should replace `existing` for `bin_name`.
 fn pick_winner(bin_name: &str, existing: &PackageBinSource, candidate: &PackageBinSource) -> bool {
     match (existing.origin, candidate.origin) {
-        (BinOrigin::Direct, BinOrigin::Hoisted | BinOrigin::Peer)
-        | (BinOrigin::Hoisted, BinOrigin::Peer) => return false,
-        (BinOrigin::Hoisted | BinOrigin::Peer, BinOrigin::Direct)
-        | (BinOrigin::Peer, BinOrigin::Hoisted) => return true,
+        (BinOrigin::Hoisted, BinOrigin::Direct) => return true,
+        (BinOrigin::Direct, BinOrigin::Hoisted) => return false,
         _ => {}
     }
     let existing_name = package_name(existing);

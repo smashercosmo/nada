@@ -182,7 +182,6 @@ async fn read_git_manifest_reads_the_name_from_the_checkout() {
         path: None,
         git_shallow_hosts: &[],
         git_bin: None,
-        git_config: &[],
     })
     .await
     .expect("checkout should be readable");
@@ -207,7 +206,6 @@ async fn read_git_manifest_reads_a_repo_rooted_sub_directory() {
         path: Some("/packages/foo"),
         git_shallow_hosts: &[],
         git_bin: None,
-        git_config: &[],
     })
     .await
     .expect("checkout should be readable");
@@ -231,7 +229,6 @@ async fn read_git_manifest_returns_none_for_a_directory_without_a_manifest() {
         path: Some("/packages/no-manifest"),
         git_shallow_hosts: &[],
         git_bin: None,
-        git_config: &[],
     })
     .await
     .expect("a manifest-less directory is not a failure");
@@ -254,7 +251,6 @@ async fn read_git_manifest_rejects_a_non_sha_commit() {
         path: None,
         git_shallow_hosts: &[],
         git_bin: None,
-        git_config: &[],
     })
     .await
     .expect_err("a non-SHA commit must be rejected before it reaches git");
@@ -281,7 +277,6 @@ async fn read_git_manifest_rejects_an_option_shaped_repo() {
         path: None,
         git_shallow_hosts: &[],
         git_bin: None,
-        git_config: &[],
     })
     .await
     .expect_err("an option-shaped repo must be rejected before it reaches git");

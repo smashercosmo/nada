@@ -33,8 +33,7 @@ use pnpm_graph_hasher::{
     join_global_virtual_store_path,
 };
 use pnpm_lockfile::{
-    Lockfile, LockfileResolution, PackageKey, PackageMetadata, PkgVerPeer, SnapshotEntry,
-    VersionPart,
+    LockfileResolution, PackageKey, PackageMetadata, PkgVerPeer, SnapshotEntry, VersionPart,
 };
 use std::{
     collections::HashMap,
@@ -396,18 +395,18 @@ impl VirtualStoreLayout {
     }
 }
 
-/// Build a lockfile's layout using the root project's runtime pin, effective
-/// Node version, then host.
+/// Build a lockfile's layout using the runtime pin, effective Node version, then host.
 #[must_use]
 pub fn virtual_store_layout_for_lockfile(
     config: &Config,
     effective_node_version: Option<&str>,
-    lockfile: &Lockfile,
+    snapshots: Option<&HashMap<PackageKey, SnapshotEntry>>,
+    packages: Option<&HashMap<PackageKey, PackageMetadata>>,
     allow_build_policy: Option<&AllowBuildPolicy>,
     lockfile_dir: Option<&Path>,
 ) -> VirtualStoreLayout {
     let engine = if config.enable_global_virtual_store {
-        find_runtime_node_major(&lockfile.importers)
+        find_runtime_node_major(snapshots)
             .or_else(|| effective_node_version.and_then(parse_major_from_version))
             .or_else(detect_node_major)
             .map(|major| engine_name(major, None, None))
@@ -417,8 +416,8 @@ pub fn virtual_store_layout_for_lockfile(
     VirtualStoreLayout::new(
         config,
         engine.as_deref(),
-        lockfile.snapshots.as_ref(),
-        lockfile.packages.as_ref(),
+        snapshots,
+        packages,
         allow_build_policy,
         lockfile_dir,
     )

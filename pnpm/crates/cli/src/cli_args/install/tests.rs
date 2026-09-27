@@ -43,7 +43,7 @@ fn dependency_options_to_dependency_groups() {
             optional: false,
             no_optional: false,
         }),
-        [Dev, Optional],
+        [Dev],
     );
 
     assert_eq!(

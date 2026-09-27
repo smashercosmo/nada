@@ -4,8 +4,6 @@
 //! against synthetic graphs — the full install integration tests live
 //! in `crates/package-manager/tests/` and `crates/cli/tests/`.
 
-mod external_virtual_store;
-
 use super::{
     DirectDepsByImporter, HoistGraphNode, HoistInputs, HoistedDependencies,
     build_direct_deps_by_importer, build_hoist_graph, get_hoisted_dependencies,
@@ -127,7 +125,6 @@ fn empty_graph_returns_none() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     };
     assert!(get_hoisted_dependencies(&input).is_none());
 }
@@ -148,7 +145,6 @@ fn star_pattern_hoists_all_transitives_privately() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -179,7 +175,6 @@ fn star_public_pattern_hoists_all_publicly() {
         private_pattern: create_matcher(&[]),
         public_pattern: create_matcher(&pats(["*"])),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -205,7 +200,6 @@ fn public_pattern_wins_ties() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&pats(["*eslint*"])),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -232,7 +226,6 @@ fn negation_pattern_excludes_alias() {
         private_pattern: create_matcher(&pats(["*", "!banned"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -261,7 +254,6 @@ fn first_seen_wins_per_alias() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -299,7 +291,6 @@ fn traversal_matches_pnpm_graph_walker_ownership() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -335,7 +326,6 @@ fn traversal_includes_alias_collisions_from_every_importer() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -366,7 +356,6 @@ fn direct_dep_blocks_same_alias_transitive() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -393,7 +382,6 @@ fn skipped_snapshot_is_excluded() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -796,7 +784,6 @@ fn private_hoist_with_bins_collected_for_bin_link() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -827,7 +814,6 @@ fn public_hoist_does_not_contribute_to_bin_aliases() {
         private_pattern: create_matcher(&[]),
         public_pattern: create_matcher(&pats(["*eslint*"])),
         hoisted_workspace_packages: None,
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -1138,7 +1124,6 @@ fn workspace_packages_hoist_privately_with_lowest_precedence() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: Some(&workspace_packages),
-        hoist_root_dependencies: false,
     })
     .expect("non-empty graph");
 
@@ -1205,7 +1190,6 @@ fn workspace_packages_with_conflicting_destinations_are_not_hoisted() {
         private_pattern: create_matcher(&pats(["*"])),
         public_pattern: create_matcher(&[]),
         hoisted_workspace_packages: Some(&workspace_packages),
-        hoist_root_dependencies: false,
     })
     .expect("workspace projects are present");
 

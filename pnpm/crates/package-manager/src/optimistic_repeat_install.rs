@@ -384,13 +384,7 @@ fn local_file_blocks_fast_path(check: &OptimisticRepeatInstallCheck<'_>) -> Opti
         layout: crate::RepeatInstallLayout { included, .. },
         ..
     } = check;
-    let Ok(parsed_overrides) = crate::install::parse_config_overrides(config, catalogs) else {
-        return Some("pnpm.overrides cannot be parsed");
-    };
-    let overrides = parsed_overrides
-        .as_deref()
-        .unwrap_or(&[]);
-    match has_local_file_dep_requiring_install(check, overrides) {
+    match has_local_file_dep_requiring_install(check) {
         Ok(true) => {
             return Some(
                 "a dependency is a local file dependency and its contents may have changed",
@@ -399,12 +393,16 @@ fn local_file_blocks_fast_path(check: &OptimisticRepeatInstallCheck<'_>) -> Opti
         Ok(false) => {}
         Err(reason) => return Some(reason),
     }
-    if has_local_file_override(overrides) {
-        return Some(
-            "an override maps to a local file dependency and its contents may have changed",
-        );
+    match has_local_file_override(config, catalogs) {
+        Ok(true) => {
+            return Some(
+                "an override maps to a local file dependency and its contents may have changed",
+            );
+        }
+        Err(reason) => return Some(reason),
+        Ok(false) => {}
     }
-    if has_local_file_package_extension(config, included, catalogs, overrides) {
+    if has_local_file_package_extension(config, included, catalogs) {
         return Some(
             "a package extension injects a local file dependency and its contents may have changed",
         );
@@ -568,9 +566,11 @@ fn patches_modified_since(workspace_root: &Path, config: &Config, cutoff_ms: i64
 }
 
 /// The pnpmfile list recorded in the workspace state and compared by
-/// the freshness check: every pnpmfile the install loads. An install
-/// that ignores the pnpmfile records none, so the next install that
-/// honors it again sees the list change and re-validates.
+/// the freshness check: today just the workspace pnpmfile.
+/// Config-dependency plugin pnpmfiles are tracked via the
+/// `config_dependencies` comparison instead. An install that ignores
+/// the pnpmfile records none, so the next install that honors it again
+/// sees the list change and re-validates.
 pub(crate) fn current_pnpmfiles(workspace_root: &Path, config: &Config) -> Vec<String> {
     if config.ignore_pnpmfile {
         return Vec::new();

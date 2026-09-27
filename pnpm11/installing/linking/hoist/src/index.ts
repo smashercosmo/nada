@@ -1,13 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { setTimeout as delay } from 'node:timers/promises'
 import util from 'node:util'
 
 import { linkBinsOfPkgsByAliases, type WarnFunction } from '@pnpm/bins.linker'
 import { createMatcher } from '@pnpm/config.matcher'
 import { WANTED_LOCKFILE } from '@pnpm/constants'
 import { linkLogger } from '@pnpm/core-loggers'
-import { isTransientFileLockError, withFileLockRetryAsync } from '@pnpm/fs.graceful-fs'
 import { findCommonPathAncestor, prepareWorkspaceModulesDir, validateWorkspaceModulesDir } from '@pnpm/fs.symlink-dependency'
 import { logger } from '@pnpm/logger'
 import { lexCompare } from '@pnpm/text.ordinal-comparator'
@@ -391,10 +389,6 @@ async function removeWorkspaceLinkIfTarget (destination: string, target: string)
 
 export function getHoistedDependencies<T extends string> (opts: GetHoistedDependenciesOpts<T>): HoistGraphResult<T> | null {
   if (Object.keys(opts.graph ?? {}).length === 0) return null
-  const rootDirectDeps = opts.directDepsByImporterId['.' as ProjectId] ?? new Map<string, T>()
-  const privateRootAliases = isSubdir(path.dirname(opts.publicHoistedModulesDir), opts.privateHoistedModulesDir)
-    ? new Set<string>()
-    : new Set(Array.from(rootDirectDeps.keys()).filter(createMatcher(opts.privateHoistPattern)))
   const { directDeps, step } = graphWalker(
     opts.graph,
     opts.directDepsByImporterId
@@ -407,7 +401,7 @@ export function getHoistedDependencies<T extends string> (opts: GetHoistedDepend
             acc[alias] = nodeId
           }
           return acc
-        }, privateRootAliases.size > 0 ? Object.fromEntries(rootDirectDeps) : {} as Record<string, T>),
+        }, {} as Record<string, T>),
       nodeId: '' as T,
       depth: -1,
     },
@@ -416,9 +410,8 @@ export function getHoistedDependencies<T extends string> (opts: GetHoistedDepend
 
   const getAliasHoistType = createGetAliasHoistType(opts.publicHoistPattern, opts.privateHoistPattern)
 
-  return hoistGraph(deps, rootDirectDeps, {
+  return hoistGraph(deps, opts.directDepsByImporterId['.' as ProjectId] ?? new Map(), {
     getAliasHoistType,
-    privateRootAliases,
     graph: opts.graph,
     reservedAliases: opts.reservedAliases,
     skipped: opts.skipped,
@@ -515,14 +508,13 @@ function hoistGraph<T extends string> (
   currentSpecifiers: Map<string, T>,
   opts: {
     getAliasHoistType: GetAliasHoistType
-    privateRootAliases: Set<string>
     graph: DependenciesGraph<T>
     reservedAliases?: Iterable<string>
     skipped: Set<DepPath>
   }
 ): HoistGraphResult<T> {
   const hoistedAliases = new Set([
-    ...Array.from(currentSpecifiers.keys()).filter(alias => !opts.privateRootAliases.has(alias)),
+    ...currentSpecifiers.keys(),
     ...opts.reservedAliases ?? [],
   ].map(alias => alias.toLowerCase()))
   const hoistedDependencies: HoistedDependencies = Object.create(null)
@@ -538,8 +530,7 @@ function hoistGraph<T extends string> (
     // build the alias map and the id map
     .forEach((depNode) => {
       for (const [childAlias, childNodeId] of Object.entries<T>(depNode.children)) {
-        const node = opts.graph[childNodeId as T]
-        const hoist = getChildHoistType(childAlias, childNodeId, node)
+        const hoist = opts.getAliasHoistType(childAlias)
         if (!hoist) continue
         const childAliasNormalized = childAlias.toLowerCase()
         // if this alias has already been taken, skip it
@@ -550,6 +541,7 @@ function hoistGraph<T extends string> (
           hoistedDependenciesByNodeId.set(childNodeId, {})
         }
         hoistedDependenciesByNodeId.get(childNodeId)![childAlias] = hoist
+        const node = opts.graph[childNodeId as T]
         if (node?.depPath == null || opts.skipped.has(node.depPath)) {
           continue
         }
@@ -568,14 +560,6 @@ function hoistGraph<T extends string> (
     hoistedDependencies,
     hoistedDependenciesByNodeId,
     hoistedAliasesWithBins: Array.from(hoistedAliasesWithBins),
-  }
-
-  function getChildHoistType (childAlias: string, childNodeId: T, node: DependenciesGraphNode<T> | undefined): 'public' | 'private' | false {
-    if (!opts.privateRootAliases.has(childAlias)) return opts.getAliasHoistType(childAlias)
-    // Only the root's own version of a root dependency may take its alias, and a skipped one keeps it reserved.
-    if (currentSpecifiers.get(childAlias) !== childNodeId) return false
-    if (node?.depPath != null && opts.skipped.has(node.depPath)) return false
-    return 'private'
   }
 }
 
@@ -620,14 +604,6 @@ async function symlinkHoistedDependency (
   depLocation: string,
   dest: string
 ): Promise<void> {
-  return withFileLockRetryAsync(() => symlinkHoistedDependencyOnce(opts, depLocation, dest))
-}
-
-async function symlinkHoistedDependencyOnce (
-  opts: { virtualStoreDir: string, internalPnpmDir: string },
-  depLocation: string,
-  dest: string
-): Promise<void> {
   try {
     await symlinkDir(depLocation, dest, { overwrite: false })
     linkLogger.debug({ target: dest, link: depLocation })
@@ -637,12 +613,8 @@ async function symlinkHoistedDependencyOnce (
   }
   let existingSymlink!: string
   try {
-    existingSymlink = await withFileLockRetryAsync(() => resolveLinkTarget(dest))
-  } catch (err: unknown) {
-    if (util.types.isNativeError(err) && 'code' in err && err.code === 'ENOENT') {
-      return createHoistedDependencyLink(depLocation, dest)
-    }
-    if (!util.types.isNativeError(err) || !('code' in err) || err.code !== 'EINVAL') throw err
+    existingSymlink = await resolveLinkTarget(dest)
+  } catch {
     hoistLogger.debug({
       skipped: dest,
       reason: 'a directory is present at the target location',
@@ -657,76 +629,9 @@ async function symlinkHoistedDependencyOnce (
     })
     return
   }
-  try {
-    await fs.promises.unlink(dest)
-  } catch (err: unknown) {
-    if (!util.types.isNativeError(err) || !('code' in err) || err.code !== 'ENOENT') throw err
-  }
-  await createHoistedDependencyLink(depLocation, dest)
-}
-
-async function createHoistedDependencyLink (depLocation: string, dest: string): Promise<void> {
-  let retries = 0
-  while (true) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await symlinkDir(depLocation, dest, { overwrite: false })
-      break
-    } catch (err: unknown) {
-      if (!util.types.isNativeError(err) || !('code' in err) || (err.code !== 'EEXIST' && err.code !== 'EISDIR')) throw err
-      let winningTarget: string
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        winningTarget = await withFileLockRetryAsync(() => resolveLinkTarget(dest))
-      } catch (readError: unknown) {
-        retries += 1
-        if (util.types.isNativeError(readError) && 'code' in readError) {
-          if (readError.code === 'ENOENT' && retries <= 100) continue
-          if (readError.code === 'EINVAL') {
-            // macOS can report EINVAL when a concurrent unlink interrupts readlink.
-            try {
-              // eslint-disable-next-line no-await-in-loop
-              const stat = await fs.promises.lstat(dest)
-              // eslint-disable-next-line no-await-in-loop
-              if ((stat.isSymbolicLink() || await mayBeJunctionInCreation(dest, stat)) && retries <= 100) {
-                // eslint-disable-next-line no-await-in-loop
-                await delay(1)
-                continue
-              }
-            } catch (statError: unknown) {
-              if (util.types.isNativeError(statError) && 'code' in statError && statError.code === 'ENOENT' && retries <= 100) continue
-            }
-          }
-        }
-        throw err
-      }
-      if (path.relative(depLocation, winningTarget) !== '') throw err
-      break
-    }
-  }
+  await fs.promises.unlink(dest)
+  await symlinkDir(depLocation, dest)
   linkLogger.debug({ target: dest, link: depLocation })
-}
-
-/**
- * A junction is created as an empty directory that gets its reparse point
- * afterwards, so a concurrent hoist can find a plain directory in its place
- * for a moment. Until then its creator holds it open without sharing, so
- * listing it fails with a transient file-lock error, which counts as a
- * junction in creation. A junction completed after `stat` was read lists its
- * target's entries, so a non-empty directory is checked again. Always false
- * off Windows. Rejects with any other listing or inspection error.
- */
-async function mayBeJunctionInCreation (dest: string, stat: fs.Stats): Promise<boolean> {
-  if (process.platform !== 'win32' || !stat.isDirectory()) return false
-  let entries: string[]
-  try {
-    entries = await fs.promises.readdir(dest)
-  } catch (err: unknown) {
-    if (isTransientFileLockError(err)) return true
-    throw err
-  }
-  if (entries.length === 0) return true
-  return (await fs.promises.lstat(dest)).isSymbolicLink()
 }
 
 export function graphWalker<T extends string> (

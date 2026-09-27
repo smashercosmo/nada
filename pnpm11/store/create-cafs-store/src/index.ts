@@ -31,7 +31,8 @@ export function createPackageImporterAsync (
   const gfm = getFlatMap.bind(null, opts.storeDir)
   return async (to, opts) => {
     const { filesMap, isBuilt } = gfm(opts.filesResponse, opts.sideEffectsCacheKey)
-    const pkgImportMethod = needsPrivateFiles(opts.filesResponse, !isBuilt && opts.requiresBuild === true)
+    const willBeBuilt = !isBuilt && opts.requiresBuild
+    const pkgImportMethod = willBeBuilt
       ? (packageImportMethod === 'copy' ? 'copy' : 'clone-or-copy')
       : (packageImportMethod && packageImportMethod !== 'auto'
         ? packageImportMethod
@@ -44,7 +45,6 @@ export function createPackageImporterAsync (
       force: opts.force,
       keepModulesDir: Boolean(opts.keepModulesDir),
       safeToSkip: opts.safeToSkip,
-      sourceExists: opts.filesResponse.sourceExists,
     })
     return { importMethod, isBuilt }
   }
@@ -64,7 +64,8 @@ function createPackageImporter (
   const gfm = getFlatMap.bind(null, opts.storeDir)
   return (to, opts) => {
     const { filesMap, isBuilt } = gfm(opts.filesResponse, opts.sideEffectsCacheKey)
-    const pkgImportMethod = needsPrivateFiles(opts.filesResponse, !isBuilt && opts.requiresBuild === true)
+    const willBeBuilt = !isBuilt && opts.requiresBuild
+    const pkgImportMethod = willBeBuilt
       ? (packageImportMethod === 'copy' ? 'copy' : 'clone-or-copy')
       : (packageImportMethod && packageImportMethod !== 'auto'
         ? packageImportMethod
@@ -77,18 +78,9 @@ function createPackageImporter (
       force: opts.force,
       keepModulesDir: Boolean(opts.keepModulesDir),
       safeToSkip: opts.safeToSkip,
-      sourceExists: opts.filesResponse.sourceExists,
     })
     return { importMethod, isBuilt }
   }
-}
-
-// A package that a build will still write to must not share inodes with its
-// source. Neither may a local directory whose fetcher asked for private copies
-// (`pnpm deploy`), even when a global `packageImportMethod` asks for hard links.
-function needsPrivateFiles (filesResponse: PackageFilesResponse, willBeBuilt: boolean): boolean {
-  return willBeBuilt ||
-    (filesResponse.resolvedFrom === 'local-dir' && filesResponse.packageImportMethod === 'clone-or-copy')
 }
 
 function getFlatMap (

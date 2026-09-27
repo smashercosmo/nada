@@ -37,9 +37,6 @@
       "path": "../../crypto/object-hasher"
     },
     {
-      "path": "../../hooks/read-package-hook"
-    },
-    {
       "path": "../../installing/context"
     },
     {

@@ -31,7 +31,6 @@ export interface LocalResolverOptions {
     resolution: DirectoryResolution | TarballResolution | Resolution
   }
   update?: false | 'compatible' | 'latest'
-  injectWorkspacePackages?: boolean
 }
 
 /**
@@ -45,7 +44,6 @@ export async function resolveFromLocalScheme (
 ): Promise<LocalResolveResult | null> {
   const spec = parseLocalScheme(wantedDependency, opts.projectDir, opts.lockfileDir ?? opts.projectDir, {
     preserveAbsolutePaths: ctx.preserveAbsolutePaths ?? false,
-    injectWorkspacePackages: opts.injectWorkspacePackages ?? false,
   })
   return resolveSpec(spec, opts)
 }

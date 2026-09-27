@@ -64,16 +64,10 @@
       "path": "../../engine/runtime/system-version"
     },
     {
-      "path": "../../fs/dir-lock"
-    },
-    {
       "path": "../../installing/client"
     },
     {
       "path": "../../installing/commands"
-    },
-    {
-      "path": "../../log/group"
     },
     {
       "path": "../../pkg-manifest/reader"

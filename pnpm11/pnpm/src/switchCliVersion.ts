@@ -3,13 +3,14 @@ import util from 'node:util'
 
 import { packageManager } from '@pnpm/cli.meta'
 import { type Config, type ConfigContext, getPackageManagerBootstrapConfig, shouldPersistLockfile } from '@pnpm/config.reader'
-import { assertReleaseIsInstallable, installPnpmToStore, spawnPnpm } from '@pnpm/engine.pm.commands'
+import { assertReleaseIsInstallable, installPnpmToStore } from '@pnpm/engine.pm.commands'
 import { PnpmError } from '@pnpm/error'
 import { isPackageManagerResolved, resolvePackageManagerIntegrities } from '@pnpm/installing.env-installer'
 import { readEnvLockfile } from '@pnpm/lockfile.fs'
 import type { EnvLockfile } from '@pnpm/lockfile.types'
 import { globalWarn } from '@pnpm/logger'
 import { createStoreController } from '@pnpm/store.connection-manager'
+import spawn from 'cross-spawn'
 import semver from 'semver'
 
 import { exit } from './exit.js'
@@ -54,7 +55,7 @@ export async function switchCliVersion (config: Config, context: ConfigContext):
   let freshlyResolved = false
   if (pmVersion == null) {
     // Resolve to an exact version from the registry.
-    storeToUse = await createStoreController({ ...config, ...context, ...packageManagerConfig, skipBypassedHomeStoreWarning: true })
+    storeToUse = await createStoreController({ ...config, ...context, ...packageManagerConfig })
     envLockfile = await resolvePackageManagerIntegrities(wantedVersion, {
       envLockfile,
       registriesByScope: packageManagerConfig.registriesByScope,
@@ -72,7 +73,7 @@ export async function switchCliVersion (config: Config, context: ConfigContext):
       return
     }
   } else if (!isPackageManagerResolved(envLockfile, pmVersion, config.frozenLockfile ? undefined : wantedVersion)) {
-    storeToUse = await createStoreController({ ...config, ...context, ...packageManagerConfig, skipBypassedHomeStoreWarning: true })
+    storeToUse = await createStoreController({ ...config, ...context, ...packageManagerConfig })
     envLockfile = await resolvePackageManagerIntegrities(pmVersion, {
       envLockfile,
       registriesByScope: packageManagerConfig.registriesByScope,
@@ -130,7 +131,7 @@ export async function switchCliVersion (config: Config, context: ConfigContext):
       // rather than the range around it, keeps the result in memory, and
       // leaves the lockfile as it is.
       delete envLockfile.importers['.'].packageManagerDependencies
-      storeToUse ??= await createStoreController({ ...config, ...context, ...packageManagerConfig, skipBypassedHomeStoreWarning: true })
+      storeToUse ??= await createStoreController({ ...config, ...context, ...packageManagerConfig })
       envLockfile = await resolvePackageManagerIntegrities(config.frozenLockfile ? pmVersion : pm.version, {
         envLockfile,
         registriesByScope: packageManagerConfig.registriesByScope,
@@ -160,7 +161,7 @@ export async function switchCliVersion (config: Config, context: ConfigContext):
   // We need a store controller to install pnpm. If it wasn't created during
   // integrity resolution (because integrities were already cached), create it now.
   if (!storeToUse) {
-    storeToUse = await createStoreController({ ...config, ...context, ...packageManagerConfig, skipBypassedHomeStoreWarning: true })
+    storeToUse = await createStoreController({ ...config, ...context, ...packageManagerConfig })
   }
 
   let wantedPnpmBinDir: string
@@ -170,7 +171,7 @@ export async function switchCliVersion (config: Config, context: ConfigContext):
     await storeToUse.ctrl.close()
   }
 
-  // Specify the exact pnpm file path that's expected to execute to spawn()
+  // Specify the exact pnpm file path that's expected to execute to spawn.sync()
   //
   // It's not safe spawn 'pnpm' (without specifying an absolute path) and expect
   // it to resolve to the same file path computed above due to the $PATH
@@ -181,12 +182,12 @@ export async function switchCliVersion (config: Config, context: ConfigContext):
   // at https://github.com/pnpm/pnpm/pull/8679.
   const pnpmBinPath = path.join(wantedPnpmBinDir, 'pnpm')
 
-  let status: number | null
-  let signal: NodeJS.Signals | null
-  try {
-    ;({ status, signal } = await spawnPnpm(pnpmBinPath, process.argv.slice(2)))
-  } catch (err: unknown) {
-    throw new VersionSwitchFail(pmVersion, wantedPnpmBinDir, err)
+  const { status, signal, error } = spawn.sync(pnpmBinPath, process.argv.slice(2), {
+    stdio: 'inherit',
+  })
+
+  if (error) {
+    throw new VersionSwitchFail(pmVersion, wantedPnpmBinDir, error)
   }
 
   if (signal) {
@@ -228,7 +229,7 @@ export async function fetchLockedPackageManager (config: Config, context: Config
     return
   }
   assertReleaseIsInstallable(pmVersion)
-  const store = await createStoreController({ ...config, ...context, ...getPackageManagerBootstrapConfig(config), skipBypassedHomeStoreWarning: true })
+  const store = await createStoreController({ ...config, ...context, ...getPackageManagerBootstrapConfig(config) })
   try {
     await installPnpmToStore(pmVersion, installPnpmToStoreOptions(config, envLockfile, store))
   } finally {

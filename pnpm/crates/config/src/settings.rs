@@ -266,10 +266,6 @@ pub struct Config {
     /// [`Config::place_skipped_store_dir`] places it. A pinned store is never
     /// marked.
     pub store_dir_placement_skipped: bool,
-    /// Set when the default store resolution moved the store off the pnpm
-    /// home directory because the project cannot hard link from it. See
-    /// [`Config::bypassed_home_store_warning`].
-    pub store_relocation: Option<Box<crate::StoreRelocation>>,
 
     /// Whether macOS Time Machine may back up newly created pnpm directories.
     /// Set `macosBackup.excludeModulesDir` or `macosBackup.excludeStoreDir` to `true` in
@@ -580,16 +576,6 @@ pub struct Config {
     /// `pnpm-lock.yaml`.
     pub git_branch_lockfile_name: Option<String>,
 
-    /// The `pnpm-lock.<branch>.yaml` files a detached HEAD's install reads
-    /// before `pnpm-lock.yaml`: the lockfiles of the branches containing
-    /// the checked-out commit. Empty unless
-    /// [`Self::use_git_branch_lockfile`] is on and HEAD is detached with
-    /// containing branches. The write target stays
-    /// [`Self::git_branch_lockfile_name`] — `None` here too, so a detached
-    /// install still writes the shared lockfile, as under
-    /// [`Self::merge_git_branch_lockfiles`].
-    pub git_branch_lockfile_candidates: Vec<String>,
-
     /// Refuse network requests during install. The `offline` flag gates
     /// the metadata-fetch path with `ERR_PNPM_NO_OFFLINE_META` when no
     /// cached metadata exists for a spec. Pacquet doesn't have a
@@ -897,16 +883,6 @@ pub struct Config {
     /// `pnpm deploy` at the dispatch, like `ignoreScripts`); not a
     /// `pnpm-workspace.yaml` / `.npmrc` setting.
     pub force: bool,
-
-    /// Whether packages resolved from a local directory are imported
-    /// with `clone-or-copy` whatever
-    /// [`package_import_method`](Self::package_import_method) says, so no
-    /// installed file shares an inode with its source directory.
-    ///
-    /// Set only by `pnpm deploy` with a shared lockfile, whose deployed
-    /// workspace dependencies must not change when the workspace sources
-    /// do. Not a `pnpm-workspace.yaml` / `.npmrc` setting.
-    pub isolate_local_directory_imports: bool,
 
     /// `forceIgnoresPlatform`. When `true`, [`force`](Self::force) also
     /// bypasses the per-snapshot installability check, so optional
@@ -1775,16 +1751,6 @@ pub struct Config {
     /// settings struct names exactly the keys a source set, with the user's
     /// raw value. The `config` command turns this into the record it prints.
     pub explicit_settings: serde_json::Map<String, serde_json::Value>,
-
-    /// Camel-cased names of the settings the command line set: every
-    /// `--config.<key>` override and bare setting flag, `registry` for
-    /// `--registry`, `storeDir` / `stateDir` for `--store-dir` /
-    /// `--state-dir`. A `--config.@<scope>:registry` override is recorded
-    /// under that `@<scope>:registry` key. Recorded by the CLI as it layers
-    /// the flags onto the loaded config; the `updateConfig` hooks cannot
-    /// change these settings, since the command line outranks every other
-    /// layer.
-    pub cli_settings: BTreeSet<String>,
 
     /// Raw `.npmrc` / `auth.ini` config keys (those for which
     /// [`config_types::is_ini_config_key`](crate::config_types::is_ini_config_key) holds: `registry`, `@scope:registry`,

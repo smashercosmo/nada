@@ -156,11 +156,9 @@ export async function handler (opts: DeployOptions, params: string[]): Promise<v
   }
 
   await writeInheritedPackageManager(deployDir, opts.enginePinManifest)
-  const deployNodeModules = path.join(deployDir, 'node_modules')
-  if (opts.allProjects) {
-    for (const project of opts.allProjects) {
-      project.modulesDir = path.relative(project.rootDir, deployNodeModules)
-    }
+  const deployedProject = opts.allProjects?.find(({ rootDir }) => rootDir === selectedProject.rootDir)
+  if (deployedProject) {
+    deployedProject.modulesDir = path.relative(selectedProject.rootDir, path.join(deployDir, 'node_modules'))
   }
   await install.handler({
     ...opts,
@@ -214,7 +212,7 @@ export async function handler (opts: DeployOptions, params: string[]): Promise<v
       ...opts.hooks,
       readPackage: [
         ...(opts.hooks?.readPackage ?? []),
-        pkg => deployHook(pkg, { convertLinksToFileProtocol: true }),
+        deployHook,
       ],
     },
     frozenLockfile: false,
@@ -437,7 +435,6 @@ async function deployFromSharedLockfile (
       lockfileDir: deployDir,
       workspaceDir: deployDir,
       virtualStoreDir: resolveDeployVirtualStoreDir(deployDir, opts),
-      localDirPackageImportMethod: 'clone-or-copy',
       modulesDir: undefined,
       confirmModulesPurge: false,
       frozenLockfile: true,
@@ -450,7 +447,7 @@ async function deployFromSharedLockfile (
         ...opts.hooks,
         readPackage: [
           ...(opts.hooks?.readPackage ?? []),
-          pkg => deployHook(pkg),
+          deployHook,
         ],
         calculatePnpmfileChecksum: undefined, // the effects of the pnpmfile should already be part of the package snapshots
       },

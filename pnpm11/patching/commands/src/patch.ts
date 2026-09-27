@@ -133,7 +133,7 @@ To commit your changes, run:
 
 function tryPatchWithExistingPatchFile (
   {
-    patchedDep: { applyToAll, alias, bareSpecifier, version },
+    patchedDep: { applyToAll, alias, bareSpecifier },
     patchedDir,
     patchedDependencies,
     lockfileDir,
@@ -148,9 +148,6 @@ function tryPatchWithExistingPatchFile (
   let existingPatchFile: string | undefined
   if (bareSpecifier) {
     existingPatchFile = patchedDependencies[`${alias}@${bareSpecifier}`]
-  }
-  if (!existingPatchFile && version) {
-    existingPatchFile = patchedDependencies[`${alias}@${version}`]
   }
   if (!existingPatchFile && applyToAll) {
     existingPatchFile = patchedDependencies[alias]

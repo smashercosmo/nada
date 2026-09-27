@@ -74,81 +74,46 @@ fn warn_about_config_settings(cfg: &Config, reporter: ReporterType) {
     warn_unapplied_package_configs(cfg);
 }
 
-fn apply_install_materialization_config(
-    cfg: &mut Config,
-    materialization: &crate::cli_args::install::InstallMaterializationArgs,
-) {
-    if materialization.frozen_store || materialization.no_frozen_store {
-        cfg.cli_settings.insert("frozenStore".to_string());
-    }
+pub(crate) fn apply_install_cli_config(cfg: &mut Config, args: &InstallArgs) {
+    args.network_cache.apply(cfg);
+    args.lockfile_updates.dedupe.apply(cfg);
     cfg.frozen_store = resolve_bool_override(
-        materialization.frozen_store,
-        materialization.no_frozen_store,
+        args.materialization.frozen_store,
+        args.materialization.no_frozen_store,
         cfg.frozen_store,
     );
-    if materialization.force {
-        cfg.cli_settings.insert("force".to_string());
-    }
-    cfg.force = materialization.force || cfg.force;
-}
-
-fn apply_install_fetching_config(
-    cfg: &mut Config,
-    fetching: &crate::cli_args::install::InstallFetchArgs,
-) {
-    if let Some(network_concurrency) = fetching.concurrency {
-        cfg.cli_settings.insert("networkConcurrency".to_string());
+    args.scripts.apply(cfg);
+    cfg.force = args.materialization.force || cfg.force;
+    if let Some(network_concurrency) = args.fetching.concurrency {
         cfg.network_concurrency = network_concurrency;
     }
-    if let Some(fetch_timeout) = fetching.timeout {
-        cfg.cli_settings.insert("fetchTimeout".to_string());
+    if let Some(fetch_timeout) = args.fetching.timeout {
         cfg.fetch_timeout = fetch_timeout;
     }
-    if let Some(fetch_warn_timeout_ms) = fetching.warn_timeout_ms {
-        cfg.cli_settings.insert("fetchWarnTimeoutMs".to_string());
+    if let Some(fetch_warn_timeout_ms) = args.fetching.warn_timeout_ms {
         cfg.fetch_warn_timeout_ms = fetch_warn_timeout_ms;
     }
-    if let Some(fetch_min_speed_ki_bps) = fetching.min_speed_ki_bps {
-        cfg.cli_settings.insert("fetchMinSpeedKiBps".to_string());
+    if let Some(fetch_min_speed_ki_bps) = args.fetching.min_speed_ki_bps {
         cfg.fetch_min_speed_ki_bps = fetch_min_speed_ki_bps;
     }
-    if let Some(user_agent) = fetching.user_agent.clone() {
-        cfg.cli_settings.insert("userAgent".to_string());
+    if let Some(user_agent) = args.fetching.user_agent.clone() {
         cfg.user_agent = user_agent;
     }
-    if let Some(pnpr_server) = fetching.pnpr_server.clone() {
-        cfg.cli_settings.insert("pnprServer".to_string());
+    if let Some(pnpr_server) = args.fetching.pnpr_server.clone() {
         cfg.pnpr_server = Some(pnpr_server);
     }
-}
-
-fn apply_install_git_branch_lockfiles_config(
-    cfg: &mut Config,
-    lockfile_updates: &crate::cli_args::install::LockfileUpdateArgs,
-) {
     // pnpm merges its CLI options into the config *before* deciding
     // `mergeGitBranchLockfiles`, so a pattern given on the command line
     // still gets matched against the current branch — and an explicit
     // `--merge-git-branch-lockfiles` settles the question without it.
-    if lockfile_updates.merge_git_branch_lockfiles {
-        cfg.cli_settings.insert("mergeGitBranchLockfiles".to_string());
+    if args.lockfile_updates.merge_git_branch_lockfiles {
         cfg.merge_git_branch_lockfiles = true;
-    } else if !lockfile_updates.merge_git_branch_lockfiles_branch_pattern.is_empty() {
-        cfg.cli_settings.insert("mergeGitBranchLockfilesBranchPattern".to_string());
+    } else if !args.lockfile_updates.merge_git_branch_lockfiles_branch_pattern.is_empty() {
         cfg.merge_git_branch_lockfiles_branch_pattern.clone_from(
-            &lockfile_updates.merge_git_branch_lockfiles_branch_pattern,
+            &args.lockfile_updates.merge_git_branch_lockfiles_branch_pattern,
         );
         cfg.apply_git_branch_lockfile_derivation::<Host>();
     }
-}
-
-pub(crate) fn apply_install_cli_config(cfg: &mut Config, args: &InstallArgs) {
-    args.network_cache.apply(cfg);
-    args.lockfile_updates.dedupe.apply(cfg);
-    args.scripts.apply(cfg);
-    apply_install_materialization_config(cfg, &args.materialization);
-    apply_install_fetching_config(cfg, &args.fetching);
-    apply_install_git_branch_lockfiles_config(cfg, &args.lockfile_updates);
 }
 
 /// Whether the active directory has no manifest of its own and is none of

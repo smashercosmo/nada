@@ -19,9 +19,6 @@
       "path": "../../config/parse-overrides"
     },
     {
-      "path": "../../core/error"
-    },
-    {
       "path": "../../crypto/hash"
     },
     {

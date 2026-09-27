@@ -20,7 +20,6 @@ pub(super) fn select_audited_importers<'lockfile>(
     lockfile: &'lockfile Lockfile,
 ) -> miette::Result<Option<Cow<'lockfile, Lockfile>>> {
     if !selectors_narrow_the_run(state.config) {
-        lockfile.verify_importer_snapshot_links()?;
         return Ok(Some(Cow::Borrowed(lockfile)));
     }
     let selected =
@@ -41,7 +40,6 @@ pub(super) fn select_audited_importers<'lockfile>(
     }
     let mut narrowed = lockfile.clone();
     narrowed.importers.retain(|importer_id, _| selected.contains(importer_id));
-    narrowed.verify_importer_snapshot_links()?;
     Ok(Some(Cow::Owned(narrowed)))
 }
 

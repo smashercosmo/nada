@@ -24,5 +24,4 @@
 
 pub use tarball_resolver::{PriorTarballEntry, TarballFetchContext, TarballResolver};
 
-mod http_cache;
 mod tarball_resolver;

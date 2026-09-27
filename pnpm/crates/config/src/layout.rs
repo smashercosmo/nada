@@ -1,8 +1,8 @@
 use super::{
     Config, EnvVar, GetCurrentDir, GetHomeDir, GitHost, HashMap, HoistPatterns, LinkProbe,
-    Lockfile, NodeLinker, Path, StoreDir, StoreRelocation, WantedLockfileSelection,
-    WorkspaceSettings, collect_explicit_settings, create_matcher, default_store_dir,
-    esm_node_path_loader, get_branches_containing_head, get_current_branch, store_path,
+    Lockfile, NodeLinker, Path, StoreDir, WantedLockfileSelection, WorkspaceSettings,
+    collect_explicit_settings, create_matcher, default_store_dir, esm_node_path_loader,
+    get_current_branch, store_path,
 };
 
 impl Config {
@@ -267,37 +267,6 @@ impl Config {
             .unwrap_or_else(|| std::borrow::Cow::Borrowed(self.modules_dir_name()))
     }
 
-    /// The modules directory an install gives the project at
-    /// `project_dir`: the `packageConfigs` entry naming it, else the
-    /// configured `modulesDir`, resolved against `project_dir` and
-    /// lexically normalized. Unlike [`Self::modules_dir_name_for`] it
-    /// keeps a multi-component or absolute setting whole, as pnpm's
-    /// `pathAbsolute` does.
-    #[must_use]
-    pub fn project_modules_dir(
-        &self,
-        project_dir: &Path,
-        project_name: Option<&str>,
-    ) -> std::path::PathBuf {
-        let modules_dir = self
-            .applies_package_configs()
-            .then(|| {
-                self.package_configs
-                    .as_ref()?
-                    .get(project_name?)?
-                    .modules_dir_for(project_dir)
-            })
-            .flatten()
-            .unwrap_or_else(|| {
-                let raw = self.explicit_settings
-                    .get("modulesDir")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or("node_modules");
-                project_dir.join(raw)
-            });
-        pnpm_fs::lexical_normalize(&modules_dir)
-    }
-
     /// Put `<project_dir>/<modules_dir_name>` first on the `NODE_PATH` of
     /// `env`, the environment of that project's scripts and commands, when
     /// it is a custom modules directory and the project's executables are
@@ -411,7 +380,6 @@ impl Config {
         WantedLockfileSelection {
             file_name: self.wanted_lockfile_name().to_owned(),
             merge_git_branch_lockfiles: self.merge_git_branch_lockfiles,
-            branch_lockfile_candidates: self.git_branch_lockfile_candidates.clone(),
         }
     }
 
@@ -420,13 +388,6 @@ impl Config {
     /// `gitBranchLockfile` uses, and whether
     /// `mergeGitBranchLockfilesBranchPattern` puts this branch in merge
     /// mode.
-    ///
-    /// A detached HEAD names no branch. The checked-out commit still belongs
-    /// to the branches whose history includes it, so their lockfiles join
-    /// the read path through [`Self::git_branch_lockfile_candidates`] — the
-    /// read tries each before `pnpm-lock.yaml`. The write target stays
-    /// `pnpm-lock.yaml`, the same behavior as `mergeGitBranchLockfiles`,
-    /// because a branch containing HEAD need not have HEAD at its tip.
     ///
     /// The branch is read from the process's working directory, which is
     /// where pnpm reads it from too — not from the workspace root, which
@@ -441,10 +402,7 @@ impl Config {
             return;
         }
         let Ok(cwd) = Sys::current_dir() else { return };
-        let Some(branch) = get_current_branch::<GitHost>(&cwd) else {
-            self.apply_detached_head_branch_candidates(&cwd);
-            return;
-        };
+        let Some(branch) = get_current_branch::<GitHost>(&cwd) else { return };
         if pattern_decides {
             self.merge_git_branch_lockfiles =
                 create_matcher(&self.merge_git_branch_lockfiles_branch_pattern).matches(&branch);
@@ -452,18 +410,6 @@ impl Config {
         if self.use_git_branch_lockfile {
             self.git_branch_lockfile_name = Some(Lockfile::git_branch_file_name(&branch));
         }
-    }
-
-    /// Fill [`Self::git_branch_lockfile_candidates`] for a detached HEAD
-    /// under plain `gitBranchLockfile`, whose branch file the loader tries
-    /// before the shared one. Merge mode folds every branch lockfile in
-    /// regardless of the branch, so it needs no candidates.
-    fn apply_detached_head_branch_candidates(&mut self, cwd: &Path) {
-        if !self.use_git_branch_lockfile || self.merge_git_branch_lockfiles {
-            return;
-        }
-        self.git_branch_lockfile_candidates =
-            detached_head_candidates(&get_branches_containing_head::<GitHost>(cwd));
     }
 
     /// Record the settings `settings` sets in [`Self::explicit_settings`],
@@ -588,28 +534,8 @@ impl Config {
             .parent()
             .unwrap_or(&home_dir)
             .to_path_buf();
-        let resolved = StoreDir::from(store_path::resolve_store_dir::<Sys>(
-            store_root.clone(),
-            &pnpm_home_dir,
-            start_dir,
-        ));
-        let home_store_dir = StoreDir::from(store_root);
-        self.store_relocation = (resolved != home_store_dir).then(|| {
-            Box::new(StoreRelocation { home_store_dir, store_dir: resolved.clone() })
-        });
-        self.store_dir = resolved;
-    }
-
-    /// The warning to print when the default store was moved off the pnpm
-    /// home directory while a store already exists there, so packages
-    /// already in it are downloaded again. [`None`] when the store in use
-    /// is not the relocated one (an explicit `storeDir` replaced it) or the
-    /// home store does not exist.
-    pub fn bypassed_home_store_warning(&self) -> Option<String> {
-        let relocation = self.store_relocation.as_ref()?;
-        (relocation.store_dir == self.store_dir && relocation.home_store_dir.root().is_dir()).then(
-            || relocation.warning(),
-        )
+        let resolved = store_path::resolve_store_dir::<Sys>(store_root, &pnpm_home_dir, start_dir);
+        self.store_dir = StoreDir::from(resolved);
     }
 
     /// Return the `virtualStoreDir` value pnpm exposes externally — the
@@ -655,16 +581,4 @@ pub(crate) fn project_relative_modules_dir<'a>(
         && components.all(|component| matches!(component, std::path::Component::Normal(_)))
         && modules_dir.ends_with(relative))
     .then_some(relative)
-}
-
-/// The lockfile names of `branches`, without the ones longer than a
-/// filesystem allows: such a file cannot be on disk, and probing it fails
-/// with `ENAMETOOLONG` instead of reporting it absent.
-pub(crate) fn detached_head_candidates(branches: &[String]) -> Vec<String> {
-    const MAX_FILE_NAME_LENGTH: usize = 255;
-    branches
-        .iter()
-        .map(|branch| Lockfile::git_branch_file_name(branch))
-        .filter(|file_name| file_name.len() <= MAX_FILE_NAME_LENGTH)
-        .collect()
 }

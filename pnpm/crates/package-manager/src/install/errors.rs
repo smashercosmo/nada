@@ -119,9 +119,6 @@ pub enum InstallError {
     #[diagnostic(code(ERR_PNPM_PNPMFILE_FAIL))]
     ReadPackageHook(#[error(not(source))] pnpm_hooks::HookError),
 
-    #[diagnostic(code(ERR_PNPM_BAD_READ_PACKAGE_HOOK_RESULT))]
-    BadReadPackageHookResult(#[error(not(source))] pnpm_hooks::HookError),
-
     #[diagnostic(transparent)]
     FrozenLockfile(#[error(source)] InstallFrozenLockfileError),
 
@@ -270,38 +267,6 @@ pub enum InstallError {
     )]
     LockfileConfigMismatch { setting: &'static str },
 
-    /// The lockfile's `(patch_hash=...)` depPath suffixes disagree with
-    /// its own `patchedDependencies` map. Distinct from
-    /// [`InstallError::LockfileConfigMismatch`], which is the lockfile
-    /// disagreeing with the *configuration*: no configuration change
-    /// repairs this one, so the fix quoted is a re-resolve rather than a
-    /// setting to look at.
-    #[display(
-        r#"Cannot proceed with the frozen installation. The lockfile records dependency paths whose patch hashes disagree with its own "patchedDependencies""#
-    )]
-    #[diagnostic(
-        code(ERR_PNPM_INCONSISTENT_PATCH_HASH),
-        help(
-            r#"The lockfile disagrees with itself, which usually means it was hand-edited or a merge conflict was incorrectly resolved. Repair your lockfile using "pnpm install --no-frozen-lockfile""#
-        )
-    )]
-    InconsistentPatchHash,
-
-    /// The lockfile's `(patch_hash=...)` depPath suffixes could not be checked
-    /// against its own `patchedDependencies`. A frozen install cannot
-    /// re-resolve to settle the question, and installing from a lockfile whose
-    /// patches are unverified is what this check exists to prevent.
-    #[display(
-        r#"Cannot proceed with the frozen installation. The lockfile's patch hashes cannot be checked against its own "patchedDependencies""#
-    )]
-    #[diagnostic(
-        code(ERR_PNPM_UNCHECKABLE_PATCH_HASH),
-        help(
-            r#"The lockfile has a malformed patch hash, or is missing a package version or a usable "patchedDependencies" entry that checking needs. Repair your lockfile using "pnpm install --no-frozen-lockfile""#
-        )
-    )]
-    UncheckablePatchHash,
-
     /// `--frozen-lockfile` was requested against a lockfile whose
     /// `importers` map has no entry for the root project. Distinct
     /// from `NoLockfile` (file missing) — here the file exists but
@@ -429,18 +394,6 @@ pub enum InstallError {
     #[diagnostic(code(ERR_PNPM_CONFIG_CONFLICT_VIRTUAL_STORE_ONLY_WITH_NO_MODULES_DIR))]
     ConfigConflictVirtualStoreOnlyWithNoModulesDir,
 }
-
-impl From<pnpm_hooks::HookError> for InstallError {
-    fn from(err: pnpm_hooks::HookError) -> Self {
-        match err {
-            pnpm_hooks::HookError::BadReadPackageResult { .. } => {
-                Self::BadReadPackageHookResult(err)
-            }
-            _ => Self::ReadPackageHook(err),
-        }
-    }
-}
-
 /// Hold back an [`InstallError::IgnoredBuilds`] verdict so the calling
 /// command can finish writing `package.json` and `pnpm-workspace.yaml`
 /// before it aborts: the install materialized the tree, and pnpm reports

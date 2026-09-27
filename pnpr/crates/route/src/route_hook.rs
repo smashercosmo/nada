@@ -1,5 +1,3 @@
-use pnpm_network::AddressGuard;
-
 use super::{
     AUTHORIZATION, Arc, Footprint, Identity, MetadataCacheScope, Mutex, PrivateAccessDescriptor,
     ResolvedAlias, RouteClass, RouteContext, UpstreamConfig, UpstreamRouteHook, credential_digest,
@@ -71,12 +69,7 @@ impl UpstreamRouteHook for RouteHook {
     }
 
     fn allows_fetch(&self, url: &str) -> bool {
-        self.context.allows_fetch(url)
-    }
-
-    fn connect_guard(&self) -> Option<AddressGuard> {
-        let context = Arc::clone(&self.context);
-        Some(Arc::new(move |host, address| context.allows_address(host, address)))
+        self.context.allows_registry(url)
     }
 
     fn metadata_scope(&self, url: &str, package: Option<&str>) -> MetadataCacheScope {

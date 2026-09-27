@@ -272,7 +272,7 @@ test('refetch local tarball if its integrity has changed', async () => {
     const { files, bundledManifest } = await response.fetching()
 
     expect(response.body.updated).toBeFalsy()
-    expect(files.resolvedFrom).toBe('local-dir')
+    expect(files.resolvedFrom).toBe('remote')
     expect(bundledManifest).toBeTruthy()
   }
 
@@ -302,7 +302,7 @@ test('refetch local tarball if its integrity has changed', async () => {
     const { files, bundledManifest } = await response.fetching!()
 
     expect(response.body.updated).toBeTruthy()
-    expect(files.resolvedFrom).toBe('local-dir')
+    expect(files.resolvedFrom).toBe('remote')
     expect(bundledManifest).toBeTruthy()
   }
 
@@ -400,7 +400,7 @@ test('refetch local tarball if its integrity has changed. The requester does not
     const { files, bundledManifest } = await response.fetching()
 
     expect(response.body.updated).toBeTruthy()
-    expect(files.resolvedFrom).toBe('local-dir')
+    expect(files.resolvedFrom).toBe('remote')
     expect(bundledManifest).toBeTruthy()
   }
 
@@ -423,7 +423,7 @@ test('refetch local tarball if its integrity has changed. The requester does not
     const { files, bundledManifest } = await response.fetching()
 
     expect(response.body.updated).toBeTruthy()
-    expect(files.resolvedFrom).toBe('local-dir')
+    expect(files.resolvedFrom).toBe('remote')
     expect(bundledManifest).toBeTruthy()
   }
 
@@ -1727,69 +1727,6 @@ test('skipFetch still downloads the tarball to compute a missing integrity', asy
   await pkgResponse.fetching()
   expect(pkgResponse.body.resolution).toHaveProperty('integrity')
   expect((pkgResponse.body.resolution as { integrity?: string }).integrity).toMatch(/^sha512-/)
-})
-
-test('a tarball whose integrity was computed during fetch is found in the store once the integrity is known', async () => {
-  const storeDir = temporaryDirectory()
-  const cafs = createCafsStore(storeDir)
-  const localFetchers = createFetchersForStore(storeDir)
-  const projectDir = temporaryDirectory()
-  const tarball = `http://localhost:${REGISTRY_MOCK_PORT}/is-positive/-/is-positive-1.0.0.tgz`
-  const requestPackageOpts = {
-    downloadPriority: 0,
-    lockfileDir: projectDir,
-    preferredVersions: {},
-    projectDir,
-  } satisfies RequestPackageOptions
-
-  let computedIntegrity: string | undefined
-  {
-    const requestPackage = createPackageRequester({
-      resolve: async () => ({
-        id: 'is-positive@1.0.0' as PkgResolutionId,
-        latest: '1.0.0',
-        resolution: { tarball },
-        manifest: { name: 'is-positive', version: '1.0.0' },
-        resolvedVia: 'npm-registry',
-      }),
-      fetchers: localFetchers,
-      cafs,
-      networkConcurrency: 1,
-      storeDir,
-      verifyStoreIntegrity: true,
-      virtualStoreDirMaxLength: 120,
-    })
-    const response = await requestPackage({ alias: 'is-positive', bareSpecifier: '1.0.0' }, requestPackageOpts) as PackageResponse & {
-      fetching: () => Promise<PkgRequestFetchResult>
-    }
-    const { files } = await response.fetching()
-    expect(files.resolvedFrom).toBe('remote')
-    computedIntegrity = (response.body.resolution as { integrity?: string }).integrity
-    expect(computedIntegrity).toMatch(/^sha512-/)
-  }
-
-  {
-    const requestPackage = createPackageRequester({
-      resolve: async () => ({
-        id: 'is-positive@1.0.0' as PkgResolutionId,
-        latest: '1.0.0',
-        resolution: { tarball, integrity: computedIntegrity },
-        manifest: { name: 'is-positive', version: '1.0.0' },
-        resolvedVia: 'npm-registry',
-      }),
-      fetchers: localFetchers,
-      cafs,
-      networkConcurrency: 1,
-      storeDir,
-      verifyStoreIntegrity: true,
-      virtualStoreDirMaxLength: 120,
-    })
-    const response = await requestPackage({ alias: 'is-positive', bareSpecifier: '1.0.0' }, requestPackageOpts) as PackageResponse & {
-      fetching: () => Promise<PkgRequestFetchResult>
-    }
-    const { files } = await response.fetching()
-    expect(files.resolvedFrom).toBe('store')
-  }
 })
 
 test('should pass optional flag to resolve function', async () => {

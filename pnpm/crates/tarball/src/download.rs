@@ -4,7 +4,7 @@
 //! events the reporter renders during a fetch.
 
 pub(crate) use body::{BodyProgress, slow_download_warning};
-pub(crate) use fetch::{AttemptedFetch, ExtractedArchive, fetch_and_extract_once};
+pub(crate) use fetch::fetch_and_extract_once;
 pub use progress::download_priority;
 pub(crate) use progress::{emit_progress_fetched, emit_progress_found_in_store};
 
@@ -19,7 +19,7 @@ use super::{
 use crate::{extract::BodyChunkSender, extraction_task::spawn_extraction};
 use futures_util::{Stream, StreamExt};
 use pnpm_network::{
-    AuthHeaders, MAX_THROUGHPUT_PRIORITY, RetryOpts, ThrottledClient, is_permanent_error,
+    AuthHeaders, MAX_THROUGHPUT_PRIORITY, RetryOpts, ThrottledClient, is_certificate_error,
     redact_url_for_display,
 };
 use pnpm_reporter::{
@@ -266,27 +266,12 @@ pub(crate) fn tarball_error_to_request_retry(err: &TarballError) -> RequestRetry
 pub(crate) fn is_transient_error(err: &TarballError) -> bool {
     match err {
         TarballError::HttpStatus(http) => !matches!(http.status, 401 | 403 | 404),
-        TarballError::FetchTarball(network) => !is_permanent_error(&network.error),
+        TarballError::FetchTarball(network) => !is_certificate_error(&network.error),
         TarballError::ReadLocalTarball { .. } => false,
-        TarballError::WriteCasFile(write) => !is_storage_full(write),
         // A route policy does not change between attempts.
         TarballError::OffAllowlist { .. } => false,
         _ => true,
     }
-}
-
-fn is_storage_full(error: &(dyn std::error::Error + 'static)) -> bool {
-    let mut source = Some(error);
-    while let Some(error) = source {
-        if error
-            .downcast_ref::<std::io::Error>()
-            .is_some_and(|io| io.kind() == std::io::ErrorKind::StorageFull)
-        {
-            return true;
-        }
-        source = error.source();
-    }
-    false
 }
 
 pub(crate) async fn extract_tarball_buffer(
@@ -416,9 +401,10 @@ impl<'a> BodyProgress<'a> {
 }
 
 /// Run [`fetch_and_extract_once`] under pnpm's retry policy. Permanent
-/// errors (see [`is_transient_error`]) fail on the first attempt;
-/// transient errors sleep with exponential backoff until the retry
-/// budget is exhausted, surfacing the most recent error.
+/// errors (HTTP 401 / 403 / 404 — see [`is_transient_error`]) fail on
+/// the first attempt; everything else sleeps with exponential backoff
+/// and tries again until the budget is exhausted, surfacing the most
+/// recent error.
 ///
 /// On retry, CAFS writes from a previous attempt that may have made it
 /// part-way through extraction stay on disk. That's safe: the CAFS is
@@ -452,66 +438,15 @@ pub(crate) async fn fetch_and_extract_with_retry<Reporter: self::Reporter>(
     progress_key: Option<(&SharedReportedProgressKeys, &str)>,
     revision_addressed: bool,
 ) -> Result<(Integrity, HashMap<String, PathBuf>, PackageFilesIndex), TarballError> {
-    match fetch_and_extract_conditional::<Reporter>(
-        http_client,
-        package_url,
-        expected_integrity,
-        package_unpacked_size,
-        download_priority,
-        package_id,
-        requester,
-        store_dir,
-        retry_opts,
-        auth_headers,
-        ignore_file_pattern,
-        progress_key,
-        revision_addressed,
-        None,
-    )
-    .await?
-    {
-        AttemptedFetch::Extracted(extracted) => {
-            let extracted = *extracted;
-            Ok((extracted.integrity, extracted.files, extracted.index))
-        }
-        AttemptedFetch::NotModified(meta) => {
-            Err(TarballError::HttpStatus(crate::HttpStatusError {
-                url: meta.final_url,
-                status: 304,
-            }))
-        }
-    }
-}
-
-/// Like [`fetch_and_extract_with_retry`], but a conditional `If-None-Match`
-/// may resolve to [`AttemptedFetch::NotModified`] instead of a body.
-#[expect(
-    clippy::too_many_arguments,
-    reason = "the parameters are independent install-scoped inputs; bundling them into a struct only moves the same fields into a wrapper"
-)]
-pub(crate) async fn fetch_and_extract_conditional<Reporter: self::Reporter>(
-    http_client: &ThrottledClient,
-    package_url: &str,
-    expected_integrity: Option<&Integrity>,
-    package_unpacked_size: Option<usize>,
-    download_priority: u64,
-    package_id: &str,
-    requester: &str,
-    store_dir: &'static StoreDir,
-    retry_opts: RetryOpts,
-    auth_headers: &AuthHeaders,
-    ignore_file_pattern: Option<Arc<IgnoreEntryFilter>>,
-    progress_key: Option<(&SharedReportedProgressKeys, &str)>,
-    revision_addressed: bool,
-    if_none_match: Option<&str>,
-) -> Result<AttemptedFetch, TarballError> {
-    let retries = if revision_addressed { 0 } else { retry_opts.retries };
     crate::archive_retry::retry_archive::<Reporter, _, _>(
         package_url,
         package_id,
         requester,
         progress_key,
-        RetryOpts { retries, ..retry_opts },
+        RetryOpts {
+            retries: if revision_addressed { 0 } else { retry_opts.retries },
+            ..retry_opts
+        },
         |attempt| {
             fetch_and_extract_once::<Reporter>(
                 http_client,
@@ -525,7 +460,6 @@ pub(crate) async fn fetch_and_extract_conditional<Reporter: self::Reporter>(
                 auth_headers,
                 ignore_file_pattern.clone(),
                 revision_addressed,
-                if_none_match,
             )
         },
     )

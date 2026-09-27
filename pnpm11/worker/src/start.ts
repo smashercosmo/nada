@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import util from 'node:util'
@@ -23,11 +24,10 @@ import {
 } from '@pnpm/store.cafs'
 import type { Cafs, FilesMap, PackageFiles, SideEffectsDiff } from '@pnpm/store.cafs-types'
 import { createCafsStore } from '@pnpm/store.create-cafs-store'
-import { packForStorage, ReadOnlyStoreIndex, StoreIndex, storeIndexKey } from '@pnpm/store.index'
+import { packForStorage, ReadOnlyStoreIndex, StoreIndex } from '@pnpm/store.index'
 import type { BundledManifest, DependencyManifest } from '@pnpm/types'
 
 import { equalOrSemverEqual } from './equalOrSemverEqual.js'
-import { hashBuffer } from './hashBuffer.js'
 import type {
   AddDirToStoreMessage,
   HardLinkDirMessage,
@@ -85,7 +85,7 @@ async function handleMessage (
   try {
     switch (message.type) {
       case 'extract': {
-        parentPort!.postMessage(await addTarballToStore(message))
+        parentPort!.postMessage(addTarballToStore(message))
         break
       }
       case 'link': {
@@ -221,10 +221,10 @@ function readManifestFromCafs (filesMap: FilesMap): DependencyManifest | undefin
   }
 }
 
-async function addTarballToStore ({ buffer, storeDir, integrity, filesIndexFile, pkgId, appendManifest, ignoreFilePattern }: TarballExtractMessage) {
+function addTarballToStore ({ buffer, storeDir, integrity, filesIndexFile, appendManifest, ignoreFilePattern }: TarballExtractMessage) {
   if (integrity) {
     const { algorithm, hexDigest } = parseIntegrity(integrity)
-    const calculatedHash = hashBuffer(algorithm, buffer)
+    const calculatedHash: string = crypto.hash(algorithm, buffer, 'hex')
     if (calculatedHash !== hexDigest) {
       return {
         status: 'error',
@@ -242,7 +242,7 @@ async function addTarballToStore ({ buffer, storeDir, integrity, filesIndexFile,
   }
   const cafs = cafsCache.get(storeDir)!
   const ignore = ignoreFilePattern ? makeIgnoreFromPattern(ignoreFilePattern) : undefined
-  let { filesIndex, manifest } = await cafs.addFilesFromTarballBounded(buffer, true, ignore)
+  let { filesIndex, manifest } = cafs.addFilesFromTarball(buffer, true, ignore)
   if (appendManifest && manifest == null) {
     manifest = appendManifest
     addManifestToCafs(cafs, filesIndex, appendManifest)
@@ -258,28 +258,20 @@ async function addTarballToStore ({ buffer, storeDir, integrity, filesIndexFile,
     algo: HASH_ALGORITHM,
     files: filesIntegrity,
   }
-  const packedFilesIndex = packToShared(pkgFilesIndex)
-  const indexWrites: IndexWrite[] = [{ key: filesIndexFile, buffer: packedFilesIndex }]
-  if (!integrity) {
-    integrity = calcIntegrity(buffer)
-    if (pkgId) {
-      indexWrites.push({ key: storeIndexKey(integrity, pkgId), buffer: packedFilesIndex })
-    }
-  }
   return {
     status: 'success',
     value: {
       filesMap,
       manifest: bundledManifest,
       requiresBuild,
-      integrity,
+      integrity: integrity ?? calcIntegrity(buffer),
     },
-    indexWrites,
+    indexWrites: [{ key: filesIndexFile, buffer: packToShared(pkgFilesIndex) }],
   }
 }
 
 function calcIntegrity (buffer: Buffer): string {
-  const calculatedHash = hashBuffer('sha512', buffer)
+  const calculatedHash: string = crypto.hash('sha512', buffer, 'hex')
   return formatIntegrity('sha512', calculatedHash)
 }
 
@@ -370,7 +362,7 @@ function addFilesFromDir (
     cafsCache.set(storeDir, createCafs(storeDir))
   }
   const cafs = cafsCache.get(storeDir)!
-  let { filesIndex, hasSymlinks, manifest } = cafs.addFilesFromDir(dir, {
+  let { filesIndex, manifest } = cafs.addFilesFromDir(dir, {
     files,
     includeNodeModules,
     readManifest: true,
@@ -398,23 +390,6 @@ function addFilesFromDir (
           manifest: bundledManifest,
           requiresBuild: pkgRequiresBuild(manifest, filesMap),
         },
-      }
-    }
-    if (hasSymlinks) {
-      if (existingFilesIndex.sideEffects?.delete(sideEffectsCacheKey)) {
-        if (existingFilesIndex.sideEffects.size === 0) {
-          existingFilesIndex.sideEffects = undefined
-        }
-        indexWrites = [{ key: filesIndexFile, buffer: packToShared(existingFilesIndex) }]
-      }
-      return {
-        status: 'success',
-        value: {
-          filesMap,
-          manifest: bundledManifest,
-          requiresBuild: existingFilesIndex.requiresBuild ?? pkgRequiresBuild(manifest, filesMap),
-        },
-        indexWrites,
       }
     }
     if (!existingFilesIndex.sideEffects) {
@@ -496,8 +471,7 @@ function calculateDiff (baseFiles: PackageFiles, sideEffectsFiles: PackageFiles)
     } else if (
       !baseFiles.has(file) ||
       baseFiles.get(file)!.digest !== sideEffectsFiles.get(file)!.digest ||
-      // On Windows, the mode read back from disk does not preserve the mode stored from the tarball.
-      (process.platform !== 'win32' && baseFiles.get(file)!.mode !== sideEffectsFiles.get(file)!.mode)
+      baseFiles.get(file)!.mode !== sideEffectsFiles.get(file)!.mode
     ) {
       added.set(file, sideEffectsFiles.get(file)!)
     }

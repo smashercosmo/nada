@@ -105,18 +105,6 @@ pub fn get_registry_name(registry: &str) -> Result<String, EncodeRegistryError> 
     Ok(key)
 }
 
-/// Format the legacy registry directory name `<host>[+<port>]` from a registry URL.
-/// Returns `None` when the registry URL does not parse or has no host.
-#[must_use]
-pub fn get_legacy_registry_name(registry: &str) -> Option<String> {
-    let parsed = reqwest::Url::parse(registry).ok()?;
-    let host = parsed.host_str()?;
-    Some(match parsed.port() {
-        Some(port) => format!("{host}+{port}"),
-        None => host.to_string(),
-    })
-}
-
 /// Append the registry path's own key. A path that is not all lowercase
 /// gets a sha256 suffix, because HFS+ and NTFS would otherwise merge
 /// `…/Team` into `…/team`.
@@ -231,10 +219,8 @@ pub(super) fn percent_escapes_are_well_formed(text: &str) -> bool {
 ///
 /// A key too long for a 255-byte filename collapses to a bare sha256 and
 /// carries no separator either, so such a name is *not* reported — it may well
-/// be a live registry's. A legacy host of exactly 64 lowercase hex characters
-/// has the same shape, and the name is all there is to go on, so it is spared
-/// too. Keeping one unreachable directory is the lesser harm next to deleting a
-/// mirror still in use.
+/// be a live registry's. Keeping one unreachable directory is the lesser harm
+/// next to deleting a mirror still in use.
 ///
 /// "Unreadable" is judged against the running pnpm, and the cache directory is
 /// shared machine-wide. A pnpm from before the scheme joined the key still reads

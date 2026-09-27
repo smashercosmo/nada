@@ -15,7 +15,7 @@ export interface ConfigFilePathInfo {
   configFileName: ConfigFileName
 }
 
-export function getConfigFileInfo (key: string, opts: Pick<ConfigCommandOptions, 'global' | 'configDir' | 'dir' | 'workspaceDir'>): ConfigFilePathInfo {
+export function getConfigFileInfo (key: string, opts: Pick<ConfigCommandOptions, 'global' | 'configDir' | 'dir'>): ConfigFilePathInfo {
   key = kebabCase(key)
 
   const configDir = opts.global ? opts.configDir : opts.dir
@@ -27,12 +27,8 @@ export function getConfigFileInfo (key: string, opts: Pick<ConfigCommandOptions,
     //       Add more settings to `isIniConfigKey` to make it complete.
     const configFileName = opts.global ? 'auth.ini' : '.npmrc'
     return { configDir, configFileName }
-  } else if (opts.global) {
-    return { configDir, configFileName: GLOBAL_CONFIG_YAML_FILENAME }
   } else {
-    // Unlike .npmrc, pnpm-workspace.yaml is read only from the workspace root.
-    // Writing one into a sub-package would make that sub-package the root.
-    // See https://github.com/pnpm/pnpm/issues/13757
-    return { configDir: opts.workspaceDir ?? opts.dir, configFileName: WORKSPACE_MANIFEST_FILENAME }
+    const configFileName = opts.global ? GLOBAL_CONFIG_YAML_FILENAME : WORKSPACE_MANIFEST_FILENAME
+    return { configDir, configFileName }
   }
 }

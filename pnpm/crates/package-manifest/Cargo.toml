@@ -11,7 +11,6 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-pnpm-fs = { workspace = true }
 pnpm-yaml-document-sync = { workspace = true }
 
 derive_more = { workspace = true }

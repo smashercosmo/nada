@@ -1,7 +1,7 @@
 //! Resolves `http://` / `https://` tarball URLs and the latest-version
 //! companion path for them.
 
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use pnpm_lockfile::{LockfileResolution, TarballResolution};
 use pnpm_network::{AuthHeaders, ThrottledClient};
@@ -12,11 +12,9 @@ use pnpm_resolving_resolver_base::{
 };
 use pnpm_tarball::{
     FetchTarballForResolution, MemCache, PrefetchIntegrityCheck, PrefetchResult, RetryOpts,
-    TarballError, prefetch_cas_paths,
+    prefetch_cas_paths,
 };
 use ssri::Integrity;
-
-mod cache;
 
 /// Store/network handles the [`TarballResolver`] needs to fetch a
 /// remote tarball during resolution — download it, compute its sha512
@@ -40,9 +38,6 @@ pub struct TarballFetchContext {
     /// reveal a redirect.
     pub prior_tarball_entries: Arc<HashMap<String, PriorTarballEntry>>,
     pub store: pnpm_tarball::ArchiveStoreContext<'static>,
-    /// `<cacheDir>` for the URL → integrity record. `None` in unit tests
-    /// that only exercise the HEAD preflight.
-    pub cache_dir: Option<PathBuf>,
 }
 
 /// One remote-tarball entry carried over from the prior lockfile.
@@ -128,20 +123,6 @@ impl TarballResolver {
             return Ok(Some(reused));
         }
 
-        if let Some(reused) =
-            self.reuse_from_http_cache(wanted_dependency, &normalized_bare_specifier).await?
-        {
-            return Ok(Some(reused));
-        }
-
-        self.fetch_and_resolve(wanted_dependency, normalized_bare_specifier).await
-    }
-
-    async fn fetch_and_resolve(
-        &self,
-        wanted_dependency: &WantedDependency,
-        normalized_bare_specifier: String,
-    ) -> Result<Option<ResolveResult>, ResolveError> {
         let resolved_url = self.preflight_url(&normalized_bare_specifier).await?;
 
         // No store context (unit tests): keep the HEAD-only shape. The
@@ -169,7 +150,6 @@ impl TarballResolver {
             .run::<SilentReporter>(ctx.mem_cache.as_deref())
             .await
             .map_err(|err| Box::new(err) as ResolveError)?;
-        self.remember_http_cache(&normalized_bare_specifier, &resolved_url, &resolved);
 
         Ok(Some(Self::head_only_result(
             wanted_dependency,
@@ -208,16 +188,9 @@ impl TarballResolver {
         }
     }
 
-    /// Authorize and authenticate the HEAD preflight like the GET. Only immutable responses
+    /// Authenticate the HEAD preflight like the GET. Only immutable responses
     /// pin the post-redirect URL; mutable URLs must be revalidated on the next run.
     async fn preflight_url(&self, normalized_bare_specifier: &str) -> Result<String, ResolveError> {
-        if let Some(ctx) = self.fetch_context.as_ref()
-            && !ctx.auth_headers.allows_fetch(normalized_bare_specifier)
-        {
-            return Err(Box::new(TarballError::OffAllowlist {
-                url: pnpm_network::redact_url_credentials(normalized_bare_specifier),
-            }));
-        }
         let client = self.http_client.acquire_for_url(normalized_bare_specifier).await;
         let mut request = client.head(normalized_bare_specifier);
         if let Some(value) = self.fetch_context

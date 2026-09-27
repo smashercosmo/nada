@@ -9,10 +9,8 @@ impl ReporterState {
     // --- lifecycle --------------------------------------------------------
 
     pub(super) fn on_lifecycle(&mut self, message: &LifecycleMessage) {
-        let quiet = self.options.max_log_level < crate::MaxLogLevel::Info;
-        if quiet
-            || ((self.options.append_only || self.options.lifecycle.stream_output)
-                && !self.options.lifecycle.hide_output)
+        if (self.options.append_only || self.options.lifecycle.stream_output)
+            && !self.options.lifecycle.hide_output
         {
             let Some(msg) = self.streamed_lifecycle_block(message) else { return };
             let mut slot = BlockSlot::default();
@@ -150,15 +148,11 @@ impl ReporterState {
         &mut self,
         message: &LifecycleMessage,
     ) -> Option<String> {
-        let aggregate_output = self.options.lifecycle.aggregate_output
-            || self.options.max_log_level < crate::MaxLogLevel::Info;
-        if !aggregate_output {
+        if !self.options.lifecycle.aggregate_output {
             return Some(self.stream_lifecycle(message));
         }
-        let (stage, dep_path, wd) = lifecycle_ids(message);
-        // `pnpm -r exec` reports a project's manifest name as its
-        // `dep_path`, so same-named projects differ only by `wd`.
-        let key = format!("{stage}\0{dep_path}\0{wd}");
+        let (stage, dep_path, _) = lifecycle_ids(message);
+        let key = format!("{stage}:{dep_path}");
         // Format on flush rather than on arrival so the prefix color
         // wheel advances in the order the blocks are printed.
         if !matches!(message, LifecycleMessage::Exit { .. }) {
@@ -168,31 +162,11 @@ impl ReporterState {
                 .push(message.clone());
             return None;
         }
-        self.finish_streamed_lifecycle(&key, message)
-    }
-
-    fn finish_streamed_lifecycle(
-        &mut self,
-        key: &str,
-        message: &LifecycleMessage,
-    ) -> Option<String> {
-        let buffered = self.scripts.buffers.remove(key).unwrap_or_default();
-        let LifecycleMessage::Exit { exit_code, optional, .. } = message else { unreachable!() };
-        if (*exit_code == 0 && self.options.max_log_level < crate::MaxLogLevel::Info)
-            || (*optional && self.options.max_log_level == crate::MaxLogLevel::Error)
-        {
-            return None;
-        }
         let mut lines = Vec::new();
-        for buffered in buffered {
+        for buffered in self.scripts.buffers.remove(&key).unwrap_or_default() {
             lines.push(self.stream_lifecycle(&buffered));
         }
-        let exit_line = self.stream_lifecycle(message);
-        if *optional && self.options.max_log_level < crate::MaxLogLevel::Info {
-            lines.push(format!("{exit_line} (skipped as optional)"));
-        } else {
-            lines.push(exit_line);
-        }
+        lines.push(self.stream_lifecycle(message));
         Some(lines.join("\n"))
     }
 

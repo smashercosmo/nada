@@ -68,8 +68,12 @@ export function createReadPackageHook (
   }
 ): ReadPackageHook | undefined {
   const hooks: ReadPackageHook[] = []
-  if (!isEmpty(packageExtensions ?? {})) {
-    hooks.push(createPackageExtender(packageExtensions!))
+  const effectivePackageExtensions = getEffectivePackageExtensions({
+    ignoreCompatibilityDb,
+    packageExtensions,
+  })
+  if (effectivePackageExtensions != null) {
+    hooks.push(createPackageExtender(effectivePackageExtensions))
   }
   if (Array.isArray(readPackageHook)) {
     hooks.push(...readPackageHook)
@@ -83,23 +87,12 @@ export function createReadPackageHook (
     hooks.push(createOptionalDependenciesRemover(ignoredOptionalDependencies))
   }
 
-  const dependencyHooks = [...hooks]
-  const compatibilityPackageExtensions = getEffectivePackageExtensions({
-    ignoreCompatibilityDb,
-  })
-  if (compatibilityPackageExtensions != null) {
-    dependencyHooks.unshift(createPackageExtender(compatibilityPackageExtensions))
-  }
-
-  if (dependencyHooks.length === 0) {
+  if (hooks.length === 0) {
     return undefined
   }
-  const readPackageAndExtend = ((pkg: PackageManifest | ProjectManifest, dir?: string) => {
-    const hooksForManifest = dir == null ? dependencyHooks : hooks
-    if (hooksForManifest.length === 0) return pkg
-    if (hooksForManifest.length === 1) return hooksForManifest[0](pkg, dir)
-    return pipeWith(async (f, res) => f(await res, dir), hooksForManifest as any)(pkg, dir) // eslint-disable-line @typescript-eslint/no-explicit-any
-  }) as ReadPackageHook
+  const readPackageAndExtend = hooks.length === 1
+    ? hooks[0]
+    : ((pkg: PackageManifest | ProjectManifest, dir: string) => pipeWith(async (f, res) => f(await res, dir), hooks as any)(pkg, dir)) as ReadPackageHook // eslint-disable-line @typescript-eslint/no-explicit-any
   return readPackageAndExtend
 }
 

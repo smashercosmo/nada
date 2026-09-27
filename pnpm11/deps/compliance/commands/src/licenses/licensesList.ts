@@ -3,12 +3,14 @@ import path from 'node:path'
 import { readProjectManifestOnly } from '@pnpm/cli.utils'
 import type { Config, ConfigContext } from '@pnpm/config.reader'
 import { WANTED_LOCKFILE } from '@pnpm/constants'
-import { compareVersions, findDependencyLicenses, type LicensePackage, mergeLicensePackagePaths } from '@pnpm/deps.compliance.license-scanner'
+import { findDependencyLicenses, type LicensePackage } from '@pnpm/deps.compliance.license-scanner'
 import { PnpmError } from '@pnpm/error'
+import { readModulesManifest } from '@pnpm/installing.modules-yaml'
 import { getLockfileImporterId, readWantedLockfile } from '@pnpm/lockfile.fs'
 import { getStorePath } from '@pnpm/store.path'
 import type { ProjectId } from '@pnpm/types'
 
+import { compareVersions } from './compareVersions.js'
 import type { LicensesCommandResult } from './LicensesCommandResult.js'
 import { renderLicences } from './outputRenderer.js'
 
@@ -22,8 +24,6 @@ export type LicensesCommandOptions = {
 | 'dev'
 | 'dir'
 | 'lockfileDir'
-| 'publicHoistPattern'
-| 'shamefullyHoist'
 | 'registriesByScope'
 | 'registriesByPrefix'
 | 'optional'
@@ -76,16 +76,17 @@ export async function licensesList (opts: LicensesCommandOptions): Promise<Licen
 
   const licensePackagesByLockfile = await Promise.all(
     lockfiles.map(async ({ lockfileDir, lockfile, includedImporterIds }) => {
+      const modules = opts.nodeLinker === 'hoisted'
+        ? await readModulesManifest(path.resolve(lockfileDir, opts.modulesDir ?? 'node_modules'))
+        : null
       return findDependencyLicenses({
         include,
-        dir: opts.dir,
         lockfileDir,
         storeDir,
         virtualStoreDir: opts.virtualStoreDir ?? path.join(opts.modulesDir ?? 'node_modules', '.pnpm'),
         virtualStoreDirMaxLength: opts.virtualStoreDirMaxLength,
         modulesDir: opts.modulesDir,
-        nodeLinker: opts.nodeLinker,
-        shamefullyHoist: hoistsEverythingPublicly(opts),
+        hoistedLocations: modules?.hoistedLocations,
         registriesByScope: opts.registriesByScope,
         registriesByPrefix: opts.registriesByPrefix,
         wantedLockfile: lockfile,
@@ -101,11 +102,8 @@ export async function licensesList (opts: LicensesCommandOptions): Promise<Licen
   const licensePackages = new Map<string, LicensePackage>()
   for (const licensePackage of licensePackagesByLockfile.flat()) {
     const key = `${licensePackage.name}@${licensePackage.registryName ?? ''}:${licensePackage.version}\u0000${licensePackage.license}`
-    const existing = licensePackages.get(key)
-    if (existing === undefined) {
+    if (!licensePackages.has(key)) {
       licensePackages.set(key, licensePackage)
-    } else {
-      mergeLicensePackagePaths(existing, licensePackage)
     }
   }
 
@@ -137,10 +135,4 @@ function importerIdsByLockfileDir (opts: LicensesCommandOptions): Map<string, Pr
     importerIds.push(getLockfileImporterId(lockfileDir, projectDir))
   }
   return byLockfileDir
-}
-
-function hoistsEverythingPublicly (opts: Pick<LicensesCommandOptions, 'publicHoistPattern' | 'shamefullyHoist'>): boolean {
-  if (opts.shamefullyHoist) return true
-  const patterns = typeof opts.publicHoistPattern === 'string' ? [opts.publicHoistPattern] : opts.publicHoistPattern
-  return patterns?.includes('*') ?? false
 }

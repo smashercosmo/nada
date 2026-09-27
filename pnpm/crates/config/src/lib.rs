@@ -23,7 +23,6 @@ pub use crate::{
     },
     global_bin_check::{CheckGlobalBinDirError, check_global_bin_dir},
     npmrc_auth::{BasicAuth, RegistryCreds, is_json_auth_scope, validate_json_auth_registry},
-    store_path::StoreRelocation,
 };
 pub use pnpm_matcher as matcher;
 pub use setting_types::{
@@ -74,7 +73,7 @@ use crate::{
 };
 use indexmap::IndexMap;
 use pipe_trait::Pipe;
-use pnpm_git_utils::{Host as GitHost, get_branches_containing_head, get_current_branch};
+use pnpm_git_utils::{Host as GitHost, get_current_branch};
 use pnpm_lockfile::{Lockfile, RegistryOptions, WantedLockfileSelection};
 use pnpm_matcher::create_matcher;
 use pnpm_patching::{

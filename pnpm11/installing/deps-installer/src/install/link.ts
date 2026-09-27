@@ -6,7 +6,7 @@ import {
   stageLogger,
   statsLogger,
 } from '@pnpm/core-loggers'
-import { calcDepState, type DepsStateCache, shouldIncludeDepGraphHash } from '@pnpm/deps.graph-hasher'
+import { calcDepState, type DepsStateCache, findRuntimeNodeVersion } from '@pnpm/deps.graph-hasher'
 import { readModulesDir } from '@pnpm/fs.read-modules-dir'
 import { symlinkDependency } from '@pnpm/fs.symlink-dependency'
 import type {
@@ -23,7 +23,6 @@ import {
   filterLockfileByImporters,
 } from '@pnpm/lockfile.filtering'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
-import { findLockedRootNodeRuntime } from '@pnpm/lockfile.utils'
 import { logger } from '@pnpm/logger'
 import { createRemoteSideEffectsRestorer } from '@pnpm/pnpr.client'
 import type { StoreController, TarballResolution } from '@pnpm/store.controller-types'
@@ -51,7 +50,6 @@ export interface LinkPackagesOptions {
   currentLockfile: LockfileObject
   dedupeDirectDeps: boolean
   dependenciesByProjectId: Record<string, Map<string, DepPath>>
-  deferDependencyBuilds: boolean
   disableRelinkLocalDirDeps?: boolean
   force: boolean
   depsStateCache: DepsStateCache
@@ -166,7 +164,6 @@ export async function linkPackages (projects: ImporterToUpdate[], depGraph: Depe
     depGraph,
     {
       allowBuild: opts.allowBuild,
-      deferDependencyBuilds: opts.deferDependencyBuilds,
       disableRelinkLocalDirDeps: opts.disableRelinkLocalDirDeps,
       enableGlobalVirtualStore: opts.enableGlobalVirtualStore,
       force: opts.force,
@@ -307,10 +304,15 @@ export async function linkPackages (projects: ImporterToUpdate[], depGraph: Depe
       projects.map(async ({ id, manifest, modulesDir, rootDir }) => {
         const deps = opts.dependenciesByProjectId[id]
         const importerFromLockfile = newCurrentLockfile.importers[id]
+        const publishDir = (manifest.publishConfig?.directory != null && manifest.publishConfig.linkDirectory !== false)
+          ? manifest.publishConfig.directory
+          : (importerFromLockfile?.publishDirectory != null && importerFromLockfile?.linkDirectory !== false)
+            ? importerFromLockfile.publishDirectory
+            : undefined
         return [id, {
           dir: rootDir,
           modulesDir,
-          publishDir: manifest.publishConfig?.directory ?? importerFromLockfile?.publishDirectory,
+          publishDir,
           dependencies: await Promise.all([
             ...Array.from(deps.entries())
               .filter(([rootAlias]) => importerFromLockfile.specifiers[rootAlias])
@@ -372,7 +374,6 @@ function resolvePath (where: string, spec: string): string {
 
 interface LinkNewPackagesOptions {
   allowBuild?: AllowBuild
-  deferDependencyBuilds: boolean
   depsStateCache: DepsStateCache
   disableRelinkLocalDirDeps?: boolean
   enableGlobalVirtualStore: boolean
@@ -508,13 +509,11 @@ async function linkNewPackages (
       allowBuild: opts.allowBuild,
       depGraph,
       depsStateCache: opts.depsStateCache,
-      deferDependencyBuilds: opts.deferDependencyBuilds,
       disableRelinkLocalDirDeps: opts.disableRelinkLocalDirDeps,
       enableGlobalVirtualStore: opts.enableGlobalVirtualStore,
       force: opts.force,
       ignoreScripts: opts.ignoreScripts,
       lockfileDir: opts.lockfileDir,
-      nodeVersion: findLockedRootNodeRuntime(wantedLockfile)?.version,
       sideEffectsCacheRead: opts.sideEffectsCacheRead,
       remoteSideEffectsCache: opts.remoteSideEffectsCache,
       pnprServer: opts.pnprServer,
@@ -570,17 +569,11 @@ async function linkAllPkgs (
     allowBuild?: AllowBuild
     depGraph: DependenciesGraph
     depsStateCache: DepsStateCache
-    deferDependencyBuilds: boolean
     disableRelinkLocalDirDeps?: boolean
     enableGlobalVirtualStore: boolean
     force: boolean
     ignoreScripts: boolean
     lockfileDir: string
-    /**
-     * The root project's `engines.runtime` Node version, which keys the
-     * side-effects cache of every package that does not pin its own.
-     */
-    nodeVersion?: string
     sideEffectsCacheRead: boolean
     remoteSideEffectsCache?: RemoteSideEffectsCacheSettings
     pnprServer?: string
@@ -588,13 +581,18 @@ async function linkAllPkgs (
     supportedArchitectures?: SupportedArchitectures
   }
 ): Promise<void> {
+  // Resolved `engines.runtime` Node version (when present) so the
+  // side-effects-cache key prefix tracks the script-runner Node
+  // rather than pnpm's own `process.version`. Computed once outside
+  // the per-node loop.
+  const nodeVersion = findRuntimeNodeVersion(Object.keys(opts.depGraph))
   const restorer = createRemoteSideEffectsRestorer({
     allowBuild: opts.allowBuild,
     configByUri: opts.configByUri,
     depsGraph: opts.depGraph,
     depsStateCache: opts.depsStateCache,
     ignoreScripts: opts.ignoreScripts,
-    nodeVersion: opts.nodeVersion,
+    nodeVersion,
     pnprServer: opts.pnprServer,
     settings: opts.remoteSideEffectsCache,
     sideEffectsCacheRead: opts.sideEffectsCacheRead,
@@ -619,14 +617,10 @@ async function linkAllPkgs (
       if (sideEffectsCacheKey == null && opts.sideEffectsCacheRead && files.sideEffectsMaps && !isEmpty(files.sideEffectsMaps)) {
         if (opts.allowBuild?.(depNode.depPath) === true) {
           const localCacheKey = calcDepState(opts.depGraph, opts.depsStateCache, depNode.depPath, {
-            includeDepGraphHash: shouldIncludeDepGraphHash({
-              ignoreScripts: opts.ignoreScripts,
-              deferDependencyBuilds: opts.deferDependencyBuilds,
-              requiresBuild: depNode.requiresBuild,
-            }),
+            includeDepGraphHash: !opts.ignoreScripts && depNode.requiresBuild === true,
             patchFileHash: depNode.patch?.hash,
             supportedArchitectures: opts.supportedArchitectures,
-            nodeVersion: opts.nodeVersion,
+            nodeVersion,
           })
           if (files.sideEffectsDiffs?.get(localCacheKey)?.remoteOrigin == null) {
             sideEffectsCacheKey = localCacheKey

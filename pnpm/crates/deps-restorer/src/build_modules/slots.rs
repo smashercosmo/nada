@@ -61,114 +61,71 @@ pub(crate) fn slot_carries_overlay(pkg_dir: &Path, overlay: &HashMap<String, Pat
             .all(|relative| pkg_dir.join(relative).exists())
 }
 
-/// The `.pnpm-needs-build` content of a slot whose build has started and
-/// not finished.
-const STARTED_BUILD_MARKER: &str = "started";
-
-/// Whether the slot's build started and then failed, or its process died,
-/// leaving files the build may have changed. Only a re-import of the
-/// pristine files, which rewrites the marker empty, makes it safe to build.
-/// A missing marker is `false`; any other read failure is an error, since
-/// the slot's state is then unknown.
-pub(crate) fn is_started_build_marker(marker: &Path) -> std::io::Result<bool> {
-    match std::fs::read(marker) {
-        Ok(content) => Ok(content == STARTED_BUILD_MARKER.as_bytes()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(error) => Err(error),
-    }
-}
-
-/// Mark a snapshot's global-virtual-store slot as mid-build, before its
-/// patch or build script writes into it.
+/// Whether `slot_dir` is a strict descendant of `root` reached only
+/// through `..`-free path components.
 ///
-/// A successful build removes the marker. A failed patch or build script,
-/// or a process that dies mid-build, leaves it in place instead of the
-/// slot being removed: other projects whose dependency graph hashes to it
-/// may already link it. The next install that reaches the slot then
-/// re-imports its pristine files and builds it again.
-///
-/// No-op outside the isolated global virtual store: the next install
-/// rebuilds a project-local slot from scratch anyway. A failed write is
-/// logged and swallowed; the build itself is what the install reports.
-pub(crate) fn mark_global_virtual_store_build_started(pkg_roots: PkgRoots<'_>, key: &PackageKey) {
-    if !pkg_roots.layout.enable_global_virtual_store() || pkg_roots.by_key.is_some() {
-        return;
-    }
-    let marker = virtual_store_dir_for_key(pkg_roots.layout, key).join(NEEDS_BUILD_MARKER);
-    if let Err(error) = std::fs::write(&marker, STARTED_BUILD_MARKER)
-        && error.kind() != std::io::ErrorKind::NotFound
-    {
-        tracing::warn!(
-            target: "pacquet::build",
-            ?error,
-            dep_path = %key,
-            marker = %marker.display(),
-            "failed to mark the global virtual store slot as mid-build",
-        );
-    }
-}
-
-/// Remove every installed copy of an optional dependency whose build
-/// failed, so a consumer that probes for it finds it absent rather than
-/// half-built. The next install finds the directory missing and retries
-/// the build.
-///
-/// Under the global virtual store this removes the package directory of
-/// the shared slot, and the caller must hold the slot's lock. The slot
-/// keeps its lock and its dependency links, and every project that links
-/// it finds the package absent. A directory that is not a plain descendant
-/// of the virtual store or the lockfile directory is left alone, since its
-/// path comes from a lockfile-controlled package name.
-pub(crate) fn discard_skipped_optional_dependency(
-    pkg_roots: PkgRoots<'_>,
-    lockfile_dir: &Path,
-    key: &PackageKey,
-) -> Result<(), BuildModulesError> {
-    let virtual_store_dir = pkg_roots.layout.package_store_dir();
-    for pkg_dir in pkg_roots.all_recorded(key) {
-        if !is_contained_descendant(virtual_store_dir, &pkg_dir)
-            && !is_contained_descendant(lockfile_dir, &pkg_dir)
-        {
-            tracing::warn!(
-                target: "pacquet::build",
-                dep_path = %key,
-                pkg_dir = %pkg_dir.display(),
-                "refusing to remove a skipped optional dependency outside the project",
-            );
-            continue;
-        }
-        // A duplicate placement is recorded as a link to the location
-        // imported first; the link is unlinked itself, never followed.
-        let remove = if pnpm_fs::is_symlink_or_junction(&pkg_dir).unwrap_or(false) {
-            pnpm_fs::remove_symlink_dir
-        } else {
-            pnpm_fs::remove_dir_all_with_retry
-        };
-        match remove(&pkg_dir) {
-            Ok(()) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-            Err(source) => {
-                return Err(BuildModulesError::RemoveSkippedOptionalDependency {
-                    path: pkg_dir,
-                    source,
-                });
-            }
-        }
-    }
-    Ok(())
-}
-
-/// Whether `dir` is a strict descendant of `root` reached only through
-/// `..`-free path components, so a crafted `..` segment in a
-/// lockfile-controlled package name cannot make a recursive delete escape
-/// `root`.
-pub(crate) fn is_contained_descendant(root: &Path, dir: &Path) -> bool {
-    dir.strip_prefix(root)
+/// The gate for [`discard_failed_global_virtual_store_slot`]'s recursive
+/// delete: `slot_dir` is derived from a lockfile-controlled package
+/// name, so a crafted `..` segment must not let the delete escape the
+/// store root.
+pub(crate) fn is_contained_descendant(root: &Path, slot_dir: &Path) -> bool {
+    slot_dir
+        .strip_prefix(root)
         .is_ok_and(|suffix| {
             let mut components = suffix.components().peekable();
             components.peek().is_some()
                 && components.all(|component| matches!(component, std::path::Component::Normal(_)))
         })
+}
+
+/// Remove a snapshot's whole global-virtual-store hash directory after
+/// its patch application or build script failed.
+///
+/// The hash directory is shared across every project that resolves to
+/// the same dependency graph, so leaving a half-built one behind would
+/// serve broken files to all of them: the next install finds the
+/// directory present, takes the warm fast path, and never re-fetches.
+/// Removing it restores the cold path.
+///
+/// No-op when the global virtual store is off — a project-local
+/// `node_modules/.pnpm` slot is rebuilt from scratch by the next
+/// install anyway. Removal failures are logged and swallowed; the build
+/// error the caller is already returning is the one worth surfacing.
+pub(crate) fn discard_failed_global_virtual_store_slot(
+    layout: &crate::VirtualStoreLayout,
+    key: &PackageKey,
+) {
+    if !layout.enable_global_virtual_store() {
+        return;
+    }
+    let slot_dir = layout.slot_dir(key);
+    // Defense-in-depth: the slot path is built from a lockfile-controlled
+    // package name, which is not validated against `..` segments. Refuse
+    // to recurse-delete anything that isn't a plain descendant of the GVS
+    // root, so a crafted name can't turn cleanup into a path traversal
+    // that removes directories outside the store.
+    let root = layout.package_store_dir();
+    if !is_contained_descendant(root, &slot_dir) {
+        tracing::warn!(
+            target: "pacquet::build",
+            dep_path = %key,
+            slot_dir = %slot_dir.display(),
+            store_root = %root.display(),
+            "refusing to remove a build slot outside the store root",
+        );
+        return;
+    }
+    if let Err(err) = std::fs::remove_dir_all(&slot_dir)
+        && err.kind() != std::io::ErrorKind::NotFound
+    {
+        tracing::warn!(
+            target: "pacquet::build",
+            ?err,
+            dep_path = %key,
+            slot_dir = %slot_dir.display(),
+            "failed to remove the global virtual store slot of a failed build",
+        );
+    }
 }
 
 /// Where each snapshot's package sits on disk, under either linker.
@@ -206,36 +163,14 @@ impl PkgRoots<'_> {
         }
     }
 
-    /// Every distinct on-disk directory holding a snapshot's package.
+    /// Every on-disk directory holding a snapshot's package.
     ///
     /// The isolated linker gives each snapshot exactly one virtual-store
     /// slot, so this is [`Self::canonical`] in a one-element list. The
     /// hoisted linker can place the same snapshot at several paths — a
     /// version conflict keeps a package out of the root and the walker
-    /// nests a copy under each consumer that needs it. Two recorded
-    /// locations may also alias one directory: the hoisted linker
-    /// replaces a duplicate placement with a symlink to the location
-    /// imported first (see [`crate::symlink_package()`]), so both paths
-    /// resolve to the same files. Those collapse here — a write has to
-    /// reach each distinct directory once, not once per recorded path.
+    /// nests a copy under each consumer that needs it.
     pub(crate) fn all(self, key: &PackageKey) -> Vec<PathBuf> {
-        match self.by_key {
-            Some(map) => match map.get(key) {
-                Some(dirs) => dedupe_aliased_dirs(dirs),
-                None => Vec::new(),
-            },
-            None => vec![virtual_store_dir_for_key(self.layout, key)],
-        }
-    }
-
-    /// Every recorded on-disk location of a snapshot's package, aliasing
-    /// included: a duplicate hoisted placement recorded as a link to
-    /// another location (see [`crate::symlink_package()`]) is listed as
-    /// itself, not collapsed into its target. Removal walks this list —
-    /// each alias has to be unlinked too, or it is left dangling over
-    /// the removed directory — while writes use [`Self::all`] to reach
-    /// each distinct directory once.
-    pub(crate) fn all_recorded(self, key: &PackageKey) -> Vec<PathBuf> {
         match self.by_key {
             Some(map) => map
                 .get(key)
@@ -244,27 +179,6 @@ impl PkgRoots<'_> {
             None => vec![virtual_store_dir_for_key(self.layout, key)],
         }
     }
-}
-
-/// Collapse locations that resolve to one directory, keeping the recorded
-/// (non-canonicalized) paths so consumers keep writing where the walker
-/// placed them. Single-location snapshots — the common case — skip the
-/// canonicalization entirely.
-fn dedupe_aliased_dirs(dirs: &[PathBuf]) -> Vec<PathBuf> {
-    if dirs.len() == 1 {
-        return dirs.to_vec();
-    }
-    let mut seen = std::collections::HashSet::with_capacity(dirs.len());
-    let mut distinct = Vec::with_capacity(dirs.len());
-    for dir in dirs {
-        // A path that fails to canonicalize is kept: the directory may
-        // genuinely be gone, and the caller's own `exists()` handling
-        // decides what that means.
-        if seen.insert(dir.canonicalize().unwrap_or_else(|_| dir.clone())) {
-            distinct.push(dir.clone());
-        }
-    }
-    distinct
 }
 
 /// Re-import a snapshot's package directory from the side-effects cache

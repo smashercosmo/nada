@@ -3,7 +3,6 @@ import { expect, test } from '@jest/globals'
 import {
   depPathToFilename,
   getPkgIdWithPatchHash,
-  hasPatchHash,
   isAbsolute,
   isRuntimeDepPath,
   parse,
@@ -210,11 +209,4 @@ test('depPathToFilename() escapes trailing dots and spaces', () => {
 
 test('depPathToFilename() escapes registry-qualified dep paths', () => {
   expect(depPathToFilename('foo@work:1.0.0', 120)).toBe('foo@work+1.0.0')
-})
-
-test('hasPatchHash()', () => {
-  expect(hasPatchHash('foo@1.0.0(patch_hash=abc)')).toBe(true)
-  expect(hasPatchHash('foo@1.0.0(patch_hash=abc)(bar@2.0.0)')).toBe(true)
-  expect(hasPatchHash('foo@1.0.0(bar@2.0.0(patch_hash=abc))')).toBe(false)
-  expect(hasPatchHash('foo@1.0.0')).toBe(false)
 })

@@ -1,2 +1,1 @@
-export { compareVersions } from './compareVersions.js'
-export { findDependencyLicenses, type LicensePackage, mergeLicensePackagePaths } from './licenses.js'
+export { findDependencyLicenses, type LicensePackage } from './licenses.js'

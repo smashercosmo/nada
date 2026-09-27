@@ -118,11 +118,7 @@ export function withFileLockRetry<T> (operation: () => T): T {
   }
 }
 
-/**
- * Asynchronous {@link withFileLockRetry}, which waits between attempts
- * without blocking the event loop.
- */
-export async function withFileLockRetryAsync<T> (operation: () => Promise<T>): Promise<T> {
+async function withFileLockRetryAsync<T> (operation: () => Promise<T>): Promise<T> {
   const retry = createFileLockRetry()
   for (;;) {
     try {
@@ -164,7 +160,7 @@ function createFileLockRetry (): FileLockRetry {
   }
 }
 
-export function isTransientFileLockError (err: unknown): err is NodeJS.ErrnoException {
+function isTransientFileLockError (err: unknown): err is NodeJS.ErrnoException {
   return (process.platform === 'win32' || isWsl()) &&
     util.types.isNativeError(err) &&
     'code' in err &&

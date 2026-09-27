@@ -1,7 +1,5 @@
 use std::sync::LazyLock;
 
-use pnpm_fs::is_subdir;
-
 use super::super::{
     BTreeMap, Config, HashMap, HashSet, PackageKey, PackageMetadata, Path, PathBuf, Prefix,
     SkippedSnapshots, SnapshotEntry, build_direct_deps_by_importer, create_matcher,
@@ -137,17 +135,9 @@ pub fn compute_hoist_plan(
         private_pattern,
         public_pattern,
         hoisted_workspace_packages,
-        hoist_root_dependencies: needs_private_root_hoisting(config),
     })?;
     Some(HoistPlan { graph, result, skipped: hoist_skipped })
 }
-
-fn needs_private_root_hoisting(config: &Config) -> bool {
-    config.modules_dir
-        .parent()
-        .is_some_and(|project_dir| !is_subdir(project_dir, &config.virtual_store_dir))
-}
-
 /// Build the `<alias → resolved-target-dir>` map for every publicly-
 /// hoisted entry that will land in root's `node_modules/`. Pacquet
 /// runs the dedupe pass before the on-disk hoist phase, so this map
@@ -215,26 +205,41 @@ pub fn parse_major_from_version(version: &str) -> Option<u32> {
     let after_v = version.strip_prefix('v').unwrap_or(version);
     after_v.split('.').next()?.parse().ok()
 }
-/// The Node.js major the root project's `node@runtime:` dependency pins.
+/// Pull the `node@runtime:<version>` major out of a lockfile's
+/// `snapshots:` map, if the project pinned a runtime Node.
 ///
-/// The engine-name string anchors the GVS hash and the side-effects-cache
-/// key prefix to that pinned major instead of the host's own
-/// `node --version`. Only the root importer's pin counts: it is the `node`
-/// that dependency build scripts run with. A dependency's own
-/// `engines.runtime` pin keys only that dependency's hash, through
-/// [`find_own_runtime_node_major`].
+/// The runtime resolver writes the pinned Node into the lockfile as a
+/// snapshot with key `node@runtime:<version>`. The engine-name string
+/// anchors the GVS hash and the side-effects-cache key prefix to that
+/// pinned major instead of the host's own `node --version`. Scans the
+/// snapshots with "first hit wins" semantics (the resolver rejects
+/// workspaces with conflicting pins before they reach the lockfile).
 ///
-/// Returns `None` when the root project pins no runtime. Callers then fall
-/// through to the host probe (`node --version` or the cached `host_node`).
+/// Returns `None` when no importer pinned a runtime — callers should
+/// then fall through to the host probe (`node --version` or the
+/// cached `host_node`).
 #[must_use]
 pub fn find_runtime_node_major(
-    importers: &HashMap<String, pnpm_lockfile::ProjectSnapshot>,
+    snapshots: Option<&HashMap<PackageKey, SnapshotEntry>>,
 ) -> Option<u32> {
-    // `Version::major` is `u64`; the major is small (<=99 in practice), so
-    // the cast is lossless. The downstream `engine_name` argument is `u32`.
-    let major =
-        crate::installability::root_runtime_node_ver_peer(importers)?.version_semver()?.major;
-    Some(major as u32)
+    let snapshots = snapshots?;
+    for key in snapshots.keys() {
+        if key.suffix.prefix() != Prefix::Runtime {
+            continue;
+        }
+        // Only `node@runtime:` feeds the Node-shaped engine string —
+        // `bun@runtime:` and `deno@runtime:` exist as separate runtime
+        // kinds. Scan for `node@runtime:` exclusively.
+        if key.name.scope.is_some() || key.name.bare != "node" {
+            continue;
+        }
+        // `Version::major` is `u64`; the major is small (<=99 in
+        // practice), so the cast is lossless. The downstream
+        // `engine_name` argument is `u32`.
+        let major = key.suffix.version_semver()?.major;
+        return Some(major as u32);
+    }
+    None
 }
 /// Read one snapshot's own `engines.runtime` Node pin from its
 /// `dependencies` map. The resolver desugars `engines.runtime`

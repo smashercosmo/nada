@@ -174,11 +174,12 @@ impl InstallPackageBySnapshot<'_> {
         let raw_cas_paths = download_tarball::<Reporter>(
             download,
             self.fetching.tarball_mem_cache
-                .filter(|_| {
-                    matches!(
-                        fetch.resolution,
-                        LockfileResolution::Registry(_) | LockfileResolution::Tarball(_),
-                    )
+                .filter(|_| match fetch.resolution {
+                    LockfileResolution::Registry(_) => true,
+                    LockfileResolution::Tarball(tarball) => {
+                        pnpm_lockfile::is_git_hosted_tarball_url(&tarball.tarball)
+                    }
+                    _ => false,
                 })
                 .map(std::convert::AsRef::as_ref),
             revision_addressed,

@@ -87,9 +87,7 @@ use indexmap::IndexMap;
 use pnpm_config::Config as PacquetConfig;
 use pnpm_lockfile::Lockfile;
 use pnpm_lockfile_verification::{collect_resolution_policy_violations, hash_lockfile};
-use pnpm_network::{
-    AuthHeaders, GuardedDnsResolver, ThrottledClient, UpstreamRouteHook, native_dns_resolver,
-};
+use pnpm_network::{AuthHeaders, ThrottledClient, UpstreamRouteHook};
 use pnpm_package_manager::build_resolution_verifiers;
 use pnpm_resolving_npm_resolver::{
     InMemoryPackageMetaCache, ObservedDistStats, PackageMetaCache, observed_dist_stats_sink,
@@ -102,7 +100,7 @@ use self::{
     protocol::{EcosystemProbe, ResolveRequest},
     request_validation::{
         reject_inline_url_auth, reject_invalid_patch_hashes, reject_invalid_registries,
-        reject_off_allowlist_fetches, reject_unsafe_publish_directories,
+        reject_off_allowlist_fetches,
     },
     verdict_cache::VerdictCache,
     wire::{
@@ -215,17 +213,11 @@ impl Resolver {
         let route_context = Arc::new(RouteContext::from_config(config));
         // Re-validate every redirect hop against the same fetch allowlist the
         // request boundary uses, so an allowlisted registry that redirects to
-        // an off-allowlist host cannot slip a server-side fetch past it (SSRF),
-        // and check every address a hostname resolves to before connecting.
+        // an off-allowlist host cannot slip a server-side fetch past it (SSRF).
         let redirect_context = Arc::clone(&route_context);
-        let connect_context = Arc::clone(&route_context);
-        let client = Arc::new(ThrottledClient::new_for_installs_with_guards(
-            move |url| redirect_context.allows_fetch(url.as_str()),
-            Arc::new(GuardedDnsResolver::new(
-                native_dns_resolver(),
-                Arc::new(move |host, address| connect_context.allows_address(host, address)),
-            )),
-        ));
+        let client = Arc::new(ThrottledClient::new_for_installs_with_redirect_guard(move |url| {
+            redirect_context.allows_registry(url.as_str())
+        }));
         Resolver {
             store_dir: StoreDir::new(store_dir),
             client,
@@ -484,7 +476,6 @@ fn reject_unusable_resolve(request: &ResolveRequest, context: &RouteContext) -> 
     reject_invalid_registries(request)
         .or_else(|| reject_invalid_patch_hashes(request))
         .or_else(|| reject_inline_url_auth(request))
-        .or_else(|| reject_unsafe_publish_directories(request))
         .or_else(|| reject_off_allowlist_fetches(request, context))
 }
 

@@ -269,20 +269,11 @@ fn do_not_fail_on_optional_dep_with_failing_postinstall() {
         scripts: crate::BuildScriptOptions {
             extra_env: &HashMap::new(),
             user_agent: "pnpm/test",
-            path: crate::ScriptPath {
-                prepend_node_path: ScriptsPrependNodePath::Never,
-                extra_bin_paths: &[],
-                private_hoisting: false,
-            },
+            prepend_node_path: ScriptsPrependNodePath::Never,
             shell: None,
             shell_emulator: false,
             unsafe_perm: true,
             ignore: false,
-            patched_engines: crate::PatchedEngineCheck {
-                engine_strict: false,
-                node_version: None,
-                virtual_store_dir: None,
-            },
         },
 
         allow_build_policy: &policy,
@@ -374,20 +365,11 @@ pub(super) fn fail_when_failing_postinstall_is_required() {
         scripts: crate::BuildScriptOptions {
             extra_env: &HashMap::new(),
             user_agent: "pnpm/test",
-            path: crate::ScriptPath {
-                prepend_node_path: ScriptsPrependNodePath::Never,
-                extra_bin_paths: &[],
-                private_hoisting: false,
-            },
+            prepend_node_path: ScriptsPrependNodePath::Never,
             shell: None,
             shell_emulator: false,
             unsafe_perm: true,
             ignore: false,
-            patched_engines: crate::PatchedEngineCheck {
-                engine_strict: false,
-                node_version: None,
-                virtual_store_dir: None,
-            },
         },
 
         allow_build_policy: &policy,
@@ -503,20 +485,11 @@ async fn write_path_disabled_skips_upload() {
         scripts: crate::BuildScriptOptions {
             extra_env: &HashMap::new(),
             user_agent: "pnpm/test",
-            path: crate::ScriptPath {
-                prepend_node_path: ScriptsPrependNodePath::Never,
-                extra_bin_paths: &[],
-                private_hoisting: false,
-            },
+            prepend_node_path: ScriptsPrependNodePath::Never,
             shell: None,
             shell_emulator: false,
             unsafe_perm: true,
             ignore: false,
-            patched_engines: crate::PatchedEngineCheck {
-                engine_strict: false,
-                node_version: None,
-                virtual_store_dir: None,
-            },
         },
 
         allow_build_policy: &policy,
@@ -654,20 +627,11 @@ async fn upload_error_does_not_interrupt_install() {
         scripts: crate::BuildScriptOptions {
             extra_env: &HashMap::new(),
             user_agent: "pnpm/test",
-            path: crate::ScriptPath {
-                prepend_node_path: ScriptsPrependNodePath::Never,
-                extra_bin_paths: &[],
-                private_hoisting: false,
-            },
+            prepend_node_path: ScriptsPrependNodePath::Never,
             shell: None,
             shell_emulator: false,
             unsafe_perm: true,
             ignore: false,
-            patched_engines: crate::PatchedEngineCheck {
-                engine_strict: false,
-                node_version: None,
-                virtual_store_dir: None,
-            },
         },
 
         allow_build_policy: &policy,
@@ -756,65 +720,26 @@ fn pkg_root_for_key_uses_parsed_name_for_non_registry_version() {
     assert!(result.ends_with(Path::new("node_modules").join("foo")), "package name: {result:?}");
 }
 
-/// The failed-optional-build cleanup only recurse-deletes a directory that
-/// sits strictly inside its root through `..`-free components, so a crafted
-/// package name cannot turn the cleanup into a path traversal.
+/// The GVS build-failure cleanup only recurse-deletes a slot that sits
+/// strictly inside the store root through `..`-free components, so a
+/// crafted package name cannot turn the cleanup into a path traversal.
 #[test]
 fn is_contained_descendant_rejects_traversal_and_escapes() {
-    let root = Path::new("/project/node_modules/.pnpm");
+    let root = Path::new("/store/v11/links");
 
-    assert!(is_contained_descendant(
-        root,
-        &root.join("@pnpm.e2e+foo@1.0.0/node_modules/@pnpm.e2e/foo")
-    ));
-    assert!(is_contained_descendant(root, &root.join("foo@1.0.0/node_modules/foo")));
+    // A normal GVS slot suffix is accepted.
+    assert!(is_contained_descendant(root, &root.join("@pnpm.e2e/foo/1.0.0/deadbeef")));
+    assert!(is_contained_descendant(root, &root.join("foo/1.0.0/deadbeef")));
 
     // A `..` segment that climbs out of the root is rejected even though
     // the path still textually starts with the root.
     assert!(!is_contained_descendant(root, &root.join("../../../etc/passwd")));
     assert!(!is_contained_descendant(root, &root.join("foo/../../../escape")));
 
-    // The root itself is not a descendant.
+    // The root itself is not a descendant — deleting it wholesale is not
+    // a per-slot cleanup.
     assert!(!is_contained_descendant(root, root));
 
     // A sibling that merely shares a name prefix is not contained.
-    assert!(!is_contained_descendant(root, Path::new("/project/node_modules/.pnpm-evil/foo")));
-}
-
-/// A hoisted snapshot recorded at a real placement plus a link that
-/// aliases it loses both on an optional-build skip. Walking the deduped
-/// write list would remove only the real directory and leave the link
-/// dangling where the consumer must see the package as absent.
-#[test]
-fn discard_skipped_optional_dependency_unlinks_the_hoisted_alias_too() {
-    let dir = tempdir().unwrap();
-    let mut config = Config::new();
-    config.store_dir = dir.path().join("store").into();
-    config.modules_dir = dir.path().join("node_modules");
-    config.virtual_store_dir = dir.path().join("node_modules/.pacquet");
-    let config = config.leak();
-    let layout = VirtualStoreLayout::new(config, None, None, None, None, None);
-
-    let placement = dir.path().join("node_modules/.pnpm/is-odd@3.0.0/node_modules/is-odd");
-    std::fs::create_dir_all(&placement).expect("create the real placement");
-    let alias = dir.path().join("packages/pkg-a/node_modules/is-odd");
-    std::fs::create_dir_all(alias.parent().expect("alias parent")).expect("create alias parent");
-    pnpm_fs::symlink_dir(&placement, &alias).expect("record the aliased duplicate placement");
-
-    let key: PackageKey = "/is-odd@3.0.0".parse().expect("parse key");
-    let map =
-        std::collections::HashMap::from([(key.clone(), vec![placement.clone(), alias.clone()])]);
-
-    super::super::discard_skipped_optional_dependency(
-        super::super::PkgRoots { layout: &layout, by_key: Some(&map) },
-        dir.path(),
-        &key,
-    )
-    .expect("discard the skipped optional dependency");
-
-    assert!(!placement.exists(), "the real placement must be removed");
-    assert!(
-        std::fs::symlink_metadata(&alias).is_err(),
-        "the aliasing link must be unlinked, not left dangling",
-    );
+    assert!(!is_contained_descendant(root, Path::new("/store/v11/links-evil/foo")));
 }

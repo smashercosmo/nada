@@ -8,7 +8,7 @@ use crate::{
     script_working_dir::{
         emulator_working_dir, is_refused_directory, script_working_dir, shorter_working_dirs,
     },
-    shell::{ScriptShellError, SelectedShell, missing_script_shell, script_body, select_shell},
+    shell::{ScriptShellError, SelectedShell, missing_script_shell, select_shell},
     shell_emulator::{EmulatedOutput, ShellEmulatorError, execute_emulated},
 };
 use derive_more::{Display, Error};
@@ -524,7 +524,7 @@ fn run_in_shell<Reporter: self::Reporter>(
     // Windows `cmd /d /s /c` path needs `raw_arg` rather than `arg`
     // (see [`push_script_arg`]) — a branch the method chain can't
     // express.
-    push_script_arg(&mut cmd, &script_body(shell, script), shell.windows_verbatim_args);
+    push_script_arg(&mut cmd, script, shell.windows_verbatim_args);
     // Stripping inherited env so leftover npm_* keys from a wrapping
     // invocation cannot leak in. `build_env` already folded the
     // surviving parent keys into `built.env`.
@@ -536,14 +536,29 @@ fn run_in_shell<Reporter: self::Reporter>(
     let mut child = spawn_in_pkg_root(&mut cmd, pkg_root)
         .map_err(|error| spawn_error(opts, stage, pkg_root, error))?;
 
+    let stdout = child.child_mut().stdout.take();
+    let stderr = child.child_mut().stderr.take();
+
     let target = StreamedScript { dep_path: opts.dep_path, stage, wd, emit: Reporter::emit };
-    let status = target
-        .pump(&mut child)
+    let stdout_handle = stdout.map(|stream| target.pump_stream(stream, LifecycleStdio::Stdout));
+    let stderr_handle = stderr.map(|stream| target.pump_stream(stream, LifecycleStdio::Stderr));
+
+    let status = child
+        .wait()
         .map_err(|error| LifecycleScriptError::Wait {
             dep_path: opts.dep_path.to_string(),
             stage: stage.to_string(),
             source: error,
         })?;
+
+    // Joining the pumps after `wait` ensures every line they read is
+    // emitted before the caller's `Exit` event, matching pnpm's ordering.
+    if let Some(handle) = stdout_handle {
+        let _ = handle.join();
+    }
+    if let Some(handle) = stderr_handle {
+        let _ = handle.join();
+    }
 
     Ok(ScriptExit::Process(status))
 }

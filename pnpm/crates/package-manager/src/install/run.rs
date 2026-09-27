@@ -34,7 +34,7 @@ use super::{
 use pnpm_config::Config;
 
 use crate::{
-    PolicyExcludes, PreferredVersionsOverride, ProjectMutation,
+    PolicyExcludes, ProjectMutation,
     catalog_cleanup::{
         post_install_prune, write_workspace_catalogs, write_workspace_catalogs_selected,
     },
@@ -172,8 +172,6 @@ where
         );
         owned.http_client_arc.set_warning_handler(pnpm_reporter::emit_global_warning::<Reporter>);
         let mode = RunMode::settle(install, &owned, &options)?;
-        owned.projects.dependency_groups =
-            super::project_dependency_groups(std::mem::take(&mut owned.projects.dependency_groups));
         let rollback_guard = if install.should_prune_catalogs(&options) {
             install.prune_workspace_catalogs(
                 &options,
@@ -350,7 +348,7 @@ struct InstallOwned {
 #[derive(Default)]
 pub struct ResolutionInputs {
     pub update_seed_policy: UpdateSeedPolicy,
-    pub preferred_versions_override: Option<PreferredVersionsOverride>,
+    pub preferred_versions_override: Option<pnpm_resolving_resolver_base::PreferredVersions>,
     pub auth_override: Option<Arc<super::AuthHeaders>>,
     pub observer: Option<Arc<dyn crate::ResolutionObserver>>,
     pub peer_issues_sink: Option<crate::PeerIssuesSink>,

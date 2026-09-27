@@ -43,9 +43,6 @@ impl ReporterState {
             | ProgressMessage::Imported { requester, .. } => requester.clone(),
         };
         let entry = self.downloads.progress.entry(requester.clone()).or_default();
-        if entry.done {
-            return;
-        }
         match message {
             ProgressMessage::Resolved { .. } => entry.stats.resolved += 1,
             ProgressMessage::Fetched { .. } => entry.stats.fetched += 1,
@@ -82,9 +79,7 @@ impl ReporterState {
                 let mut slot =
                     std::mem::take(&mut self.downloads.progress.get_mut(prefix).unwrap().slot);
                 self.display.frame.emit(&mut slot, msg, false);
-                let entry = self.downloads.progress.get_mut(prefix).unwrap();
-                entry.slot = slot;
-                entry.done = true;
+                self.downloads.progress.get_mut(prefix).unwrap().slot = slot;
             }
             _ => {}
         }

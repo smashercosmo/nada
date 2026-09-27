@@ -27,9 +27,6 @@ pub struct UnlinkArgs {
 
 impl UnlinkArgs {
     pub(crate) fn apply_cli_config(&self, config: &mut Config) {
-        if self.ignore_pnpmfile {
-            config.cli_settings.insert("ignorePnpmfile".to_string());
-        }
         config.ignore_pnpmfile = self.ignore_pnpmfile || config.ignore_pnpmfile;
     }
 

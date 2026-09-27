@@ -115,8 +115,6 @@ export interface StrictInstallOptions extends RegistryContext {
   includeDirect: IncludedDependencies
   ignoreCurrentSpecifiers: boolean
   ignoreScripts: boolean
-  /** Dependency builds are postponed until the workspace-wide rebuild pass. */
-  deferDependencyBuilds: boolean
   childConcurrency: number
   userAgent: string
   unsafePerm: boolean
@@ -342,7 +340,6 @@ const defaults = (opts: InstallOptions): StrictInstallOptions => {
     hooks: {},
     ignoreCurrentSpecifiers: false,
     ignoreScripts: false,
-    deferDependencyBuilds: false,
     include: {
       dependencies: true,
       devDependencies: true,
@@ -431,7 +428,6 @@ export interface ProcessedInstallOptions extends StrictInstallOptions {
    * `mutateModules` adds its own for a catalog entry it moves.
    */
   preferredVersions?: PreferredVersions
-  preferredVersionsByImporterId?: Record<string, PreferredVersions>
   parsedOverrides: VersionOverride[]
   /**
    * Present when the overrides contain convergence entries (`"pkg@"`). The
@@ -462,7 +458,15 @@ export function extendOptions (
   if (extendedOpts.parsedOverrides.some(({ converge }) => converge)) {
     extendedOpts.convergeDeclaredRanges = new Map()
   }
-  extendedOpts.readPackageHook = createInstallReadPackageHook(extendedOpts, extendedOpts.parsedOverrides)
+  extendedOpts.readPackageHook = createReadPackageHook({
+    ignoreCompatibilityDb: extendedOpts.ignoreCompatibilityDb,
+    readPackageHook: extendedOpts.hooks?.readPackage,
+    overrides: extendedOpts.parsedOverrides,
+    convergeDeclaredRanges: extendedOpts.convergeDeclaredRanges,
+    lockfileDir: extendedOpts.lockfileDir,
+    packageExtensions: extendedOpts.packageExtensions,
+    ignoredOptionalDependencies: extendedOpts.ignoredOptionalDependencies,
+  })
   if (extendedOpts.virtualStoreOnly && !extendedOpts.enableModulesDir && !extendedOpts.enableGlobalVirtualStore) {
     throw new PnpmError('CONFIG_CONFLICT_VIRTUAL_STORE_ONLY_WITH_NO_MODULES_DIR',
       'Cannot use virtualStoreOnly when enableModulesDir is false (the standard virtual store requires node_modules/.pnpm)')
@@ -506,19 +510,4 @@ export function extendOptions (
     ? extendedOpts.virtualStoreDir!
     : path.join(extendedOpts.storeDir, 'links')
   return extendedOpts
-}
-
-export function createInstallReadPackageHook (
-  opts: Pick<ProcessedInstallOptions, 'convergeDeclaredRanges' | 'hooks' | 'ignoreCompatibilityDb' | 'ignoredOptionalDependencies' | 'lockfileDir' | 'packageExtensions'>,
-  parsedOverrides: VersionOverride[]
-): ReadPackageHook | undefined {
-  return createReadPackageHook({
-    ignoreCompatibilityDb: opts.ignoreCompatibilityDb,
-    readPackageHook: opts.hooks?.readPackage,
-    overrides: parsedOverrides,
-    convergeDeclaredRanges: opts.convergeDeclaredRanges,
-    lockfileDir: opts.lockfileDir,
-    packageExtensions: opts.packageExtensions,
-    ignoredOptionalDependencies: opts.ignoredOptionalDependencies,
-  })
 }

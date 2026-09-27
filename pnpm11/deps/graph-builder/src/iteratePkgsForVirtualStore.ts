@@ -4,6 +4,7 @@ import {
   calcGraphNodeHash,
   type DepsGraph,
   type DepsStateCache,
+  findRuntimeNodeVersion,
   type GraphNodeHashOptions,
   type HashedDepPath,
   iterateHashedGraphNodes,
@@ -14,7 +15,6 @@ import {
 import * as dp from '@pnpm/deps.path'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import {
-  findLockedRootNodeRuntime,
   nameVerFromPkgSnapshot,
 } from '@pnpm/lockfile.utils'
 import type { AllowBuild, DepPath, SupportedArchitectures } from '@pnpm/types'
@@ -33,13 +33,13 @@ export function * iteratePkgsForVirtualStore (lockfile: LockfileObject, opts: {
   globalVirtualStoreDir: string
   supportedArchitectures?: SupportedArchitectures
 }): IterableIterator<PkgSnapshotWithLocation> {
-  // Resolve the root project's pinned runtime Node version once per
+  // Resolve the project's pinned runtime Node version once per
   // invocation — the result drives every snapshot's GVS hash (or
   // the side-effects-cache key prefix in the non-GVS runtime
   // branch). `undefined` when no `engines.runtime` / `devEngines.runtime`
   // pin reached the lockfile, in which case the hasher falls through
   // to the host-detected Node.
-  const nodeVersion = findLockedRootNodeRuntime(lockfile)?.version
+  const nodeVersion = findRuntimeNodeVersion(Object.keys(lockfile.packages ?? {}))
   if (opts.enableGlobalVirtualStore) {
     for (const { hash, pkgMeta } of hashDependencyPaths(lockfile, {
       allowBuild: opts.allowBuild,

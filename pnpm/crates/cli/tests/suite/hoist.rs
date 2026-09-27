@@ -23,8 +23,6 @@
 
 pub use _utils::*;
 
-mod external_virtual_store;
-
 use crate::_utils;
 
 use assert_cmd::prelude::*;

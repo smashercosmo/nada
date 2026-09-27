@@ -22,7 +22,7 @@ pub use workspace_state::{
 };
 pub(crate) use workspace_state::{
     build_workspace_state, configured_or_discovered_workspace_dir, lockfile_root_dir,
-    update_workspace_state_or_warn, workspace_packages_for_freshness,
+    workspace_packages_for_freshness,
 };
 
 mod entry_points;
@@ -39,6 +39,8 @@ use crate::{
     optimistic_repeat_install::Decision as OptimisticRepeatInstallDecision,
     prune_merged_branch_lockfile::prune_merged_branch_lockfile, report_merged_lockfile_conflicts,
 };
+use derive_more::{Display, Error};
+use miette::Diagnostic;
 use pnpm_catalogs_config::get_catalogs_from_workspace_manifest;
 use pnpm_catalogs_types::Catalogs;
 use pnpm_config::{Config, NodeLinker, PNPM_VERSION};
@@ -68,7 +70,7 @@ use pnpm_reporter::{
 use pnpm_resolving_npm_resolver::InMemoryPackageMetaCache;
 use pnpm_resolving_resolver_base::ResolutionVerifier;
 use pnpm_tarball::MemCache;
-use pnpm_workspace_state::{ProjectEntry, WorkspaceState};
+use pnpm_workspace_state::{ProjectEntry, WorkspaceState, update_workspace_state};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     path::{Path, PathBuf},
@@ -91,18 +93,6 @@ pub(super) fn included_dependencies(dependency_groups: &[DependencyGroup]) -> In
         dev_dependencies: dependency_groups.contains(&DependencyGroup::Dev),
         optional_dependencies: dependency_groups.contains(&DependencyGroup::Optional),
     }
-}
-
-/// The groups the install reads from each project's own manifest and
-/// importer. A project's `optionalDependencies` install with its
-/// production dependencies, so a run without `Prod` drops them here while
-/// [`included_dependencies`] keeps following the optional dependencies of
-/// the packages it installs.
-pub(super) fn project_dependency_groups(mut groups: Vec<DependencyGroup>) -> Vec<DependencyGroup> {
-    if !groups.contains(&DependencyGroup::Prod) {
-        groups.retain(|group| *group != DependencyGroup::Optional);
-    }
-    groups
 }
 
 mod run;

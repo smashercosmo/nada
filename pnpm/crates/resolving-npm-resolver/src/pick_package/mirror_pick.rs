@@ -4,7 +4,6 @@ use super::{
     TrustPolicy, dominant_lockfile_version, get_file_mtime, load_meta_async, pick_from_meta,
     pick_from_meta_fast, pick_stable_cached_range_version,
 };
-use crate::{errors::legacy_mirror_hint, mirror::get_legacy_pkg_mirror_path};
 
 impl PickState<'_> {
     /// The picks a read-only mirror can answer without taking the fetch
@@ -16,14 +15,6 @@ impl PickState<'_> {
         opts: &PickPackageOptions<'_>,
         disk_meta: &mut Option<Arc<Package>>,
     ) -> Option<PickPackageResult> {
-        // A registry that forbade caching must not be answered from the
-        // mirror on an online pick. Offline and prefer-offline still may.
-        if !ctx.cache_policy.offline
-            && !ctx.cache_policy.prefer_offline
-            && self.mirror_is_uncacheable().await
-        {
-            return None;
-        }
         if let Some(result) = self.version_spec_pick(ctx, spec, opts, disk_meta).await {
             return Some(result);
         }
@@ -65,12 +56,6 @@ impl PickState<'_> {
         };
         self.promote_unverified(ctx, opts, &meta);
         Some(PickPackageResult { meta: picked_meta, picked_package: Some(picked) })
-    }
-
-    /// `true` when the mirror's header line says the last response forbade caching.
-    pub(super) async fn mirror_is_uncacheable(&self) -> bool {
-        crate::mirror::load_meta_headers_async(self.pkg_mirror.as_deref()).await
-            .is_some_and(|headers| headers.uncacheable)
     }
 
     /// The mirror, loaded once and reused by every fast path.
@@ -202,20 +187,10 @@ impl PickState<'_> {
         let meta = self.mirror_meta(disk_meta).await;
         if ctx.cache_policy.offline {
             let Some(meta) = meta else {
-                let legacy_mirror = ctx.metadata.cache_dir.and_then(|dir| {
-                    get_legacy_pkg_mirror_path(dir, self.base_meta_dir, opts.registry, &spec.name)
-                });
-                let hint = match legacy_mirror {
-                    Some(path) if tokio::fs::try_exists(&path).await.unwrap_or(false) => {
-                        Some(legacy_mirror_hint(&path))
-                    }
-                    _ => None,
-                };
                 return Err(PickPackageError::NoOfflineMeta {
                     spec_name: spec.name.clone(),
                     spec_fetch_spec: spec.fetch_spec.clone(),
                     pkg_mirror: self.pkg_mirror.clone().unwrap_or_default(),
-                    hint,
                 });
             };
             // `maybe_upgrade_abbreviated_meta_for_release_age` short-circuits

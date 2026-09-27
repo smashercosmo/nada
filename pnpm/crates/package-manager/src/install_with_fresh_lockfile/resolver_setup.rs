@@ -297,9 +297,7 @@ impl ResolverChainInputs<'_> {
     fn git_resolver(&self) -> GitResolver<RealGitProbe, RealGitRunner> {
         GitResolver::new(
             Arc::new(RealGitProbe::new(Arc::clone(self.fetching.http_client))),
-            Arc::new(
-                RealGitRunner::new().with_connect_guard(self.fetching.auth_headers.connect_guard()),
-            ),
+            Arc::new(RealGitRunner::new()),
         )
         .with_fetch_context(GitFetchContext {
             source_cache: Arc::clone(self.fetching.git_sources),
@@ -328,7 +326,6 @@ impl ResolverChainInputs<'_> {
                 auth_headers: Arc::clone(self.fetching.auth_headers),
                 retry_opts: self.retry_opts(),
                 prior_tarball_entries: Arc::new(prior_tarball_entries(self.project.lockfile)),
-                cache_dir: Some(self.config.cache_dir.clone()),
                 store: pnpm_tarball::ArchiveStoreContext {
                     strict_pkg_content_check: false,
                     prefetched_cas_paths: None,

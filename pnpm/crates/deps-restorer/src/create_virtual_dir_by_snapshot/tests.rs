@@ -1,7 +1,4 @@
-use super::{
-    CreateVirtualDirBySnapshot, SlotForceInputs, optimistic_wire_method, remove_obsolete_child,
-    slot_import_opts,
-};
+use super::{CreateVirtualDirBySnapshot, optimistic_wire_method, remove_obsolete_child};
 use pnpm_config::PackageImportMethod;
 use pnpm_fs::force_symlink_dir;
 use pnpm_lockfile::{PackageKey, PkgName, SnapshotEntry};
@@ -170,11 +167,9 @@ async fn run_emits_imported_event_after_import_indexed_dir() {
             method: PackageImportMethod::Hardlink,
             logged_methods: &logged_methods,
             requester: "/proj",
-            isolate_mutable_sources: false,
         },
         source: crate::SlotImportSource {
             is_mutable: false,
-            source_exists: true,
             force: false,
             build_marker: None,
             needs_build: false,
@@ -262,11 +257,9 @@ fn needs_build_slots_ignore_the_configured_import_method() {
                 method,
                 logged_methods: &logged_methods,
                 requester: "/proj",
-                isolate_mutable_sources: false,
             },
             source: crate::SlotImportSource {
                 is_mutable,
-                source_exists: true,
                 force: false,
                 build_marker: None,
                 needs_build,
@@ -360,11 +353,9 @@ fn a_build_write_does_not_reach_the_import_source() {
             method: PackageImportMethod::Hardlink,
             logged_methods: &logged_methods,
             requester: "/proj",
-            isolate_mutable_sources: false,
         },
         source: crate::SlotImportSource {
             is_mutable: true,
-            source_exists: true,
             force: false,
             build_marker: None,
             needs_build: true,
@@ -425,11 +416,9 @@ fn run_imports_needs_build_marker_with_a_fresh_package() {
             method: PackageImportMethod::Copy,
             logged_methods: &logged_methods,
             requester: "/proj",
-            isolate_mutable_sources: false,
         },
         source: crate::SlotImportSource {
             is_mutable: false,
-            source_exists: true,
             force: false,
             build_marker: Some(&marker_source),
             needs_build: true,
@@ -482,11 +471,9 @@ fn force_import_replaces_an_existing_package_at_the_same_snapshot_key() {
             method: PackageImportMethod::Copy,
             logged_methods: &AtomicU8::new(0),
             requester: "/proj",
-            isolate_mutable_sources: false,
         },
         source: crate::SlotImportSource {
             is_mutable: false,
-            source_exists: true,
             force: true,
             build_marker: None,
             needs_build: false,
@@ -540,11 +527,9 @@ fn run_rejects_traversal_package_name() {
             method: PackageImportMethod::Hardlink,
             logged_methods: &logged_methods,
             requester: "/proj",
-            isolate_mutable_sources: false,
         },
         source: crate::SlotImportSource {
             is_mutable: false,
-            source_exists: true,
             force: false,
             build_marker: None,
             needs_build: false,
@@ -606,11 +591,9 @@ async fn run_removes_obsolete_child_links() {
             method: PackageImportMethod::Hardlink,
             logged_methods: &logged_methods,
             requester: "/proj",
-            isolate_mutable_sources: false,
         },
         source: crate::SlotImportSource {
             is_mutable: false,
-            source_exists: true,
             force: false,
             build_marker: None,
             needs_build: false,
@@ -674,81 +657,4 @@ fn remove_obsolete_child_skips_traversal_through_a_dependency_symlink() {
     remove_obsolete_child(&node_modules, &PkgName::parse("foo/../victim").unwrap()).unwrap();
 
     assert!(victim.symlink_metadata().is_ok(), "cleanup must not unlink outside the slot");
-}
-
-/// A directory dependency's slot forces a reimport on every install, since
-/// the source can change without the lockfile changing. But when the source
-/// is a `publishConfig.directory` its own `prepare` script has not (re)built
-/// yet, `DirectoryFetcher` tolerates the missing directory and comes back
-/// with an empty file map; forcing a reimport from that would wipe an
-/// already-materialized slot. `source_exists: false` must suppress the
-/// force so the existing slot survives; an existing, genuinely empty source
-/// must still force, since that reflects a real change.
-#[test]
-fn slot_import_opts_forces_only_when_a_mutable_source_exists() {
-    let dir = tempdir().expect("tempdir");
-    let layout = crate::VirtualStoreLayout::legacy(
-        dir.path().to_path_buf(),
-        pnpm_config::default_virtual_store_dir_max_length() as usize,
-    );
-
-    let missing_source = slot_import_opts(
-        &layout,
-        SlotForceInputs {
-            interrupted_build: false,
-            source_is_mutable: true,
-            source_exists: false,
-            force_import: false,
-        },
-    );
-    assert!(!missing_source.force, "a missing mutable source must not force a reimport");
-
-    let existing_source = slot_import_opts(
-        &layout,
-        SlotForceInputs {
-            interrupted_build: false,
-            source_is_mutable: true,
-            source_exists: true,
-            force_import: false,
-        },
-    );
-    assert!(existing_source.force, "an existing mutable source must still force a reimport");
-}
-
-/// `interrupted_build` and `force_import` are independent reasons to force a
-/// reimport, but neither may override the missing-source preservation above:
-/// `pnpm install --force`, or a stale `.pnpm-needs-build` marker from an
-/// interrupted build, must not wipe a slot whose mutable source is missing.
-#[test]
-fn slot_import_opts_missing_source_overrides_interrupted_build_and_force_import() {
-    let dir = tempdir().expect("tempdir");
-    let layout = crate::VirtualStoreLayout::legacy(
-        dir.path().to_path_buf(),
-        pnpm_config::default_virtual_store_dir_max_length() as usize,
-    );
-
-    let interrupted_build = slot_import_opts(
-        &layout,
-        SlotForceInputs {
-            interrupted_build: true,
-            source_is_mutable: true,
-            source_exists: false,
-            force_import: false,
-        },
-    );
-    assert!(
-        !interrupted_build.force,
-        "interrupted_build must not force a reimport of a missing source",
-    );
-
-    let force_import = slot_import_opts(
-        &layout,
-        SlotForceInputs {
-            interrupted_build: false,
-            source_is_mutable: true,
-            source_exists: false,
-            force_import: true,
-        },
-    );
-    assert!(!force_import.force, "force_import must not force a reimport of a missing source");
 }

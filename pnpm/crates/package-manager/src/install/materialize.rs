@@ -193,7 +193,6 @@ impl<'a> MaterializationInputs<'a, '_> {
             },
             projects: crate::install_with_fresh_lockfile::FreshInstallProjects {
                 dependency_groups,
-                included: self.modules.included,
                 requester: self.execution.prefix,
                 lockfile_dir: self.workspace.workspace_root,
                 supported_architectures: self.execution.supported_architectures,

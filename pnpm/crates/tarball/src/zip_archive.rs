@@ -319,7 +319,7 @@ pub(crate) async fn fetch_and_extract_zip_once<Reporter: self::Reporter>(
     ignore_file_pattern: Option<Arc<IgnoreEntryFilter>>,
     max_bytes: Option<usize>,
 ) -> Result<(HashMap<String, PathBuf>, PackageFilesIndex), TarballError> {
-    let (client, response_head, _) = crate::archive_request::request_archive::<Reporter>(
+    let (client, response_head) = crate::archive_request::request_archive::<Reporter>(
         http_client,
         package_url,
         package_id,
@@ -327,7 +327,6 @@ pub(crate) async fn fetch_and_extract_zip_once<Reporter: self::Reporter>(
         pnpm_network::UNPRIORITIZED,
         attempt,
         false,
-        None,
     )
     .await?;
     let buffer =
@@ -437,10 +436,11 @@ impl ZipExtraction {
 }
 
 /// Run [`fetch_and_extract_zip_once`] under pnpm's retry policy.
-/// Same shape as [`crate::download::fetch_and_extract_with_retry`]:
-/// permanent errors fail fast, while transient errors retry with
-/// exponential backoff until [`RetryOpts::retries`] is exhausted.
-/// On success, emit `pnpm:progress fetched` once per resolved package.
+/// Same shape as [`crate::download::fetch_and_extract_with_retry`]: HTTP 401 / 403 /
+/// 404 fail fast, every other error retries with exponential
+/// backoff until [`RetryOpts::retries`] is exhausted. On success
+/// emits `pnpm:progress fetched` once per (resolved) package, same
+/// as the tarball path.
 // 10 arguments — over the default clippy threshold for the same
 // reason `fetch_and_extract_with_retry` is: each is distinct, and
 // bundling into a struct would just push the same fields into a

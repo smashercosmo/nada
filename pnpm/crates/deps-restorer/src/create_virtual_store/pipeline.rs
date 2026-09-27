@@ -322,11 +322,11 @@ impl<'a> CreateVirtualStore<'a> {
                         .collect()
                 }),
             template: LinkSlotsParallel {
-                import: crate::PackageImportOptions::from_config(
-                    config,
-                    self.ctx.logged_methods,
-                    self.ctx.requester,
-                ),
+                import: crate::PackageImportOptions {
+                    method: config.package_import_method,
+                    logged_methods: self.ctx.logged_methods,
+                    requester: self.ctx.requester,
+                },
                 link: crate::VirtualStoreLinkOptions {
                     layout: self.ctx.linker.layout,
                     dir_clone_cache: self.dir_clone_cache,
@@ -460,7 +460,6 @@ impl<'a> CreateVirtualStore<'a> {
 
                 store_index_writer: self.fetching.store_index_writer,
             },
-            self.importers,
         )
         .await;
     }

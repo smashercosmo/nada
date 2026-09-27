@@ -357,7 +357,7 @@ export async function pickPackage (
       ctx.offline === true ||
       !unverified ||
       (pickedPackage != null && unverifiedPickIsSafe)
-    if (cacheResultCanReturn && canServeCachedMeta(ctx, metaForCache)) {
+    if (cacheResultCanReturn) {
       return {
         meta: metaForCache,
         pickedPackage,
@@ -402,9 +402,7 @@ export async function pickPackage (
           }
         }
 
-        throw new PnpmError('NO_OFFLINE_META', `Failed to resolve ${toRaw(spec)} in package mirror ${pkgMirror}`, {
-          hint: await legacyMirrorHint(ctx.cacheDir, metaDir, opts.registry, spec.name),
-        })
+        throw new PnpmError('NO_OFFLINE_META', `Failed to resolve ${toRaw(spec)} in package mirror ${pkgMirror}`)
       }
 
       if (diskMeta != null) {
@@ -416,7 +414,7 @@ export async function pickPackage (
           ctx.metaCache.set(cacheKey, diskMeta)
         }
         const pickedPackage = pickMatchingVersionFinal(pickerOpts, spec, diskMeta)
-        if (pickedPackage && canServeCachedMeta(ctx, diskMeta)) {
+        if (pickedPackage) {
           // A cache hit re-runs maybeUpgradeAbbreviatedMetaForReleaseAge, so
           // serving this meta from memory can't bypass the release-age
           // upgrade. When the upgrade branch above already cached the
@@ -437,11 +435,7 @@ export async function pickPackage (
       diskMeta = diskMeta ?? await limit(loadMetaCondensed)
       // use the cached meta only if it has the required package version
       // otherwise it is probably out of date
-      if (
-        diskMeta != null &&
-        canServeCachedMeta(ctx, diskMeta) &&
-        (diskMeta.versions?.[spec.fetchSpec]) != null
-      ) {
+      if ((diskMeta?.versions?.[spec.fetchSpec]) != null) {
         try {
           const pickedPackage = pickMatchingVersionFast(pickerOpts, spec, diskMeta)
           if (pickedPackage) {
@@ -471,7 +465,7 @@ export async function pickPackage (
             preferredVersionSelectors: opts.preferredVersionSelectors,
             versionRange: spec.fetchSpec,
           })
-          if (stableVersion != null && canServeCachedMeta(ctx, diskMeta)) {
+          if (stableVersion != null) {
             // Strict dominance makes the preferred tier a singleton, so the
             // highest-version picker used by the proof and the normal picker
             // agree even if pickLowestVersion reaches this code in the future.
@@ -494,7 +488,7 @@ export async function pickPackage (
         if (diskMeta != null) {
           try {
             const pickedPackage = pickMatchingVersionFast(pickerOpts, spec, diskMeta)
-            if (pickedPackage && canServeCachedMeta(ctx, diskMeta)) {
+            if (pickedPackage) {
               return {
                 meta: diskMeta,
                 pickedPackage,
@@ -512,19 +506,13 @@ export async function pickPackage (
       // This avoids reading and parsing the full metadata file (which can be megabytes)
       // when the registry returns 200 and the old metadata would be discarded anyway.
       const cacheHeaders = diskMeta != null
-        ? {
-          etag: diskMeta.etag,
-          modified: diskMeta.modified ?? diskMeta.time?.modified,
-          uncacheable: diskMeta.uncacheable,
-        }
+        ? { etag: diskMeta.etag, modified: diskMeta.modified ?? diskMeta.time?.modified }
         : await limit(async () => loadMetaHeaders(pkgMirror))
-      const uncacheable = cacheHeaders?.uncacheable === true
       const conditional = await ctx.fetch(spec.name, {
         authHeaderValue: opts.authHeaderValue,
-        cacheBypass: uncacheable,
         fullMetadata,
-        etag: uncacheable ? undefined : cacheHeaders?.etag,
-        modified: uncacheable ? undefined : cacheHeaders?.modified,
+        etag: cacheHeaders?.etag,
+        modified: cacheHeaders?.modified,
         registry: opts.registry,
       })
       // `return await` (not `return`) so a failure inside persistFreshMeta lands
@@ -615,7 +603,7 @@ export async function pickPackage (
         if (!isModifiedValid || modifiedDate > opts.publishedBy) {
           // Save the abbreviated metadata to the abbreviated cache before re-fetching full.
           if (!opts.dryRun) {
-            saveMetaBestEffort(pkgMirror, prepareJsonForDisk(resultToSave.meta, resultToSave.etag, resultToSave), resultToSave.uncacheable === true)
+            saveMetaBestEffort(pkgMirror, prepareJsonForDisk(resultToSave.meta, resultToSave.etag, resultToSave.jsonText))
           }
           attemptedReleaseAgeUpgrade = true
           const fullFetchResult = await ctx.fetch(spec.name, {
@@ -645,9 +633,9 @@ export async function pickPackage (
         // describes what is written — see `prepareJsonForDisk`.
         const etagForDisk = resultToSave === fetched ? fetched.etag : undefined
         const jsonForDisk = writeCondensed
-          ? prepareJsonForDisk(meta, etagForDisk, { uncacheable: resultToSave.uncacheable })
-          : prepareJsonForDisk(resultToSave.meta, etagForDisk, resultToSave)
-        saveMetaBestEffort(pkgMirror, jsonForDisk, resultToSave.uncacheable === true)
+          ? prepareJsonForDisk(meta, etagForDisk)
+          : prepareJsonForDisk(resultToSave.meta, etagForDisk, resultToSave.jsonText)
+        saveMetaBestEffort(pkgMirror, jsonForDisk)
       }
       meta.etag = resultToSave.etag
       // only save meta to cache, when it is fresh
@@ -658,19 +646,6 @@ export async function pickPackage (
       }
     }
   })
-}
-
-/**
- * Offline and prefer-offline may serve a mirror the registry marked
- * uncacheable. Every other online path has to refetch it. The flag is only
- * set on packuments read from the mirror: a document fetched during this
- * install stays reusable for the rest of it.
- */
-function canServeCachedMeta (
-  ctx: { offline?: boolean, preferOffline?: boolean },
-  meta: PackageMeta
-): boolean {
-  return ctx.offline === true || ctx.preferOffline === true || meta.uncacheable !== true
 }
 
 // When `minimumReleaseAge` is active and we have abbreviated metadata (which
@@ -794,9 +769,9 @@ function persistUpgradedMeta (
 ): PackageMeta {
   const metaForCache = condenseMetaForCache(ctx, upgradedFrom.meta)
   const jsonForDisk = metaForCache === upgradedFrom.meta
-    ? prepareJsonForDisk(upgradedFrom.meta, undefined, upgradedFrom)
-    : prepareJsonForDisk(metaForCache, undefined, { uncacheable: upgradedFrom.uncacheable })
-  saveMetaBestEffort(pkgMirror, jsonForDisk, upgradedFrom.uncacheable === true)
+    ? prepareJsonForDisk(upgradedFrom.meta, undefined, upgradedFrom.jsonText)
+    : prepareJsonForDisk(metaForCache, undefined)
+  saveMetaBestEffort(pkgMirror, jsonForDisk)
   return metaForCache
 }
 
@@ -804,24 +779,14 @@ function persistUpgradedMeta (
  * The mirror is an optimization, so a write failure only gets a debug log
  * with the mirror path and the install continues.
  */
-function saveMetaBestEffort (pkgMirror: string, json: string, uncacheable = false): void {
+function saveMetaBestEffort (pkgMirror: string, json: string): void {
   void runLimited(pkgMirror, (limit) => limit(async () => {
     try {
       await saveMeta(pkgMirror, json)
     } catch (err: unknown) {
       logger.debug({ message: `Failed to write the package metadata mirror at ${pkgMirror}`, err })
-      await discardMirrorAfterFailedUncacheableWrite(pkgMirror, uncacheable)
     }
   }))
-}
-
-/**
- * A failed uncacheable write leaves the previous header in place. The next
- * fetch would send that header's validators and can accept a stale 304.
- */
-export async function discardMirrorAfterFailedUncacheableWrite (pkgMirror: string, uncacheable: boolean): Promise<void> {
-  if (!uncacheable) return
-  await fs.rm(pkgMirror, { force: true }).catch(() => undefined)
 }
 
 export function encodePkgName (pkgName: string): string {
@@ -877,41 +842,6 @@ export function getPkgMirrorPath (cacheDir: string, metaDir: string, registry: s
 }
 
 /**
- * Hint for `NO_OFFLINE_META`: whether the package's metadata sits on disk
- * under the legacy mirror path, which this pnpm version no longer reads.
- * `undefined` when no such mirror exists, so the base error message stands
- * on its own.
- */
-export async function legacyMirrorHint (cacheDir: string, metaDir: string, registry: string, pkgName: string): Promise<string | undefined> {
-  const legacyMirror = getLegacyPkgMirrorPath(cacheDir, metaDir, registry, pkgName)
-  if (legacyMirror == null) return undefined
-  try {
-    await fs.access(legacyMirror)
-  } catch {
-    return undefined
-  }
-  return `The cache layout for registry metadata changed in pnpm 11.27 and 12.4. ${legacyMirror} holds a mirror ` +
-    'from an older pnpm version, which this offline install cannot read. Run one online install to repopulate ' +
-    'the cache under the new layout, then retry offline.'
-}
-
-/**
- * The legacy mirror path for a registry: `<host>[:<port>]` with `:`
- * replaced by `+`, and no scheme, path segments, or hash suffix.
- * `null` for a registry URL {@link getPkgMirrorPath} would itself reject.
- */
-function getLegacyPkgMirrorPath (cacheDir: string, metaDir: string, registry: string, pkgName: string): string | null {
-  let url: URL
-  try {
-    url = new URL(registry)
-  } catch {
-    return null
-  }
-  if (url.host === '') return null
-  return path.join(cacheDir, metaDir, url.host.replace(':', '+'), `${encodePkgName(pkgName)}.jsonl`)
-}
-
-/**
  * Formats metadata for disk storage as two-line NDJSON:
  *   Line 1: cache headers (etag, modified) — small, fast to read
  *   Line 2: the registry metadata JSON
@@ -925,22 +855,12 @@ function getLegacyPkgMirrorPath (cacheDir: string, metaDir: string, registry: st
  * slot. `modified` is always written: it comes from the packument's own
  * `time.modified`, which both representations report identically, so the next
  * request is still conditional through `If-Modified-Since`.
- *
- * `body.jsonText` is the raw registry body, written as is when given.
- * `body.uncacheable` records that the response forbade caching, so the next
- * online lookup refetches instead of revalidating.
  */
-export function prepareJsonForDisk (
-  meta: PackageMeta,
-  etag: string | undefined,
-  body: { jsonText?: string, uncacheable?: boolean } = {}
-): string {
+export function prepareJsonForDisk (meta: PackageMeta, etag: string | undefined, jsonText?: string): string {
   const modified = meta.modified ?? meta.time?.modified
-  const headers = JSON.stringify({ etag, modified, uncacheable: body.uncacheable === true ? true : undefined })
-  const bodyMeta = meta.etag == null && meta.uncacheable == null
-    ? meta
-    : { ...meta, etag: undefined, uncacheable: undefined }
-  return `${headers}\n${body.jsonText ?? JSON.stringify(bodyMeta)}`
+  const headers = JSON.stringify({ etag, modified })
+  const body = jsonText ?? JSON.stringify(meta.etag == null ? meta : { ...meta, etag: undefined })
+  return `${headers}\n${body}`
 }
 
 function isMissingTimeError (err: unknown): boolean {
@@ -992,7 +912,6 @@ async function getFileMtime (filePath: string): Promise<Date | null> {
 interface MetaHeaders {
   etag?: string
   modified?: string
-  uncacheable?: boolean
 }
 
 /**
@@ -1034,7 +953,6 @@ export async function loadMeta (pkgMirror: string): Promise<PackageMeta | null> 
     const meta = JSON.parse(data.slice(newlineIdx + 1)) as PackageMeta
     dropIncompletePublishTimes(meta)
     meta.etag = headers.etag
-    meta.uncacheable = headers.uncacheable === true ? true : undefined
     return meta
   } catch {
     return null

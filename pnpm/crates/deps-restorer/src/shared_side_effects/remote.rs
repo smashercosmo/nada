@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{RemoteSideEffectsQuarantineBySnapshot, SideEffectsMapsBySnapshot};
 use pnpm_config::Config;
-use pnpm_lockfile::ProjectSnapshot;
+use pnpm_lockfile::{PackageKey, SnapshotEntry};
 use pnpm_pnpr_client::{
     ArtifactBlobRequest, ArtifactFile, OwnerScope, PnprClient, PnprClientError, RejectedArtifact,
     ResolveArtifactsOptions, blob_id,
@@ -74,13 +74,13 @@ pub(super) struct RemoteCacheSetup {
 }
 pub(super) fn remote_cache_setup(
     config: &Config,
-    importers: &HashMap<String, ProjectSnapshot>,
+    snapshots: &HashMap<PackageKey, SnapshotEntry>,
 ) -> Option<RemoteCacheSetup> {
     if config.ignore_scripts {
         return None;
     }
     let settings = config.remote_side_effects_cache.as_ref()?;
-    let platform = artifact_platform(importers)?;
+    let platform = artifact_platform(snapshots)?;
     let supported_tags = match platform.supported_tags() {
         Ok(tags) => tags,
         Err(error) => {

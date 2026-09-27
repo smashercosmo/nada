@@ -121,15 +121,13 @@ impl CliArgs {
                 .ok()?;
         config_overrides.apply(&mut config, &dir);
         self.network.apply(&mut config);
-        if let Some(store_dir) = self.paths.store_dir.as_deref() {
-            if apply_store_dir_override::<Host>(&mut config, store_dir, &dir).is_err() {
-                return None;
-            }
-            config.cli_settings.insert("storeDir".to_string());
+        if let Some(store_dir) = self.paths.store_dir.as_deref()
+            && apply_store_dir_override::<Host>(&mut config, store_dir, &dir).is_err()
+        {
+            return None;
         }
         if let Some(state_dir) = self.paths.state_dir.as_deref() {
             apply_state_dir_override::<Host>(&mut config, state_dir, &dir);
-            config.cli_settings.insert("stateDir".to_string());
         }
         install_args.lockfile.directory.apply_to(&mut config, &dir);
         config.progress = self.progress_enabled(config.progress);
@@ -252,7 +250,6 @@ impl CliArgs {
         let builtin_replaced_by_script = AtomicBool::new(false);
         let ctx = RunCtx {
             effective_reporter: setup.effective_reporter,
-            reporter_flags: self.reporter_flags(),
             builtin_command_forced,
             builtin_replaced_by_script: &builtin_replaced_by_script,
             locations: CommandLocations::from(anchors),

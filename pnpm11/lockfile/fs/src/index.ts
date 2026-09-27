@@ -1,4 +1,3 @@
-export { checkPatchedDepPaths, type PatchedDepPathsStatus } from './checkPatchedDepPaths.js'
 export { createEnvLockfile, readEnvLockfile, writeEnvLockfile } from './envLockfile.js'
 export { existsNonEmptyWantedLockfile } from './existsWantedLockfile.js'
 export { getLockfileImporterId } from './getLockfileImporterId.js'

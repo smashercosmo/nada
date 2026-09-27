@@ -60,14 +60,6 @@ export interface PackageFilesResponse {
   requiresBuild: boolean
   /** Whether preparing a git package required lifecycle scripts before these files were stored. */
   requiresPrepare?: boolean
-  /**
-   * Whether a `local-dir` resolution's source directory existed to walk.
-   * Only meaningful when `resolvedFrom` is `'local-dir'`. See
-   * `DirectoryFetcherResult['sourceExists']` for why an importer must not
-   * treat a missing source's empty `filesMap` as a reason to force a
-   * reimport.
-   */
-  sourceExists?: boolean
 }
 
 export interface ImportPackageOpts {
@@ -105,7 +97,6 @@ export interface FileWriteResult {
 
 export interface AddToStoreResult {
   filesIndex: FilesIndex
-  hasSymlinks?: boolean
   manifest?: DependencyManifest
 }
 

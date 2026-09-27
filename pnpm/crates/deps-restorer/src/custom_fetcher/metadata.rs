@@ -1,7 +1,6 @@
 use super::{
     CustomFetchOutcome, CustomFetcherSession, FetchedTarball, InstallPackageBySnapshotError,
     LockfileResolution, ResolvedTarballMetadata, decode_resolution, fetch_custom_tarball,
-    fetch_identity,
 };
 use crate::install_package_by_snapshot::tarball_url_and_integrity;
 use pnpm_config::Config;
@@ -46,21 +45,18 @@ impl CustomFetcherSession {
             let Some(tarball) =
                 fetch_source::<Reporter>(&download, source, &lockfile_dir, config).await?
             else {
-                return Ok(ResolvedTarballMetadata {
-                    resolution: recorded_resolution(original, resolution),
-                    manifest: None,
-                });
+                return Ok(ResolvedTarballMetadata { resolution, manifest: None });
             };
             tarball
         };
-        let mut metadata =
+        let metadata =
             resolve_archive_metadata((&resolution, source), &tarball, download.package.id).await?;
-        metadata.resolution = recorded_resolution(original, metadata.resolution);
-        // The install pass lays a reused fetch out by the recorded resolution,
-        // so a fetch installed from elsewhere in its archive cannot be reused.
-        if git_hosted_subdir(&metadata.resolution) == git_hosted_subdir(source) {
-            self.record_completed_identities(download.package.id, &metadata, tarball);
-        }
+        self.record_completed_identities(
+            download.package.id,
+            (&resolution, source),
+            &metadata,
+            tarball,
+        );
         Ok(metadata)
     }
 
@@ -72,13 +68,11 @@ impl CustomFetcherSession {
     fn record_completed_identities(
         &self,
         package_id: &str,
+        resolutions: (&LockfileResolution, &LockfileResolution),
         metadata: &ResolvedTarballMetadata,
         tarball: Arc<FetchedTarball>,
     ) {
-        let Some(identity) = fetch_identity(&metadata.resolution, Some(&tarball.integrity)) else {
-            return;
-        };
-        self.cache_resolved_tarball(package_id, &identity, Arc::clone(&tarball));
+        self.cache_resolved_tarball(package_id, resolutions, Arc::clone(&tarball));
         let Some(manifest) = &metadata.manifest else { return };
         let (Some(name), Some(version)) = (
             manifest.get("name").and_then(Value::as_str),
@@ -88,43 +82,28 @@ impl CustomFetcherSession {
         };
         let name_ver = format!("{name}@{version}");
         if name_ver != package_id {
-            self.cache_resolved_tarball(&name_ver, &identity, tarball);
+            self.cache_resolved_tarball(&name_ver, resolutions, tarball);
         }
     }
 
     fn cache_resolved_tarball(
         &self,
         package_id: &str,
-        identity: &str,
+        resolutions: (&LockfileResolution, &LockfileResolution),
         tarball: Arc<FetchedTarball>,
     ) {
+        // A delegate can change the archive layout, which the recorded resolution cannot describe.
+        if resolutions.0 != resolutions.1
+            && [resolutions.0, resolutions.1].iter().any(|resolution| {
+                matches!(resolution, LockfileResolution::Tarball(tarball) if tarball.is_git_hosted())
+            })
+        {
+            return;
+        }
         self.completed
             .lock()
             .unwrap()
-            .insert((package_id.to_owned(), identity.to_owned()), tarball);
-    }
-}
-
-/// The resolution the lockfile records: a custom one as its resolver wrote it,
-/// since the fetch only interprets it, and otherwise the fetcher's.
-fn recorded_resolution(
-    original: &LockfileResolution,
-    fetched: LockfileResolution,
-) -> LockfileResolution {
-    // The fetcher's copy of a custom resolution carries the scratch fields a
-    // `canFetch` left on it, which `decode_resolution` strips only from
-    // resolutions that have no `type`.
-    if matches!(original, LockfileResolution::Custom(_)) { original.clone() } else { fetched }
-}
-
-/// Where in a git-hosted archive the package is installed from, `Some(None)`
-/// being the archive root. `None` for a resolution whose archive installs as is.
-fn git_hosted_subdir(resolution: &LockfileResolution) -> Option<Option<&str>> {
-    match resolution {
-        LockfileResolution::Tarball(tarball) if tarball.is_git_hosted() => {
-            Some(tarball.path.as_deref())
-        }
-        _ => None,
+            .insert((package_id.to_owned(), tarball.integrity.to_string()), tarball);
     }
 }
 
@@ -200,6 +179,3 @@ async fn resolve_archive_metadata(
     };
     Ok(ResolvedTarballMetadata { resolution, manifest })
 }
-
-#[cfg(test)]
-mod tests;

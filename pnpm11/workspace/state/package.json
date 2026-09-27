@@ -34,10 +34,9 @@
   "dependencies": {
     "@pnpm/catalogs.types": "workspace:*",
     "@pnpm/config.reader": "workspace:*",
-    "@pnpm/fs.graceful-fs": "workspace:*",
     "@pnpm/types": "workspace:*",
-    "path-temp": "catalog:",
-    "ramda": "catalog:"
+    "ramda": "catalog:",
+    "write-file-atomic": "catalog:"
   },
   "peerDependencies": {
     "@pnpm/logger": "catalog:"
@@ -47,7 +46,8 @@
     "@pnpm/logger": "workspace:*",
     "@pnpm/prepare": "workspace:*",
     "@pnpm/workspace.state": "workspace:*",
-    "@types/ramda": "catalog:"
+    "@types/ramda": "catalog:",
+    "@types/write-file-atomic": "catalog:"
   },
   "engines": {
     "node": ">=22.13"

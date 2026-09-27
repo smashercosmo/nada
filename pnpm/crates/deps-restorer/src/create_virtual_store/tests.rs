@@ -245,7 +245,6 @@ impl SeededStoreInstall {
                 snapshots: Some(&self.snapshots),
             },
             current_entries: LockfileEntries::default(),
-            importers: &HashMap::new(),
 
             dir_clone_cache: None,
 
@@ -388,7 +387,6 @@ fn slot_link<'a>(
     crate::create_virtual_store::slot_linking::SlotLink {
         source: crate::SlotImportSource {
             is_mutable: true,
-            source_exists: true,
             force: false,
             build_marker: None,
             needs_build: false,

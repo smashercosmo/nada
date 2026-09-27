@@ -3,22 +3,17 @@ import path from 'node:path'
 import util from 'node:util'
 
 import { pkgRequiresBuild } from '@pnpm/building.pkg-requires-build'
-import type {
-  DirectoryFetcher,
-  DirectoryFetcherOptions,
-  LocalDirPackageImportMethod,
-} from '@pnpm/fetching.fetcher-base'
+import type { DirectoryFetcher, DirectoryFetcherOptions } from '@pnpm/fetching.fetcher-base'
 import { packlist } from '@pnpm/fs.packlist'
 import { logger } from '@pnpm/logger'
 import type { FilesMap } from '@pnpm/store.cafs-types'
 import type { DependencyManifest } from '@pnpm/types'
-import { safeReadParentPublishManifest, safeReadProjectManifestOnly } from '@pnpm/workspace.project-manifest-reader'
+import { safeReadProjectManifestOnly } from '@pnpm/workspace.project-manifest-reader'
 
 const directoryFetcherLogger = logger('directory-fetcher')
 
 export interface CreateDirectoryFetcherOptions {
   includeOnlyPackageFiles?: boolean
-  localDirPackageImportMethod?: LocalDirPackageImportMethod
   resolveSymlinks?: boolean
 }
 
@@ -26,39 +21,14 @@ export function createDirectoryFetcher (
   opts?: CreateDirectoryFetcherOptions
 ): { directory: DirectoryFetcher } {
   const readFileStat: ReadFileStat = opts?.resolveSymlinks === true ? realFileStat : fileStat
-  const packageImportMethod = opts?.localDirPackageImportMethod ?? 'hardlink'
-  const fetchFromDir = opts?.includeOnlyPackageFiles
-    ? fetchPackageFilesFromDir.bind(null, packageImportMethod)
-    : fetchAllFilesFromDir.bind(null, readFileStat, packageImportMethod)
+  const fetchFromDir = opts?.includeOnlyPackageFiles ? fetchPackageFilesFromDir : fetchAllFilesFromDir.bind(null, readFileStat)
 
-  const directoryFetcher: DirectoryFetcher = async (cafs, resolution, opts) => {
+  const directoryFetcher: DirectoryFetcher = (cafs, resolution, opts) => {
     // Use path.resolve so absolute directories (e.g. cross-drive Windows paths
     // stored by `file:` deps) are respected instead of being concatenated
     // onto lockfileDir.
     const dir = path.resolve(opts.lockfileDir, resolution.directory)
-    // An injected dependency whose packed content is the output of its own
-    // lifecycle scripts (a project with `publishConfig.directory` built by
-    // `prepare`) has no source directory on a fresh install: the scripts run
-    // after linking, and the built output is imported afterwards. Inject an
-    // empty copy so the install can proceed instead of failing on the
-    // not-yet-built directory. Any other missing directory still fails.
-    if (!await dirExists(dir)) {
-      const manifest = await safeReadParentPublishManifest(dir) as DependencyManifest | null
-      if (manifest != null) {
-        return {
-          local: true,
-          filesMap: new Map(),
-          packageImportMethod,
-          manifest,
-          requiresBuild: false,
-          sourceExists: false,
-        }
-      }
-    }
-    return {
-      ...await fetchFromDir(dir),
-      sourceExists: true,
-    }
+    return fetchFromDir(dir)
   }
 
   return {
@@ -68,37 +38,25 @@ export function createDirectoryFetcher (
 
 export type FetchFromDirOptions = Omit<DirectoryFetcherOptions, 'lockfileDir'> & CreateDirectoryFetcherOptions
 
-async function dirExists (dir: string): Promise<boolean> {
-  try {
-    await fs.stat(dir)
-    return true
-  } catch (err: unknown) {
-    if (util.types.isNativeError(err) && 'code' in err && err.code === 'ENOENT') return false
-    throw err
-  }
-}
-
 export interface FetchResult {
   local: true
   filesMap: FilesMap
   filesStats?: Record<string, Stats | null>
-  packageImportMethod: LocalDirPackageImportMethod
+  packageImportMethod: 'hardlink'
   manifest: DependencyManifest
   requiresBuild: boolean
 }
 
 export async function fetchFromDir (dir: string, opts: FetchFromDirOptions): Promise<FetchResult> {
-  const packageImportMethod = opts.localDirPackageImportMethod ?? 'hardlink'
   if (opts.includeOnlyPackageFiles) {
-    return fetchPackageFilesFromDir(packageImportMethod, dir)
+    return fetchPackageFilesFromDir(dir)
   }
   const readFileStat: ReadFileStat = opts?.resolveSymlinks === true ? realFileStat : fileStat
-  return fetchAllFilesFromDir(readFileStat, packageImportMethod, dir)
+  return fetchAllFilesFromDir(readFileStat, dir)
 }
 
 async function fetchAllFilesFromDir (
   readFileStat: ReadFileStat,
-  packageImportMethod: LocalDirPackageImportMethod,
   dir: string
 ): Promise<FetchResult> {
   const { filesMap, filesStats } = await _fetchAllFilesFromDir(readFileStat, dir)
@@ -111,7 +69,7 @@ async function fetchAllFilesFromDir (
     local: true,
     filesMap,
     filesStats,
-    packageImportMethod,
+    packageImportMethod: 'hardlink',
     manifest,
     requiresBuild,
   }
@@ -189,10 +147,7 @@ async function fileStat (filePath: string): Promise<FileStatResult | null> {
   }
 }
 
-async function fetchPackageFilesFromDir (
-  packageImportMethod: LocalDirPackageImportMethod,
-  dir: string
-): Promise<FetchResult> {
+async function fetchPackageFilesFromDir (dir: string): Promise<FetchResult> {
   const files = await packlist(dir)
   const filesMap = new Map<string, string>(files.map((file) => [file, path.join(dir, file)]))
   // In a regular pnpm workspace it will probably never happen that a dependency has no package.json file.
@@ -203,7 +158,7 @@ async function fetchPackageFilesFromDir (
   return {
     local: true,
     filesMap,
-    packageImportMethod,
+    packageImportMethod: 'hardlink',
     manifest,
     requiresBuild,
   }

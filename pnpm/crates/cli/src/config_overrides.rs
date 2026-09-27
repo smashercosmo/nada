@@ -14,7 +14,7 @@ use pnpm_config::{
 use pnpm_fs::lexical_normalize;
 use pnpm_store_dir::StoreDir;
 use std::{
-    collections::{BTreeMap, BTreeSet, HashSet},
+    collections::{BTreeMap, HashSet},
     ffi::{OsStr, OsString},
     path::Path,
 };
@@ -124,9 +124,6 @@ pub struct ConfigOverrides {
     https_proxy: Option<String>,
     http_proxy: Option<String>,
     no_proxy: Option<String>,
-    /// Every kebab-case key [`Self::set`] received, whether or not its
-    /// value parsed, for [`Config::cli_settings`].
-    pub(super) settings: BTreeSet<String>,
 }
 
 /// Copy each override that the command line set onto the config.
@@ -246,7 +243,6 @@ impl ConfigOverrides {
     }
 
     fn set(&mut self, key: &str, value: &str) {
-        self.settings.insert(key.to_owned());
         self.set_boolean_install_option(key, value);
         self.set_boolean_execution_option(key, value);
         self.set_network_option(key, value);

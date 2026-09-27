@@ -1,7 +1,7 @@
 pub use errors::InstallWithFreshLockfileError;
 pub(crate) use lockfile_build::compute_package_extensions_checksum;
 pub(crate) use seed_policy::prefer_requested_version;
-pub use seed_policy::{ImporterUpdateSeedPolicy, PreferredVersionsOverride, UpdateSeedPolicy};
+pub use seed_policy::{ImporterUpdateSeedPolicy, UpdateSeedPolicy};
 
 mod persist;
 use persist::{
@@ -143,10 +143,6 @@ pub(crate) struct FreshInstallDrivers<'a> {
 #[derive(Clone, Copy)]
 pub(crate) struct FreshInstallProjects<'a> {
     pub(crate) dependency_groups: &'a [DependencyGroup],
-    /// The groups the install materializes. Unlike [`Self::dependency_groups`],
-    /// it keeps `optional_dependencies` on a `--dev` run, which installs the
-    /// optional dependencies of the packages it installs.
-    pub(crate) included: IncludedDependencies,
     /// Install root, threaded into reporter `requester` fields.
     pub(crate) requester: &'a str,
     /// Lockfile root for the install, used by the resolver chain to
@@ -292,7 +288,13 @@ impl FreshInputs<'_> {
     }
 
     fn included(&self) -> IncludedDependencies {
-        self.projects.included
+        IncludedDependencies {
+            dependencies: self.projects.dependency_groups.contains(&DependencyGroup::Prod),
+            dev_dependencies: self.projects.dependency_groups.contains(&DependencyGroup::Dev),
+            optional_dependencies: self.projects.dependency_groups.contains(
+                &DependencyGroup::Optional,
+            ),
+        }
     }
 }
 

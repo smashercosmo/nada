@@ -38,8 +38,7 @@ use pnpm_package_manager::{
 };
 use pnpm_package_manifest::DependencyGroup;
 use pnpm_pnpr_client::{
-    PnprClient, PnprClientError, PublishConfig, ResolveProject, ResolveProjectsOptions,
-    VerifyLockfileOptions,
+    PnprClient, PnprClientError, ResolveProject, ResolveProjectsOptions, VerifyLockfileOptions,
 };
 use pnpm_reporter::Reporter;
 use pnpr_lockfile::{
@@ -52,6 +51,7 @@ use pnpr_request::{
 };
 use pnpr_resolution::{
     DryRunIncompatibleWithPnpr, PnprSession, install_via_pnpr_inner, prefetch_allowed,
+    resolve_project,
 };
 
 use std::path::PathBuf;
@@ -124,18 +124,19 @@ pub(crate) fn included_dependency_groups(
     dev: bool,
     include_optional: bool,
 ) -> impl Iterator<Item = DependencyGroup> {
-    // `--prod` wins over `--dev`.
-    let (has_prod, has_dev) = if prod {
-        (true, false)
+    // `--prod` wins over `--dev`, and a dev-only install drops optional
+    // dependencies along with the production ones.
+    let (has_prod, has_dev, has_optional) = if prod {
+        (true, false, include_optional)
     } else if dev {
-        (false, true)
+        (false, true, false)
     } else {
-        (true, true)
+        (true, true, include_optional)
     };
     std::iter::empty()
         .chain(has_prod.then_some(DependencyGroup::Prod))
         .chain(has_dev.then_some(DependencyGroup::Dev))
-        .chain(include_optional.then_some(DependencyGroup::Optional))
+        .chain(has_optional.then_some(DependencyGroup::Optional))
 }
 
 #[derive(Debug, Default, Clone, Args)]
@@ -354,8 +355,9 @@ impl InstallArgs {
     ///
     /// `--fix-lockfile` rewrites the lockfile, so it is never frozen. On
     /// CI a project that already has a non-empty lockfile installs frozen
-    /// by default, unless the run is `--lockfile-only` or the effective
-    /// `preferFrozenLockfile` is `false`.
+    /// by default, unless the run said otherwise through
+    /// `--lockfile-only`, either `preferFrozenLockfile` flag, or the
+    /// setting itself.
     fn resolve_frozen_lockfile(&self, state: &State) -> miette::Result<bool> {
         if self.lockfile.fix {
             return Ok(false);
@@ -363,10 +365,12 @@ impl InstallArgs {
         if let Some(value) = self.configured_frozen_lockfile(state.config) {
             return Ok(value);
         }
-        let prefer_frozen =
-            self.prefer_frozen_override().unwrap_or(state.config.prefer_frozen_lockfile);
-        let ci_frozen = state.config.ci && !self.lockfile.only && prefer_frozen;
-        if !ci_frozen {
+        let ci_default = state.config.ci
+            && !self.lockfile.only
+            && !self.lockfile.prefer_frozen
+            && !self.lockfile.no_prefer_frozen
+            && !state.config.explicit_settings.contains_key("preferFrozenLockfile");
+        if !ci_default {
             return Ok(false);
         }
         Ok(state.lockfile

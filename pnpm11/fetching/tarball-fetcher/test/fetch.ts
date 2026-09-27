@@ -648,27 +648,6 @@ test('do not retry when package does not exist', async () => {
   )
 })
 
-test.each(['ENOSPC', 'ERR_PNPM_ENOSPC'])('do not retry when a tarball fetch runs out of disk space (%s)', async (code) => {
-  const noSpace = Object.assign(new Error('no space left on device'), { code })
-  mockAgent.get(registry)
-    .intercept({ path: '/foo.tgz', method: 'GET' })
-    .replyWithError(noSpace)
-    .times(2)
-
-  process.chdir(temporaryDirectory())
-  const err = await fetch.remoteTarball(cafs, {
-    integrity: tarballIntegrity,
-    tarball: `${registry}/foo.tgz`,
-  }, {
-    filesIndexFile,
-    lockfileDir: process.cwd(),
-    pkg,
-  }).then(() => undefined, (error: unknown) => error)
-
-  expect(err).toHaveProperty('code', code)
-  expect(mockAgent.pendingInterceptors()).toHaveLength(1)
-})
-
 // https://github.com/pnpm/pnpm/issues/9134
 test('do not retry when the server certificate is untrusted', async () => {
   const certificateError = Object.assign(
@@ -974,7 +953,7 @@ test('fail when extracting a broken tarball', async () => {
       lockfileDir: process.cwd(),
       pkg,
     })
-  ).rejects.toThrow(`Failed to add tarball from "${registry}/foo.tgz" to store: Unexpected end of TAR archive at offset 27`
+  ).rejects.toThrow(`Failed to add tarball from "${registry}/foo.tgz" to store: Invalid checksum for TAR header at offset 0. Expected 0, got NaN`
   )
 })
 

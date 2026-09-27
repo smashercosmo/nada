@@ -1,9 +1,8 @@
 use super::{build_zip, fast_retry_opts, gzipped_tar, tempdir_with_leaked_path};
 use crate::{ArchiveStoreProjection, IngestTarballToStore, IngestZipArchiveToStore, TarballError};
-use pnpm_fs::EnsureFileError;
 use pnpm_network::{AuthHeaders, RetryOpts, ThrottledClient};
 use pnpm_reporter::{LogEvent, Reporter, SilentReporter};
-use pnpm_store_dir::{StoreIndex, StoreIndexWriter, WriteCasFileError};
+use pnpm_store_dir::{StoreIndex, StoreIndexWriter};
 use ssri::Integrity;
 use std::{
     collections::HashMap,
@@ -39,7 +38,6 @@ async fn archive_requests_preserve_the_deployments_redirect_guard() {
         0,
         0,
         false,
-        None,
     )
     .await;
     let error = result.err().expect("off-allowlist redirect must fail");
@@ -88,7 +86,7 @@ async fn archive_retry_redacts_secrets_and_accepts_the_maximum_retry_budget() {
         RetryOpts { retries: u32::MAX, ..fast_retry_opts() },
         |attempt| {
             crate::archive_request::request_archive::<RecordingReporter>(
-                &client, &url, "fixture", &auth, 0, attempt, false, None,
+                &client, &url, "fixture", &auth, 0, attempt, false,
             )
         },
     )
@@ -113,63 +111,6 @@ async fn archive_retry_redacts_secrets_and_accepts_the_maximum_retry_budget() {
 }
 
 #[tokio::test]
-async fn archive_store_write_out_of_space_fails_without_retry() {
-    let mut attempts = 0;
-    let result = crate::archive_retry::retry_archive::<SilentReporter, _, _>(
-        "https://example.test/pkg.tgz",
-        "fixture",
-        "test",
-        None,
-        fast_retry_opts(),
-        |_| {
-            attempts += 1;
-            async {
-                Err::<(), _>(TarballError::WriteCasFile(WriteCasFileError::WriteFile(
-                    EnsureFileError::WriteFile {
-                        file_path: PathBuf::from("store/file"),
-                        error: std::io::Error::from(std::io::ErrorKind::StorageFull),
-                    },
-                )))
-            }
-        },
-    )
-    .await;
-    assert!(matches!(result, Err(TarballError::WriteCasFile(_))));
-    assert_eq!(attempts, 1);
-}
-
-#[tokio::test]
-async fn archive_store_write_interrupted_retries() {
-    let mut attempts = 0;
-    let result = crate::archive_retry::retry_archive::<SilentReporter, _, _>(
-        "https://example.test/pkg.tgz",
-        "fixture",
-        "test",
-        None,
-        fast_retry_opts(),
-        |_| {
-            attempts += 1;
-            let attempt = attempts;
-            async move {
-                if attempt == 1 {
-                    Err(TarballError::WriteCasFile(WriteCasFileError::WriteFile(
-                        EnsureFileError::WriteFile {
-                            file_path: PathBuf::from("store/file"),
-                            error: std::io::Error::from(std::io::ErrorKind::Interrupted),
-                        },
-                    )))
-                } else {
-                    Ok(())
-                }
-            }
-        },
-    )
-    .await;
-    assert!(result.is_ok(), "interrupted store write should be retried: {result:?}");
-    assert_eq!(attempts, 2);
-}
-
-#[tokio::test]
 async fn archive_network_errors_remove_urls_from_the_source_chain() {
     let socket = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let port = socket.local_addr().unwrap().port();
@@ -185,7 +126,6 @@ async fn archive_network_errors_remove_urls_from_the_source_chain() {
         0,
         u32::MAX,
         false,
-        None,
     )
     .await;
     let error = result.err().expect("closed port must fail");
@@ -234,7 +174,7 @@ async fn archive_requests_do_not_downgrade_secure_credentials_to_plain_http() {
         "Basic secret".to_string(),
     );
     let url = format!("http://registry.example:{}/simple/pkg.whl", address.port());
-    let (_guard, response, _) = crate::archive_request::request_archive::<SilentReporter>(
+    let (_guard, response) = crate::archive_request::request_archive::<SilentReporter>(
         &client,
         &url,
         "python:alpha",
@@ -242,68 +182,12 @@ async fn archive_requests_do_not_downgrade_secure_credentials_to_plain_http() {
         0,
         0,
         false,
-        None,
     )
     .await
     .unwrap();
     eprintln!("response={response:?}");
     assert_eq!(response.bytes().await.unwrap(), "wheel");
     request.assert_async().await;
-}
-
-#[tokio::test]
-async fn archive_requests_accept_not_modified_only_when_sending_a_validator() {
-    let mut server = mockito::Server::new_async().await;
-    let not_modified = server
-        .mock("GET", "/pkg.tgz")
-        .with_status(304)
-        .expect(2)
-        .create_async()
-        .await;
-    let url = format!("{}/pkg.tgz", server.url());
-    let client = ThrottledClient::default();
-    let auth = AuthHeaders::default();
-    for (if_none_match, accepted) in [(Some(r#""v1""#), true), (Some(" "), false)] {
-        let result = crate::archive_request::request_archive::<SilentReporter>(
-            &client,
-            &url,
-            "fixture",
-            &auth,
-            0,
-            0,
-            false,
-            if_none_match,
-        )
-        .await;
-        assert_eq!(result.is_ok(), accepted, "{if_none_match:?}");
-    }
-    not_modified.assert_async().await;
-}
-
-#[tokio::test]
-async fn archive_response_meta_joins_repeated_cache_control_fields() {
-    let mut server = mockito::Server::new_async().await;
-    let _mock = server
-        .mock("GET", "/pkg.tgz")
-        .with_header("cache-control", "max-age=3600")
-        .with_header("cache-control", "no-store")
-        .with_body("archive")
-        .create_async()
-        .await;
-    let url = format!("{}/pkg.tgz", server.url());
-    let (_guard, _response, meta) = crate::archive_request::request_archive::<SilentReporter>(
-        &ThrottledClient::default(),
-        &url,
-        "fixture",
-        &AuthHeaders::default(),
-        0,
-        0,
-        false,
-        None,
-    )
-    .await
-    .unwrap();
-    assert_eq!(meta.cache_headers.cache_control.as_deref(), Some("max-age=3600, no-store"));
 }
 
 impl Container {
@@ -592,12 +476,10 @@ async fn request_archive_quick_retries_transient_connection_reset() {
         0,
         0,
         false,
-        None,
     )
     .await;
 
-    let (_guard, response, _) =
-        result.expect("quick retry must recover from initial connection drop");
+    let (_guard, response) = result.expect("quick retry must recover from initial connection drop");
     assert_eq!(response.status(), 200);
     assert_eq!(response.text().await.unwrap(), "done");
     server_task.await.unwrap();

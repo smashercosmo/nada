@@ -26,11 +26,9 @@ type RecursiveRebuildOpts = CreateStoreControllerOptions & Pick<Config,
 | 'lockfileDir'
 | 'lockfileOnly'
 | 'nodeLinker'
-| 'patchedDependencies'
 | 'packageConfigs'
 | 'registriesByScope'
 | 'sharedWorkspaceLockfile'
-| 'virtualStoreDir'
 > & Pick<ConfigContext,
 | 'hooks'
 | 'rootProjectManifest'

@@ -210,8 +210,6 @@ pub struct InstalledPackage {
     /// rather than immutable content-addressed entries. See
     /// [`crate::SlotImportSource::is_mutable`].
     pub source_is_mutable: bool,
-    /// See [`crate::SlotImportSource::source_exists`].
-    pub source_exists: bool,
 }
 
 #[cfg(test)]

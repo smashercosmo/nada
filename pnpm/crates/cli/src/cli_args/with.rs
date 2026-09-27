@@ -14,7 +14,7 @@
 //! global virtual store, and spawns.
 
 use crate::{
-    cli_args::{dlx::exit_unless_success, package_manager::PACKAGE_MANAGER_SWITCH_ENV_VARS},
+    cli_args::package_manager::PACKAGE_MANAGER_SWITCH_ENV_VARS,
     engine_pm::{
         channel::PackageManager,
         error::EngineError,
@@ -79,9 +79,11 @@ impl WithArgs {
 
         let status = spawn_pnpm(&engine.bin_dirs, args, PackageManagerCheck::Disabled)?;
         drop(engine);
-        // End the way the child did: with its exit code, or with its signal
-        // when a signal killed it.
-        exit_unless_success(status);
+        if !status.success() {
+            // Propagate the child's exit code. A signal-terminated child
+            // has no code; fall back to 1, matching pnpm's `exitCode ?? 1`.
+            std::process::exit(status.code().unwrap_or(1));
+        }
         Ok(())
     }
 }
@@ -115,13 +117,7 @@ where
     cmd.args(args);
     configure_pnpm_environment(&mut cmd, bin_dirs, package_manager_check)?;
 
-    // The child runs under the interrupt relay, so a signal sent to this pnpm
-    // reaches the pnpm it switched to, and this one waits for it to shut down.
-    let mut child = pnpm_executor::spawn_child(&mut cmd, None)
-        .into_diagnostic()
-        .wrap_err("run the requested pnpm version")?;
-    child
-        .wait()
+    cmd.status()
         .into_diagnostic()
         .wrap_err("run the requested pnpm version")
 }

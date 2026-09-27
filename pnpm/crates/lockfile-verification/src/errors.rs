@@ -13,14 +13,8 @@ This can mean the lockfile is stale, or that someone committed a \
 lockfile that bypassed the policy locally — inspect recent changes \
 to pnpm-lock.yaml before trusting it. If the changes look expected, \
 run \"pnpm clean --lockfile\" and then \"pnpm install\" to rebuild from \
-a fresh resolution. If the fresh resolution still fails and you trust \
-the affected packages, relax the policy that flagged them.";
-
-const STRUCTURAL_HINT: &str = "The lockfile contains entries that pnpm cannot verify, \
-whatever the configured policies. This can mean the lockfile is stale, or that it was \
-tampered with — inspect recent changes to pnpm-lock.yaml before trusting it. If the \
-changes look expected, run \"pnpm clean --lockfile\" and then \"pnpm install\" to \
-rebuild from a fresh resolution.";
+a fresh resolution. Alternatively, relax the policy that flagged \
+them.";
 
 const INVALID_ALIAS_HINT: &str = "A dependency alias becomes a directory under node_modules, \
 so it must be a valid npm package name — a single `name` or `@scope/name` with no leading \
@@ -28,9 +22,6 @@ so it must be a valid npm package name — a single `name` or `@scope/name` with
 segments or a reserved name such as `.bin` or `.pnpm` could make an install write outside the \
 intended directory or overwrite pnpm-owned layout. This usually means the lockfile was tampered \
 with — inspect recent changes to pnpm-lock.yaml before trusting it.";
-
-const MISSING_DEPENDENCY_HINT: &str = "This issue is probably caused by a badly resolved merge conflict.\n\
-To fix the lockfile, run 'pnpm install --fix-lockfile'.";
 
 /// One verifier rejection rendered for the error breakdown.
 /// Internal-only data shape — the runner builds these from
@@ -78,7 +69,7 @@ pub enum VerifyError {
     },
 
     #[display("{count} lockfile entries failed verification:\n{breakdown}")]
-    #[diagnostic(code(ERR_PNPM_MISSING_TARBALL_INTEGRITY), help("{STRUCTURAL_HINT}"))]
+    #[diagnostic(code(ERR_PNPM_MISSING_TARBALL_INTEGRITY), help("{HINT}"))]
     MissingTarballIntegrity {
         #[error(not(source))]
         count: usize,
@@ -86,7 +77,7 @@ pub enum VerifyError {
     },
 
     #[display("{count} lockfile entries failed verification:\n{breakdown}")]
-    #[diagnostic(code(ERR_PNPM_RESOLUTION_SHAPE_MISMATCH), help("{STRUCTURAL_HINT}"))]
+    #[diagnostic(code(ERR_PNPM_RESOLUTION_SHAPE_MISMATCH), help("{HINT}"))]
     ResolutionShapeMismatch {
         #[error(not(source))]
         count: usize,
@@ -94,39 +85,11 @@ pub enum VerifyError {
     },
 
     #[display("{count} lockfile entries failed verification:\n{breakdown}")]
-    #[diagnostic(code(ERR_PNPM_TARBALL_URL_MISMATCH), help("{STRUCTURAL_HINT}"))]
-    TarballUrlMismatch {
-        #[error(not(source))]
-        count: usize,
-        breakdown: String,
-    },
-
-    #[display("{count} lockfile entries failed verification:\n{breakdown}")]
-    #[diagnostic(code(ERR_PNPM_TARBALL_REVISION_MISMATCH), help("{STRUCTURAL_HINT}"))]
-    TarballRevisionMismatch {
-        #[error(not(source))]
-        count: usize,
-        breakdown: String,
-    },
-
-    #[display("{count} lockfile entries failed verification:\n{breakdown}")]
-    #[diagnostic(code(ERR_PNPM_MISSING_NAMED_REGISTRY), help("{STRUCTURAL_HINT}"))]
-    MissingNamedRegistry {
-        #[error(not(source))]
-        count: usize,
-        breakdown: String,
-    },
-
-    #[display("{count} lockfile entries failed verification:\n{breakdown}")]
-    #[diagnostic(code(ERR_PNPM_LOCKFILE_RESOLUTION_VERIFICATION))]
+    #[diagnostic(code(ERR_PNPM_LOCKFILE_RESOLUTION_VERIFICATION), help("{HINT}"))]
     LockfileResolutionVerification {
         #[error(not(source))]
         count: usize,
         breakdown: String,
-        /// The structural hint unless every entry failed a relaxable policy,
-        /// since relaxing a policy cannot clear any other entry.
-        #[help]
-        hint: &'static str,
     },
 
     /// One or more dependency aliases in the lockfile are not valid npm
@@ -138,14 +101,6 @@ pub enum VerifyError {
         #[error(not(source))]
         count: usize,
         breakdown: String,
-    },
-
-    /// Dependency reachable from an importer that is missing from lockfile snapshots.
-    #[display("Broken lockfile: no entry for '{dep_path}' in pnpm-lock.yaml")]
-    #[diagnostic(code(ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY), help("{MISSING_DEPENDENCY_HINT}"))]
-    MissingDependency {
-        #[error(not(source))]
-        dep_path: String,
     },
 }
 
@@ -176,12 +131,6 @@ impl VerifyError {
         VerifyError::InvalidDependencyAlias { count, breakdown }
     }
 
-    /// Constructs [`VerifyError::MissingDependency`].
-    #[must_use]
-    pub fn missing_dependency(dep_path: &str) -> Self {
-        VerifyError::MissingDependency { dep_path: dep_path.to_string() }
-    }
-
     /// Build the appropriate variant from a list of rendered
     /// violations. The list is **already sorted** by `name@version`
     /// (the runner sorts before calling). Empty input is a logic
@@ -197,56 +146,34 @@ impl VerifyError {
         let count = violations.len();
         let breakdown = violation_breakdown(violations, mixed);
 
-        let hint = if distinct_codes.iter().all(|code| is_policy_violation(code)) {
-            HINT
-        } else {
-            STRUCTURAL_HINT
-        };
-
         if mixed {
-            return VerifyError::LockfileResolutionVerification { count, breakdown, hint };
-        }
-        // Safe: distinct_codes has exactly one element.
-        let code = *distinct_codes
-            .iter()
-            .next()
-            .expect("at least one code");
-        Self::from_single_code(code, count, breakdown, hint)
-    }
-
-    /// The variant carrying the stable code for a batch whose entries all
-    /// failed with `code`. An unknown verifier code falls back to the
-    /// generic envelope rather than fabricating a variant.
-    fn from_single_code(code: &str, count: usize, breakdown: String, hint: &'static str) -> Self {
-        use pnpm_resolving_npm_resolver_violation_codes as codes;
-        match code {
-            codes::MINIMUM_RELEASE_AGE_VIOLATION => {
-                VerifyError::MinimumReleaseAgeViolation { count, breakdown }
+            VerifyError::LockfileResolutionVerification { count, breakdown }
+        } else {
+            // Safe: distinct_codes has exactly one element.
+            let code = *distinct_codes
+                .iter()
+                .next()
+                .expect("at least one code");
+            match code {
+                pnpm_resolving_npm_resolver_violation_codes::MINIMUM_RELEASE_AGE_VIOLATION => {
+                    VerifyError::MinimumReleaseAgeViolation { count, breakdown }
+                }
+                pnpm_resolving_npm_resolver_violation_codes::TRUST_DOWNGRADE => {
+                    VerifyError::TrustDowngrade { count, breakdown }
+                }
+                pnpm_resolving_npm_resolver_violation_codes::MISSING_TARBALL_INTEGRITY => {
+                    VerifyError::MissingTarballIntegrity { count, breakdown }
+                }
+                crate::RESOLUTION_SHAPE_MISMATCH_VIOLATION_CODE => {
+                    VerifyError::ResolutionShapeMismatch { count, breakdown }
+                }
+                // Unknown verifier code (future-proofing): fall back
+                // to the generic envelope rather than fabricating a
+                // variant we don't have.
+                _ => VerifyError::LockfileResolutionVerification { count, breakdown },
             }
-            codes::TRUST_DOWNGRADE => VerifyError::TrustDowngrade { count, breakdown },
-            codes::MISSING_TARBALL_INTEGRITY => {
-                VerifyError::MissingTarballIntegrity { count, breakdown }
-            }
-            codes::TARBALL_URL_MISMATCH => VerifyError::TarballUrlMismatch { count, breakdown },
-            codes::TARBALL_REVISION_MISMATCH => {
-                VerifyError::TarballRevisionMismatch { count, breakdown }
-            }
-            codes::MISSING_NAMED_REGISTRY => VerifyError::MissingNamedRegistry { count, breakdown },
-            crate::RESOLUTION_SHAPE_MISMATCH_VIOLATION_CODE => {
-                VerifyError::ResolutionShapeMismatch { count, breakdown }
-            }
-            _ => VerifyError::LockfileResolutionVerification { count, breakdown, hint },
         }
     }
-}
-
-/// Whether a policy the user can relax produced this violation code.
-fn is_policy_violation(code: &str) -> bool {
-    matches!(
-        code,
-        pnpm_resolving_npm_resolver_violation_codes::MINIMUM_RELEASE_AGE_VIOLATION
-            | pnpm_resolving_npm_resolver_violation_codes::TRUST_DOWNGRADE,
-    )
 }
 
 /// Bound the printed list and omit the trailing newline from the error text.
@@ -300,12 +227,6 @@ mod pnpm_resolving_npm_resolver_violation_codes {
     pub const TRUST_DOWNGRADE: &str = "TRUST_DOWNGRADE";
     /// Matches `pnpm_resolving_npm_resolver::MISSING_TARBALL_INTEGRITY_VIOLATION_CODE`.
     pub const MISSING_TARBALL_INTEGRITY: &str = "MISSING_TARBALL_INTEGRITY";
-    /// Matches `pnpm_resolving_npm_resolver::TARBALL_URL_MISMATCH_VIOLATION_CODE`.
-    pub const TARBALL_URL_MISMATCH: &str = "TARBALL_URL_MISMATCH";
-    /// Matches `pnpm_resolving_npm_resolver::TARBALL_REVISION_MISMATCH_VIOLATION_CODE`.
-    pub const TARBALL_REVISION_MISMATCH: &str = "TARBALL_REVISION_MISMATCH";
-    /// Matches `pnpm_resolving_npm_resolver::MISSING_NAMED_REGISTRY_VIOLATION_CODE`.
-    pub const MISSING_NAMED_REGISTRY: &str = "MISSING_NAMED_REGISTRY";
 }
 
 #[cfg(test)]

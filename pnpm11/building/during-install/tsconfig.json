@@ -16,9 +16,6 @@
       "path": "../../bins/linker"
     },
     {
-      "path": "../../config/package-is-installable"
-    },
-    {
       "path": "../../config/reader"
     },
     {
@@ -41,9 +38,6 @@
     },
     {
       "path": "../../exec/lifecycle"
-    },
-    {
-      "path": "../../fs/dir-lock"
     },
     {
       "path": "../../fs/hard-link-dir"

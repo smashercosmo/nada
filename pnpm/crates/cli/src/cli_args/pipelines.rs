@@ -39,7 +39,6 @@ use install::init_shared_state;
 use miette::Context;
 
 use pnpm_config::{Config, Host};
-use pnpm_injected_deps_syncer::{injected_source_dirs, sync_injected_deps_of_modules_dir};
 use pnpm_network::ThrottledClient;
 use pnpm_package_manager::{PathNode, graph_sequencer};
 use pnpm_reporter::Reporter;
@@ -142,9 +141,6 @@ pub(crate) struct DedicatedProjects {
     /// Whether the selection is every workspace project, so that the run
     /// leaves no project's lockfile behind its manifest.
     covers_workspace: bool,
-    /// The sources whose injected copies are synced once every project ran
-    /// its lifecycle scripts, taken from the manifests read before they ran.
-    injected_source_dirs: HashSet<PathBuf>,
 }
 
 impl DedicatedProjects {
@@ -160,18 +156,7 @@ impl DedicatedProjects {
                 || selection.selected_dirs
                     .iter()
                     .any(|dir| pnpm_fs::lexical_normalize(dir) == normalized_root));
-        let injected_source_dirs = injected_source_dirs(
-            selection.projects
-                .iter()
-                .filter(|project| selection.project_dependencies.contains_key(&project.root_dir))
-                .map(|project| (project.root_dir.as_path(), Some(project.manifest.value()))),
-        );
-        DedicatedProjects {
-            dependencies: selection.project_dependencies,
-            names,
-            covers_workspace,
-            injected_source_dirs,
-        }
+        DedicatedProjects { dependencies: selection.project_dependencies, names, covers_workspace }
     }
 
     fn is_empty(&self) -> bool {
@@ -219,10 +204,6 @@ struct DedicatedProjectRuns<'a> {
     /// them succeeded and they cover the workspace. See
     /// [`prune_after_dedicated_installs`].
     prune_excludes: bool,
-    /// Whether the command installs the projects' dependencies, so that
-    /// their injected copies are synced once all of them ran. See
-    /// [`sync_dedicated_injected_deps`].
-    sync_injected_deps: bool,
 }
 
 impl DedicatedProjectRuns<'_> {
@@ -234,20 +215,6 @@ impl DedicatedProjectRuns<'_> {
         self.run_projects(run).await?;
         if self.prune_excludes && self.projects.covers_workspace {
             prune_after_dedicated_installs(self.config)?;
-        }
-        if self.sync_injected_deps {
-            let project_dirs: Vec<PathBuf> = self.projects.dependencies
-                .keys()
-                .cloned()
-                .collect();
-            sync_dedicated_injected_deps(
-                self.config,
-                &project_dirs,
-                &DedicatedSync {
-                    names: &self.projects.names,
-                    source_dirs: &self.projects.injected_source_dirs,
-                },
-            )?;
         }
         Ok(())
     }
@@ -311,37 +278,6 @@ fn prune_after_dedicated_installs(config: &Config) -> miette::Result<()> {
     };
     pnpm_package_manager::prune_against_project_lockfiles(config, workspace_dir)
         .wrap_err("prune the workspace manifest")
-}
-
-/// With a shared lockfile, an injected workspace project is synced into its
-/// copies after its own lifecycle scripts run. With a lockfile per project,
-/// every project is installed on its own, so the copies that `project_dirs`
-/// hold of each other are synced once all of them ran their scripts.
-fn sync_dedicated_injected_deps(
-    config: &Config,
-    project_dirs: &[PathBuf],
-    sync: &DedicatedSync<'_>,
-) -> miette::Result<()> {
-    if config.ignore_scripts || config.virtual_store_only {
-        return Ok(());
-    }
-    for project_dir in project_dirs {
-        let modules_dir = config.project_modules_dir(
-            project_dir,
-            sync.names.get(project_dir).map(String::as_str),
-        );
-        sync_injected_deps_of_modules_dir(project_dir, &modules_dir, sync.source_dirs)?;
-    }
-    Ok(())
-}
-
-/// What [`sync_dedicated_injected_deps`] needs to know about the projects
-/// beyond their directories.
-pub(super) struct DedicatedSync<'a> {
-    /// See [`DedicatedProjects::names`].
-    pub(super) names: &'a HashMap<PathBuf, String>,
-    /// See [`injected_source_dirs`].
-    pub(super) source_dirs: &'a HashSet<PathBuf>,
 }
 
 /// The selection in build order. Sequenced over borrowed paths: cloning a
@@ -437,26 +373,6 @@ pub(in crate::cli_args) fn anchor_active_project(cfg: &mut Config, manifest_path
         .to_path_buf();
     let name = dedicated_project_name(cfg, &manifest_dir);
     cfg.anchor_dedicated_project(&manifest_dir, name.as_deref());
-}
-
-/// The config through which a command finds the installed packages of the
-/// active project. In a workspace whose projects keep their own lockfiles,
-/// those are in the active project's modules directory, not the workspace
-/// root's.
-pub(in crate::cli_args) fn installed_project_config(
-    config: &'static Config,
-    manifest_path: &Path,
-) -> &'static Config {
-    if !keeps_project_lockfiles(config) {
-        return config;
-    }
-    let mut config = config.clone();
-    anchor_active_project(&mut config, manifest_path);
-    Config::leak(config)
-}
-
-pub(in crate::cli_args) fn keeps_project_lockfiles(config: &Config) -> bool {
-    !config.shares_one_lockfile() && config.workspace_dir.is_some()
 }
 
 fn record_dedicated_result(
