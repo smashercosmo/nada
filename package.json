@@ -51,8 +51,10 @@
     "clean:lock": "rm -rf pnpm-lock.yaml",
     "clean:modules": "pnpm clean",
     "format": "oxfmt",
-    "lint": "oxlint --type-aware && eslint",
-    "lint:fix": "oxlint --type-aware --fix && eslint --fix",
+    "lint:compat": "es-check",
+    "lint:es": "eslint",
+    "lint:ox": "oxlint --type-aware",
+    "lint": "pnpm lint:es && pnpm lint:ox && lint:compat",
     "nada": "node src/lib/index.ts",
     "test": "vitest run",
     "typecheck": "pnpm --noEmit",
@@ -62,48 +64,53 @@
     "@clack/prompts": "catalog:deps",
     "@pnpm/cli.meta": "catalog:pnpm",
     "@pnpm/cli.utils": "catalog:pnpm",
-    "configs": "catalog:",
-    "my": "catalog:",
-    "myconfig": "catalog:",
+    "@pnpm/deps.inspection.list": "catalog:pnpm",
+    "@pnpm/find-workspace-dir": "catalog:pnpm",
     "yaml": "catalog:deps"
   },
   "devDependencies": {
+    "@eslint/js": "catalog:lint",
     "@eslint/json": "catalog:lint",
+    "@pnpm/catalogs.types": "catalog:pnpm",
+    "@pnpm/config.reader": "catalog:pnpm",
+    "@pnpm/resolving.registry.types": "catalog:pnpm",
     "@pnpm/types": "catalog:types",
-    "@stylistic/eslint-plugin": "catalog:lint",
     "@types/node": "catalog:types",
-    "@types/semver": "catalog:pnpm",
+    "@typescript/native": "npm:typescript@7.0.2",
     "@vitest/coverage-v8": "catalog:test",
     "actions-up": "catalog:dev",
     "cli-testing-library": "catalog:test",
+    "es-check": "catalog:lint",
     "eslint": "catalog:lint",
+    "eslint-plugin-n": "catalog:lint",
     "eslint-plugin-package-json": "catalog:lint",
+    "globals": "catalog:lint",
     "jiti": "catalog:dev",
     "node-pty": "catalog:test",
     "oxfmt": "catalog:dev",
     "oxlint": "catalog:lint",
     "oxlint-tsgolint": "catalog:lint",
-    "semver": "catalog:pnpm",
     "ts-extras": "catalog:types",
     "tsdown": "catalog:dev",
-    "typescript": "catalog:dev",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-eslint": "catalog:lint",
     "vitest": "catalog:test"
   },
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@12.0.0",
   "engines": {
     "node": ">=24.0.0",
-    "pnpm": ">=11.0.0"
+    "pnpm": ">=12.0.0"
   },
   "devEngines": {
-      "packageManager": {
-        "name": "pnpm",
-        "version": "v12.6.0"
-      },
-      "runtime": {
-        "name": "node",
-        "version": "v26.10.0"
-      }
+    "packageManager": {
+      "name": "pnpm",
+      "version": "v12.8.1"
     },
+    "runtime": {
+      "name": "node",
+      "version": "v26.10.0"
+    }
+  },
   "publishConfig": {
     "bin": {
       "nada": "./dist/index.mjs"

@@ -1,8 +1,29 @@
 import jsonPlugin from "@eslint/json"
+import nodePlugin from "eslint-plugin-n"
 import packageJsonPlugin from "eslint-plugin-package-json/experimental"
-import { defineConfig } from "eslint/config"
+import { defineConfig, globalIgnores } from "eslint/config"
+import { parser as tsParser } from "typescript-eslint"
+import globals from "globals"
 
 export default defineConfig([
+  globalIgnores(["./repos/*"]),
+  {
+    files: ["**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+      parserOptions: {
+        ecmaVersion: "2024",
+        projectService: true,
+      },
+      parser: tsParser,
+    },
+    plugins: { n: nodePlugin },
+    rules: {
+      "n/no-unsupported-features/es-builtins": "error",
+      "n/no-unsupported-features/es-syntax": "error",
+      "n/no-unsupported-features/node-builtins": "error",
+    },
+  },
   {
     files: ["**/package.json"],
     language: "json/json",

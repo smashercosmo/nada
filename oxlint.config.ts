@@ -178,11 +178,6 @@ const config: OxlintConfig = {
      */
     "unicorn/no-nested-ternary": "off",
 
-    /**
-     *
-     */
-    "unicorn/max-nested-calls": "off",
-
     //endregion
 
     //region ------------- ESLint rules -------------
@@ -1017,8 +1012,7 @@ const config: OxlintConfig = {
         //region ------------- Non-relevant rules from other plugins -------------
 
         /**
-         * There can be infinite number of `describe` functions
-         * nesting.
+         * There can be an infinite nesting of `describe` functions.
          */
         "unicorn/max-nested-calls": "off",
       },

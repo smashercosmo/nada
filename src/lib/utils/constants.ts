@@ -3,6 +3,7 @@ import os from "node:os"
 const SUPPORTED_PACKAGE_MANAGER = "pnpm" as const
 const EXIT_CODE_FATAL_EXCEPTION = 1 as const
 const EXIT_CODE_NO_MORE_CODE_TO_EXECUTE = 0 as const
+const EXIT_CODE_CANCELLED = 130 as const;
 const PACKAGE_MANAGER_IS_NOT_SUPPORTED_TEXT =
   "This tool only supports `pnpm` package manager." as const
 const PNPM_VERSION_10 = 10 as const
@@ -26,6 +27,7 @@ const TEXT_COULD_NOT_DETERMINE_SUPPORTED_PNPM_VERSION = [
   "Continue anyway, but don't guaranty the result.",
 ].join(os.EOL);
 const TEXT_EXITING = "Exiting..." as const
+const DEFAULT_CATALOG_NAME = "default" as const;
 
 function getPnpmVersionIsNotSupportedMessage({
   supportedPnpmMajorVersion,
@@ -44,6 +46,7 @@ export {
   SUPPORTED_PACKAGE_MANAGER,
   EXIT_CODE_FATAL_EXCEPTION,
   EXIT_CODE_NO_MORE_CODE_TO_EXECUTE,
+  EXIT_CODE_CANCELLED,
   PACKAGE_MANAGER_IS_NOT_SUPPORTED_TEXT,
   PNPM_VERSION_10,
   PNPM_VERSION_11,
@@ -55,5 +58,6 @@ export {
   TEXT_EXITING,
   TEXT_COULD_NOT_DETERMINE_CURRENT_PNPM_VERSION,
   TEXT_COULD_NOT_DETERMINE_SUPPORTED_PNPM_VERSION,
+  DEFAULT_CATALOG_NAME,
   getPnpmVersionIsNotSupportedMessage,
 }

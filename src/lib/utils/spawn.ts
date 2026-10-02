@@ -9,10 +9,10 @@ import type { SpawnFn } from "./pnpm.ts"
 interface Options {
   command: string
   args: readonly string[]
-  cwd: string
   spawnImpl: SpawnFn
   stdin: "ignore" | "inherit"
   stdout: "pipe" | "inherit"
+  cwd?: string | undefined
   env?: NodeJS.ProcessEnv | undefined
 }
 

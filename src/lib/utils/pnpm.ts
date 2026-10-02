@@ -1,18 +1,97 @@
+import type { Catalog } from "@pnpm/catalogs.types"
+import type { Config as _Config } from "@pnpm/config.reader"
+import type { PackageDependencyHierarchy } from "@pnpm/deps.inspection.list"
+import type { PackageInRegistry } from "@pnpm/resolving.registry.types"
+import type { ProjectManifest } from "@pnpm/types"
 import type { ChildProcess, SpawnOptions } from "node:child_process"
 
-import child_process from "node:child_process"
+import child_process from "child_process"
+import childProcess from "node:child_process"
 import process from "node:process"
+import util from "node:util"
 
-import { SUPPORTED_PACKAGE_MANAGER } from "#lib/utils/constants.js"
+import { DEFAULT_CATALOG_NAME, SUPPORTED_PACKAGE_MANAGER } from "#lib/utils/constants.js"
 import {
   spawn,
   spawnProcessAndCaptureResult,
   type SpawnProcessAndCaptureResultOptions,
-} from '#lib/utils/spawn.js'
+} from "#lib/utils/spawn.js"
 
 interface WorkspaceProject {
   name: string
   path: string
+}
+
+const execFileAsync = util.promisify(childProcess.execFile)
+
+// pnpm hasn't yet updated its types with new `saveTypes` option,
+// and they also forgot to add `catalog` property for the default catalog
+type Config = _Config & { saveTypes?: boolean; catalog?: Catalog }
+type PnpmCommand = "info" | "pkg" | "config" | "list"
+type PnpmCommandArgs<TCommand extends PnpmCommand> = TCommand extends "info"
+  ? [string, ...(keyof PackageInRegistry)[]]
+  : TCommand extends "list"
+    ? ["--recursive", "--depth", "-1"]
+    : TCommand extends "pkg"
+      ? ["get"] | ["get", ...(keyof ProjectManifest | (string & {}))[]]
+      : ["list"] | ["get", keyof Config]
+
+/**
+ * @param {object} options
+ * @param {PnpmCommand} options.command - pnpm command to run
+ * @param {string[]} options.args - pnpm command arguments
+ * @param {string[]} options.flags - additional arguments, whose names start with "--"
+ * @param {string} options.cwd - working directory from which the process is spawned
+ */
+export async function runPnpmJson<
+  TCommand extends PnpmCommand,
+  const TArgs extends PnpmCommandArgs<TCommand>,
+>(options: {
+  command: TCommand
+  args?: TArgs
+  flags?: string[]
+  cwd?: string
+}): Promise<
+  TCommand extends "info"
+    ? TArgs extends [string, ...infer TProperties extends string[]]
+      ? TProperties extends [...(keyof PackageInRegistry)[]]
+        ? Pick<PackageInRegistry, TProperties[number] | "name">
+        : PackageInRegistry
+      : unknown
+    : TCommand extends "list"
+      ? Pick<PackageDependencyHierarchy, "name" | "path">[]
+      : TCommand extends "pkg"
+        ? TArgs extends ["get", ...infer TProperties extends string[]]
+          ? TProperties extends [...(keyof ProjectManifest)[]]
+            ? Pick<ProjectManifest, TProperties[number] | "name">
+            : ProjectManifest
+          : unknown
+        : TCommand extends "config"
+          ? TArgs extends ["list"]
+            ? Config
+            : TArgs extends ["get", infer TProperty extends string]
+              ? TProperty extends keyof Config
+                ? Config[TProperty]
+                : unknown
+              : unknown
+          : unknown
+> {
+  const { args: _args = [], flags = [], command, cwd = process.cwd() } = options
+  const args = command === "info" || command === "pkg" ? [..._args, "name"] : _args
+  const { stdout } = await execFileAsync(
+    "pnpm",
+    [command, ...[...new Set(args)], ...flags, "--json"],
+    { cwd },
+  )
+  return JSON.parse(stdout.trim())
+}
+
+/**
+ * Executes a native pnpm command and returns raw stdout string.
+ */
+export async function runPnpm(args: readonly string[], cwd: string): Promise<string> {
+  const { stdout } = await execFileAsync("pnpm", args, { cwd })
+  return stdout.trim()
 }
 
 /**
@@ -35,21 +114,6 @@ export type SpawnFn = (
   options: SpawnOptions,
 ) => ChildProcess
 
-export interface AddOptions {
-  /** Packages passed to a single `pnpm add` invocation. */
-  packageNames: string[]
-  /** Workspace root / current working directory for pnpm. */
-  cwd: string
-  /** Package name selected by the user; ignored for a root install. */
-  targetName: string | undefined
-  /** Whether the selected project is the workspace root. */
-  isRoot: boolean
-  /** The dependency field into which pnpm should save the packages. */
-  dependencyField: "dependencies" | "devDependencies"
-  /** Named pnpm catalog that should receive the versions. */
-  catalogName: string
-}
-
 /**
  * Raised when pnpm successfully starts but reports that dependency build
  * scripts were ignored because they have not been approved.
@@ -65,50 +129,38 @@ export class PnpmIgnoredBuildsError extends Error {
   }
 }
 
-/**
- * Builds the exact argument vector passed to `pnpm add`.
- *
- * Keeping argument construction separate from process execution is useful
- * both for readability and for testing: we can verify the CLI's meaning
- * without starting pnpm.
- */
-function buildArgs(options: AddOptions): string[] {
-  const args = ["add", ...options.packageNames]
+export interface AddOptions {
+  cwd?: string
+  /** Package specs, e.g. `lodash@4.18.1`. */
+  packages: readonly string[]
+  /**
+   * - omitted: plain `pnpm add`, no catalog
+   * - "default": `--save-catalog`
+   * - anything else: `--save-catalog-name <name>`
+   */
+  catalogName?: string
+}
 
-  if (options.isRoot) {
-    // Pnpm normally protects a workspace root from accidental dependency
-    // Installation. `-w` explicitly says that the root is the intended target.
-    args.push("-w")
-  } else if (options.targetName) {
-    // For a non-root workspace project, pnpm's `--filter` selects the package.
-    args.push("--filter", options.targetName)
+export function buildAddArgs(options: Pick<AddOptions, "packages" | "catalogName">): string[] {
+  const args = ["add"]
+
+  if (options.catalogName === DEFAULT_CATALOG_NAME) {
+    args.push("--save-catalog")
+  } else if (options.catalogName !== undefined) {
+    args.push("--save-catalog-name", options.catalogName)
   }
 
-  if (options.dependencyField === "devDependencies") {
-    args.push("--save-dev")
-  }
-
-  // The tool intentionally always uses a named catalog rather than pnpm's
-  // Unnamed/default catalog. pnpm creates a new named catalog when necessary.
-  args.push("--save-catalog-name", options.catalogName)
+  args.push(...options.packages)
   return args
 }
 
-/**
- * Runs the interactive `pnpm add` command.
- *
- * stdin/stdout/stderr are inherited so pnpm remains a genuine interactive
- * child: prompts such as build-script approval can be answered directly in
- * the user's terminal. The function returns pnpm's numeric exit status rather
- * than throwing for an ordinary non-zero exit.
- */
 export async function runPackageAddCommand(
   options: AddOptions,
   spawnImpl: SpawnFn = child_process.spawn,
 ): Promise<number> {
   const result = await spawn({
     command: "pnpm",
-    args: buildArgs(options),
+    args: buildAddArgs(options),
     cwd: options.cwd,
     spawnImpl,
     stdin: "inherit",
@@ -173,7 +225,9 @@ export async function checkIfPnpmIsAvailable() {
   }
 }
 
-export async function getCurrentPnpmVersion(options?: Omit<SpawnProcessAndCaptureResultOptions, "command" | "args">) {
+export async function getCurrentPnpmVersion(
+  options?: Omit<SpawnProcessAndCaptureResultOptions, "command" | "args">,
+) {
   return spawnProcessAndCaptureResult({ command: "pnpm", args: ["--version"], ...options })
 }
 
@@ -223,9 +277,4 @@ export async function getWorkspaceProjects(
       )
     })
     .map((entry) => ({ name: entry.name, path: entry.path }))
-}
-
-/** Returns a human-readable command string for the confirmation/status UI. */
-export function describePnpmAddCommand(options: AddOptions): string {
-  return ["pnpm", ...buildArgs(options)].join(" ")
 }

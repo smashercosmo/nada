@@ -1,53 +1,56 @@
 packages:
   - src/*
+  - projects/*
 
 allowBuilds:
+  msgpackr-extract: true
   node: true
   node-pty: true
-autoDedupe: true
 
-catalog:
-  '@pnpm/cli.utils': 1101.0.28
-  configs: 1.0.3
-  my: 0.3.3
-  myconfig: 0.0.3
-catalogMode: strict
+autoInstallPeers: true
+autoDedupe: true
+cleanupUnusedCatalogs: true
+hoist: false
+saveExact: true
+
 
 catalogs:
   deps:
     "@clack/prompts": 1.8.1
     yaml: 2.9.1
   dev:
-    '@pnpm/cli.utils': 1101.0.28
-    actions-up: 1.20.1
+    actions-up: 1.21.0
     jiti: 2.7.0
     oxfmt: 0.70.0
     tsdown: 0.23.0
-    typescript: 7.0.2
   lint:
+    '@eslint/js': 10.0.1
     '@eslint/json': 2.1.0
-    "@stylistic/eslint-plugin": 5.10.0
+    es-check: 9.8.1
     eslint: 10.11.0
+    eslint-plugin-n: 18.4.0
     eslint-plugin-package-json: 1.10.0
-    eslint-plugin-regexp: 3.3.1
+    globals: 17.12.0
     oxlint: 1.85.0
-    oxlint-tsgolint: 7.0.2002
+    oxlint-tsgolint: 7.0.2003
+    typescript-eslint: 8.70.1
   pnpm:
-    '@pnpm/cli.command': 1100.0.2
-    '@pnpm/cli.meta': 1100.1.0
-    '@pnpm/cli.utils': 1101.0.28
-    '@pnpm/types': 1102.1.0
-    '@types/semver': 7.8.0
-    semver: 7.8.5
+    '@pnpm/catalogs.types': 1100.0.1
+    '@pnpm/cli.meta': 1100.1.1
+    '@pnpm/cli.utils': 1101.0.29
+    '@pnpm/config.reader': 1102.3.0
+    '@pnpm/deps.inspection.list': 1101.0.8
+    '@pnpm/find-workspace-dir': 1000.1.5
+    '@pnpm/resolving.registry.types': 1100.2.1
   test:
-    "@vitest/coverage-v8": 5.0.1
+    "@vitest/coverage-v8": 5.0.2
     cli-testing-library: 4.0.0
     node-pty: 1.1.0
-    vitest: 5.0.1
+    vitest: 5.0.2
   types:
-    '@pnpm/types': 1102.1.0
+    '@pnpm/types': 1102.1.1
     "@types/node": 26.6.3
     ts-extras: 1.3.0
-hoist: false
 
-saveExact: true
+
+catalogMode: strict

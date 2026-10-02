@@ -1,0 +1,8 @@
+{
+  "ecmaVersion": "es2024",
+  "module": true,
+  "typescript": true,
+  "files": ["./*.ts", "./src/**/*.ts"],
+  "not": ["./repos/**/*"],
+  "checkFeatures": true
+}

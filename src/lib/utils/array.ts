@@ -11,6 +11,18 @@ class ExtendedArray<T> extends Array<T> {
     return this.length !== 0
   }
 
+  /**
+   * Named from the similar function in `lodash`.
+   */
+  public compact() {
+    return this.filter(item => item !== undefined)
+  }
+
+  override concat(...items: ConcatArray<T>[]) {
+    super.concat(...items);
+    return this;
+  }
+
   public unique() {
     const unique = new Set(this)
 

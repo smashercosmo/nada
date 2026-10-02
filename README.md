@@ -1,8 +1,14 @@
 # About the tool
 
-`nada` is a convenient CLI tool to manage your project dependencies. As of by "manage" I mean
-"install" only, as I've just started working on it and the functionality that I prioritize is
-intentionally quite limited. IN future It might gtow into somethimg bigger.
+`nada` is a convenient CLI tool that makes the dependency installation process much nicer and more user-friendly.
+
+---
+
+### Who is it most usefull for?
+
+You can use `nada` in any project, but **monorepos** is where it actually shines.
+
+---
 
 ### Why is it called `nada`?
 
@@ -20,79 +26,40 @@ our virtual environments. We kinda say "nnnnada react redux typescript", meaning
 redux typescript". But I'm just lazy — extremely lazy — to write four extra "n" characters, hence
 the name :)
 
-### Who is it most usefull for?
-
-You can use `nada` in any project, but **monorepos** is where it actually shines.
+---
 
 ### Requirements for the tool
 
-- First of all, pnpm is the only supported packager and supporting other players is not in the
+I like to be on the edge and use all the latest niceties that 
+our favourite dev tools have to offer. This is the reason this project
+has a pretty high bar for supported `node` and `pnpm` versions.
+
+#### Pnpm
+
+- First, pnpm is the only supported package managerr, and supporting other players is not in the
   plans. Pnpm's workspaces is basically an industry standard for monorepos at the moment.
-- Secondly, the minimal supported pnpm version is `>=11`. Bo logical explanation here, I just like
-  living on the edge
-- especially when it comes to dev tools. So, make sure you have something like this in your
-  packahe.json.
 
-  ```json
-  "devEngines": {
-    "packageManager": { "name": "pnpm", "version": "10.0.0", "onFail": "download" }
-  }
-  ```
+- Secondly, the minimal supported pnpm version is `>=12.7.0`, as `nada` uses many of its newly implemented features.
 
--
-- Only the `name` is checked — version enforcement is left to pnpm's own `onFail` handling.
-- **`catalogMode: strict` and `saveExact: true` in `pnpm-workspace.yaml`.** These are hard
-  requirements: every dependency goes into a _named_ catalog (never the bare default catalog) with
-  an exact version. If the file or either setting is missing, the tool offers to add it; declining
-  exits without installing anything.
+#### Node
 
-## What each prompt does
+ Node's version requirements are not that high. It's guaranteed to work on `>=24.0.0`, but might also work on older versions.
 
-1. **Project** — only asked when `pnpm-workspace.yaml` has a non-empty `packages:` list (i.e. it's
-   actually a monorepo). Options come from `pnpm list -r --depth -1 --json`, with the root project
-   listed first. In a non-monorepo project this step is skipped and the root is used.
-2. **Save as** — `dependencies` or `devDependencies`, applied to the whole batch of packages in one
-   run.
-3. **Catalog** — pick an existing named catalog or create a new one (`--save-catalog-name` creates
-   it automatically if it's new).
+#### Package.json
 
-Multiple package names in one run (`pnpm deps:install lodash axios uuid`) all go to the same
-project/dep-type/catalog. For a different combination, run the tool again.
-
-Package names are checked against the npm registry up front; a miss lets you retype the name before
-anything runs. There are no CLI flags to skip prompts — this tool's whole point is guided, not
-scriptable use. For CI/scripting, just call `pnpm add` directly.
-
-## Setup
-
-```bash
-cd deps-install
-npm install
-npm run build
-```
-
-Then wire it into your monorepo root `package.json`:
+If your package.json contains the following section, you're good to go.
 
 ```json
-"scripts": {
-  "deps:install": "node ./deps-install/dist/index.js"
+{
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "v24.0.0"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=12.0.0"
+    }
+  }
 }
 ```
-
-(Adjust the path to wherever you place this folder.) Run it from the repo root, e.g.
-`pnpm deps:install <package> [<package>...]`.
-
-## Development
-
-```bash
-npm run start -- lodash    # runs directly via tsx, no build step
-```
-
-## Files
-
-- `src/lib/index.ts` — prompt flow and orchestration
-- `src/lib/utils/package-manager-check.ts` — verifies `devEngines.packageManager.name === "pnpm"`
-- `src/lib/utils/workspace-config.ts` — finds/creates `pnpm-workspace.yaml`, enforces
-  `catalogMode: strict` + `saveExact: true`, reads `packages:`/`catalogs:`
-- `src/lib/utils/pnpm.ts` — lists workspace projects and runs `pnpm add`
-- `src/lib/utils/registry.ts` — npm registry existence check for typo guarding

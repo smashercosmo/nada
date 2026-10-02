@@ -3,9 +3,14 @@
   "compilerOptions": {
     "rootDir": "."
   },
-  "include": ["./src/tests", "vitest.config.ts", "oxlint.config.ts", "oxfmt.config.ts",
+  "include": [
+    "./src/tests",
+    "vitest.config.ts",
+    "oxlint.config.ts",
+    "oxfmt.config.ts",
     "eslint.config.ts",
-    "test.ts"
+    "tsdown.config.ts",
+    "cloneExternalPackageIntoGitSubTree.ts"
   ],
   "references": [{ "path": "./tsconfig.lib.json" }]
 }

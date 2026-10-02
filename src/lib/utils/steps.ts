@@ -1,4 +1,4 @@
-import { log, cancel, text, select } from "@clack/prompts"
+import { log, cancel, text, select, isCancel } from "@clack/prompts"
 import os from "node:os"
 import process from "node:process"
 
@@ -16,8 +16,9 @@ import {
   TEXT_PNPM_CHECK_ERROR,
   TEXT_PNPM_CHECK_SUCCESS,
 } from "#lib/utils/constants.js"
-import { checkIfPnpmIsAvailable, getCurrentPnpmVersion } from "#lib/utils/pnpm.js"
+import { checkIfPnpmIsAvailable, getCurrentPnpmVersion, getPackageInfo } from "#lib/utils/pnpm.js"
 import packageJson from "#root/package.json" with { type: "json" }
+import { ExtendedArray } from "#lib/utils/array.js"
 
 const VERSION_REGEX = /^[<=>^~]*(?<major>\d+)\.\d+\.\d+$/v
 
@@ -128,17 +129,6 @@ async function getPackagesFromUserInputStep() {
   return packages
 }
 
-/*type PackageCheckResult =
-  | {
-  input: string
-  found: true
-  name: string
-}
-  | {
-  input: string
-  found: false
-}*/
-
 /**
  * Checks one package against the npm registry.
  *
@@ -146,7 +136,7 @@ async function getPackagesFromUserInputStep() {
  * This is important because one failed registry request must not prevent the
  * remaining packages from being checked.
  */
-/*async function checkPackage(pkg: string): Promise<PackageCheckResult> {
+async function checkPackage(pkg: string) {
   const [info, error] = await getPackageInfo(pkg)
 
   if (error) {
@@ -174,7 +164,7 @@ async function getPackagesFromUserInputStep() {
     found: true,
     name,
   }
-}*/
+}
 
 /**
  * Recursively validates packages against the npm registry.
@@ -225,11 +215,11 @@ async function getPackagesFromUserInputStep() {
  *   - all packages are valid, or
  *   - the user presses Escape / submits an empty correction.
  */
-/*async function checkPackages(
+export async function checkPackages(
   options: Readonly<{ packages: readonly string[]; found?: readonly string[] }>,
-): Promise<string[]> {
+) {
   const { packages, found = [] } = options
-  /!*
+  /**
    * `found` represents packages that have already been verified.
    *
    * We remove duplicates here as well because the user can enter a package
@@ -244,25 +234,25 @@ async function getPackagesFromUserInputStep() {
    *     "react lodash"
    *
    * We don't want to check `react` again.
-   *!/
+   */
   const known = ExtendedArray.from(found).unique()
 
-  /!*
+  /**
    * Only check packages that aren't already known to be valid.
    *
    * `uniquePackages()` also means duplicate entries in the current prompt
    * result in only one registry request.
-   *!/
+   */
   const remaining = ExtendedArray.from(packages)
     .unique()
     .filter((pkg) => !known.includes(pkg))
 
-  /!*
+  /**
    * There may be nothing left to check.
    *
    * This can happen if the user enters only packages that were already
    * validated in a previous round.
-   *!/
+   */
   if (remaining.isEmpty()) {
     if (known.isNotEmpty()) {
       log.success(
@@ -278,7 +268,7 @@ async function getPackagesFromUserInputStep() {
 
   log.info("Checking packages on the npm registry...")
 
-  /!*
+  /**
    * Promise.all() preserves the order of `remaining`, even though the
    * individual network requests can complete in any order.
    *
@@ -298,7 +288,7 @@ async function getPackagesFromUserInputStep() {
    *     [lodashResult, axiosResult, reactResult]
    *
    * This makes the subsequent processing deterministic.
-   *!/
+   */
   const results = await Promise.all(
     [...remaining].map(async (pkg) => {
       const checked = await checkPackage(pkg)
@@ -306,35 +296,33 @@ async function getPackagesFromUserInputStep() {
     }),
   )
 
-  /!*
+  /**
    * Extract the successful results while preserving the user's order.
    *
    * The registry may return a canonical package name, so we store `result.name`
    * rather than the original input string.
-   *!/
+   */
   const newlyFound = ExtendedArray.from(results)
     .filter((result) => result.found)
     .map((result) => result.name)
+    .compact()
 
-  /!*
+  /**
    * Missing packages use the original input rather than a registry-derived
    * name because there is no valid registry name to use.
-   *!/
+   */
   const missing = ExtendedArray.from(results)
     .filter((result) => !result.found)
     .map((result) => result.input)
 
-  /!*
+  /**
    * Add this round's successful packages to our accumulated list.
-   *
-   * `Set` prevents duplicates. The array is then rebuilt from the Set so
-   * insertion order is retained.
-   *!/
+   */
   const allFound = ExtendedArray.from([...found, ...newlyFound]).unique()
 
-  /!*
+  /**
    * Success case: everything that needed checking was found.
-   *!/
+   */
   if (missing.isEmpty()) {
     log.success(
       ["Found packages", allFound.map((pkg) => `- ${pkg}`).join(os.EOL)].join(os.EOL),
@@ -343,12 +331,12 @@ async function getPackagesFromUserInputStep() {
     return allFound
   }
 
-  /!*
+  /**
    * Show everything that has been validated so far.
    *
    * This includes packages found during earlier recursive calls as well as
    * packages discovered during this call.
-   *!/
+   */
   if (allFound.isNotEmpty()) {
     log.success(
       ["Found packages", allFound.map((pkg) => `- ${pkg}`).join(os.EOL)].join(os.EOL),
@@ -357,7 +345,7 @@ async function getPackagesFromUserInputStep() {
 
   log.warn(["Missing packages", missing.map((pkg) => `- ${pkg}`).join(os.EOL)].join(os.EOL))
 
-  /!*
+  /**
    * Only the missing packages are placed into the text input.
    *
    * This makes the correction workflow convenient:
@@ -374,14 +362,14 @@ async function getPackagesFromUserInputStep() {
    *
    * However, the user can still type additional packages manually, so this
    * prompt also doubles as a way to add packages.
-   *!/
+   */
   const result = await text({
     message:
       "Correct the missing packages or add more packages. Press `Escape` to continue with valid packages.",
     initialValue: missing.join(" "),
   })
 
-  /!*
+  /**
    * Escape means "stop correcting".
    *
    * If we already have valid packages, return them and allow the caller to
@@ -389,7 +377,7 @@ async function getPackagesFromUserInputStep() {
    *
    * If nothing has been validated, there is nothing useful for the caller to
    * continue with, so bail instead.
-   *!/
+   */
   if (isCancel(result)) {
     if (allFound.isNotEmpty()) {
       return allFound
@@ -399,7 +387,7 @@ async function getPackagesFromUserInputStep() {
     process.exit(1);
   }
 
-  /!*
+  /**
    * Convert the user's response into a package list.
    *
    * Multiple whitespace characters are treated as separators, so all of
@@ -408,15 +396,15 @@ async function getPackagesFromUserInputStep() {
    *   lodash axios
    *   lodash    axios
    *   lodash\taxios
-   *!/
+   */
   const correctedPackages = ExtendedArray.from(result.trim().split(/\s+/v)).filter(Boolean)
 
-  /!*
+  /**
    * An empty response is handled similarly to Escape.
    *
    * We don't recurse with an empty array because there is nothing left to
    * validate.
-   *!/
+   */
   if (correctedPackages.isEmpty()) {
     if (allFound.isNotEmpty()) {
       return allFound
@@ -426,7 +414,7 @@ async function getPackagesFromUserInputStep() {
     process.exit(1)
   }
 
-  /!*
+  /**
    * Start another validation round.
    *
    * IMPORTANT:
@@ -438,9 +426,9 @@ async function getPackagesFromUserInputStep() {
    *
    * Previously validated packages will therefore NEVER cause another
    * registry request.
-   *!/
+   */
   return checkPackages({ packages: correctedPackages, found: allFound })
-}*/
+}
 
 export {
   checkIfPnpmIsAvailableStep,

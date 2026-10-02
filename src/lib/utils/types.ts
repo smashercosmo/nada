@@ -1,5 +1,3 @@
-
-
 type DependencyField = "dependencies" | "devDependencies"
 
 /**

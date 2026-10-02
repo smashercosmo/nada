@@ -4,7 +4,7 @@ import os from "node:os"
 import { ExtendedArray } from "#lib/utils/array.js"
 
 /**
- * Filters out flags like "--save-dev", "--save-exact" etc.,
+ * Filters out flags like "--save-dev", "--save-exact", etc.,
  * as there are handled by the CLI tool.
  *
  * @param {readonly string[]} packages - list of packages to filter out flags from

@@ -1,15 +1,17 @@
 #!/usr/bin/env node
-import { intro, updateSettings } from "@clack/prompts"
+import { intro, log, cancel, updateSettings } from "@clack/prompts"
 import console from "node:console"
 import process from "node:process"
 
-import { EXIT_CODE_FATAL_EXCEPTION, TEXT_INTRO } from "#lib/utils/constants.js"
+import { EXIT_CODE_CANCELLED, EXIT_CODE_FATAL_EXCEPTION, TEXT_INTRO } from "#lib/utils/constants.js"
+import { installPackagesStep } from "#lib/utils/install.js"
 import {
-  checkIfPnpmVersionIsSupportedStep,
-  checkIfPnpmIsAvailableStep,
   getPackagesFromUserInputStep,
   getPackagesFromCliArgsStep,
+  checkPackages,
 } from "#lib/utils/steps.js"
+import { ExtendedArray } from "#lib/utils/array.js"
+import { findWorkspaceDir } from "@pnpm/find-workspace-dir"
 
 declare global {
   namespace NodeJS {
@@ -22,6 +24,14 @@ declare global {
 }
 
 async function main() {
+  const rootDir = await findWorkspaceDir(process.cwd())
+
+  if (!rootDir) {
+    log.error("Could not find root workspace directory.")
+    cancel("Installation failed.")
+    process.exit(EXIT_CODE_FATAL_EXCEPTION)
+  }
+
   /**
    * Disabling guidelines makes testing easier, as
    * string comparison is more straightforward.
@@ -32,33 +42,31 @@ async function main() {
 
   intro(TEXT_INTRO)
 
-  await checkIfPnpmIsAvailableStep()
-  await checkIfPnpmVersionIsSupportedStep()
+  // await checkIfPnpmIsAvailableStep()
+  // await checkIfPnpmVersionIsSupportedStep()
 
   const packagesFromCliArgs = getPackagesFromCliArgsStep()
-  const isPackagesFromCliArgsArrayEmpty = packagesFromCliArgs.isEmpty()
 
-  console.log(packagesFromCliArgs)
+  const packagesFromUserInput = packagesFromCliArgs.isEmpty()
+    ? await getPackagesFromUserInputStep()
+    : ExtendedArray.from([])
 
-  if (isPackagesFromCliArgsArrayEmpty) {
-    const packagesFromUserInput = await getPackagesFromUserInputStep()
-    const packages = [...packagesFromCliArgs, ...packagesFromUserInput]
-    console.log(packages)
-  }
+  const packages = packagesFromCliArgs.concat(packagesFromUserInput)
 
-  // Await checkPackages({ packages })
+  const validPackages = await checkPackages({ packages })
 
-  // Rest of the code...
-
-  // Process.exit(EXIT_CODE_NO_MORE_CODE_TO_EXECUTE)
+  await installPackagesStep({
+    packages: validPackages,
+    rootDir,
+  })
 }
 
-try {
-  // oxlint-disable-next-line unicorn/prefer-top-level-await -- top-level `await` prevents modules from being loaded with `require(esm)`.
-  void (async () => {
-    await main()
-  })()
-} catch (error) {
+/**
+ * The previous `try { void (async () => await main())() } catch {}` could never
+ * catch anything: the promise was voided inside the try block, so rejections
+ * went unhandled. `.catch()` on the promise actually handles them.
+ */
+main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : "Something went wrong :(")
   process.exit(EXIT_CODE_FATAL_EXCEPTION)
-}
+})
