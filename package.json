@@ -64,6 +64,7 @@
     "@clack/prompts": "catalog:deps",
     "@pnpm/cli.meta": "catalog:pnpm",
     "@pnpm/cli.utils": "catalog:pnpm",
+    "@pnpm/deps.inspection.commands": "catalog:pnpm",
     "@pnpm/deps.inspection.list": "catalog:pnpm",
     "@pnpm/find-workspace-dir": "catalog:pnpm",
     "yaml": "catalog:deps"

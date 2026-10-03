@@ -39,7 +39,7 @@ export class TestProject {
   /**
    * Tmp directory against which
    * we're gonna execute our CLI tpol commands
-   * (awnswering questions, installing packages, etc...)
+   * (awnswering questions, installing projects, etc...)
    *
    * @private
    */

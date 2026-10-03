@@ -4,7 +4,10 @@ import { isRecord } from "#lib/utils/guards.js"
 import { DEFAULT_CATALOG_NAME } from "#lib/utils/constants.js"
 import { runPnpmJson } from "#lib/utils/pnpm.js"
 import { unwrap } from "#lib/utils/prompts.js"
-import type { WorkspaceTarget } from "#lib/utils/workspace.js"
+import type { getWorkspaceProjectDescriptors } from "#lib/utils/workspace.js"
+import {ExtendedArray} from "#lib/utils/array.js";
+
+type WorkspaceProjectDescriptor = Awaited<ReturnType<typeof getWorkspaceProjectDescriptors>>[number]
 
 /** catalog name -> package name -> version range */
 export type CatalogContents = Record<string, Record<string, string>>
@@ -12,7 +15,7 @@ export type CatalogContents = Record<string, Record<string, string>>
 export interface PackageChoice {
   /** e.g. `lodash@4.18.1` */
   spec: string
-  target: WorkspaceTarget
+  target: WorkspaceProjectDescriptor
   dev: boolean
   /** `null` means "install without a catalog". */
   catalog: string | null
@@ -56,6 +59,41 @@ function toEntries(value: unknown): Record<string, string> {
   }
   return entries
 }
+
+/**
+ * Uses native `pnpm config get catalogs` / `pnpm config list` to read existing catalogs from pnpm-workspace.yaml.
+ */
+export async function getExistingCatalogs(cwd: string = process.cwd()) {
+  try {
+    const [catalogs = {}, defaultCatalog] = await Promise.all([
+      runPnpmJson({
+        command: "config",
+        args: ["get", "catalogs"],
+        cwd,
+      }),
+      runPnpmJson({
+        command: "config",
+        args: ["get", "catalog"],
+        cwd,
+      }),
+    ])
+    /**
+     * The default catalog can be defined in 2 ways.
+     * Users can specify a top-level "catalog" field or
+     * An explicitly named "default" catalog under the "catalogs" map.
+     *
+     * It's an error to define the default catalog using both options,
+     * but we still dedupe "default" keyword just in case.
+     */
+    return ExtendedArray.from([
+      ...(defaultCatalog ? ["default"] : []),
+      ...Object.keys(catalogs),
+    ]).unique()
+  } catch {
+    return ExtendedArray.from([])
+  }
+}
+
 
 export async function readCatalogContents(cwd: string): Promise<CatalogContents> {
   const [catalog, catalogs] = await Promise.all([
@@ -123,9 +161,9 @@ async function askNewCatalog(state: CatalogState): Promise<string> {
 
 async function askTarget(
   spec: string,
-  targets: readonly WorkspaceTarget[],
-  previous: WorkspaceTarget | undefined,
-): Promise<WorkspaceTarget> {
+  targets: readonly WorkspaceProjectDescriptor[],
+  previous: WorkspaceProjectDescriptor | undefined,
+): Promise<WorkspaceProjectDescriptor> {
   const chosenPath = unwrap(
     await select<string>({
       message: `Which workspace should ${spec} be installed in?`,
@@ -182,7 +220,7 @@ async function askCatalog(options: {
  */
 export async function askPackageChoices(options: {
   packages: readonly string[]
-  targets: readonly WorkspaceTarget[]
+  targets: readonly WorkspaceProjectDescriptor[]
   /** False outside a workspace: catalogs don't apply and are never asked about. */
   catalogsEnabled: boolean
   /** True when `catalogMode` is unset or `manual`. */
@@ -205,7 +243,7 @@ export async function askPackageChoices(options: {
   const singleTarget = targets.length === 1 ? onlyTarget : undefined
 
   const choices: PackageChoice[] = []
-  let previousTarget: WorkspaceTarget | undefined
+  let previousTarget: WorkspaceProjectDescriptor | undefined
   let previousDev: boolean | undefined
   let previousCatalog: string | null | undefined
 

@@ -1,95 +1,104 @@
+
 import path from "node:path"
 
-import { isRecord } from "#lib/utils/guards.js"
-import { runPnpm, tailLines } from "#lib/utils/pnpm-process.js"
 import { runPnpmJson } from "#lib/utils/pnpm.js"
 
-export interface WorkspaceTarget {
-  /** Absolute directory of the project. */
-  path: string
-  /** Shown in the workspace prompt, e.g. `hello (/projects/hello)` or `nada (root)`. */
-  label: string
-  /** Flags that make `pnpm add` install into this project. Empty outside a workspace. */
-  selector: string[]
-}
-
-export interface WorkspaceContext {
-  /** Directory every pnpm command runs from. */
-  root: string
-  isWorkspace: boolean
-  /** Root first, then members sorted by path. */
-  targets: WorkspaceTarget[]
-}
-
-interface ListedProject {
-  name?: string
-  path: string
-}
-
-async function listProjects({ rootDir }: { rootDir: string }): Promise<ListedProject[]> {}
-
-function toPosix(relativePath: string): string {
-  return relativePath.split(path.sep).join("/")
-}
-
-export async function readWorkspaceContext({
+export async function getWorkspaceProjectDescriptors({
   rootDir,
+  onNamingIssuesFound,
 }: {
   rootDir: string
-}): Promise<WorkspaceContext> {
+  onNamingIssuesFound?: (args: { pathsToCheckForNamingIssues: string[] }) => void
+}) {
   const projects = await runPnpmJson({
     command: "list",
     args: ["--recursive", "--depth", "-1"],
     cwd: rootDir,
-  })
+  }) ?? [];
 
-  const projects: ListedProject[] = []
-  for (const entry of parsed) {
-    if (!isRecord(entry) || typeof entry.path !== "string") continue
-    projects.push({
-      path: path.resolve(entry.path),
-      ...(typeof entry.name === "string" ? { name: entry.name } : {}),
-    })
-  }
-  return projects
-
-  const nameCounts = new Map<string, number>()
+  const names = new Set<string>([])
+  const duplicates = new Map<string, string>()
+  const unnamed = new Set<string>()
 
   for (const project of projects) {
-    if (project.name !== undefined) {
-      nameCounts.set(project.name, (nameCounts.get(project.name) ?? 0) + 1)
+    if (project.name !== undefined && project.name !== "") {
+      if (names.has(project.name)) {
+        duplicates.set(project.name, getRelativePath({ project, rootDir }))
+      } else {
+        names.add(project.name)
+      }
+    } else {
+      unnamed.add(getRelativePath({ project, rootDir }))
     }
   }
 
-  // Depending on the pnpm version the root may or may not be part of the list,
-  // so it is identified by path and everything else is a member.
-  const rootProject = projects.find((project) => project.path === rootDir)
-  const members = projects
-    .filter((project) => project.path !== rootDir)
-    .sort((a, b) => a.path.localeCompare(b.path))
-
-  const rootTarget: WorkspaceTarget = {
-    path: rootDir,
-    label: `${rootProject?.name ?? path.basename(rootDir)} (root)`,
-    selector: ["-w"],
+  if (duplicates.size > 0) {
+    onNamingIssuesFound?.({ pathsToCheckForNamingIssues: [...duplicates.values(), ...unnamed] })
   }
 
-  const memberTargets = members.map((project): WorkspaceTarget => {
-    const relative = `/${toPosix(path.relative(rootDir, project.path))}`
+  function getProjectName({
+    project,
+    rootDir,
+  }: {
+    project: { name?: string; path: string }
+    rootDir: string
+  }) {
+    return project.name !== undefined && project.name !== ""
+      ? project.name
+      : project.path === rootDir
+        ? "root"
+        : path.basename(project.path)
+  }
 
-    // Names are used for filtering when they are unambiguous. Members without a
-    // name, or sharing a name with another project, are targeted by path.
-    const filter =
-      project.name !== undefined && nameCounts.get(project.name) === 1
-        ? project.name
-        : `.${relative}`
+  function getRelativePath({ project, rootDir }: { project: { path: string }; rootDir: string }) {
+    return `.${path.sep}${path.relative(rootDir, project.path)}`
+  }
 
-    return {
-      path: project.path,
-      label: `${project.name ?? path.basename(project.path)} (${relative})`,
-      selector: ["--filter", filter],
-    }
-  })
+  return projects
+    .toSorted((a, b) => {
+      if (a.path === rootDir) return 1
+      return a.path.localeCompare(b.path)
+    })
+    .map((project) => {
+      if (project.path === rootDir) {
+        return {
+          path: rootDir,
+          label: [getProjectName({ project, rootDir }), ...(project.name ? [] : ["(./)"])].join(
+            " ",
+          ),
+          selector: ["-w"],
+        } as const
+      }
 
-  return { root: rootDir, isWorkspace: true, targets: [rootTarget, ...memberTargets] }
+      const relative = getRelativePath({ project, rootDir })
+
+      /**
+       * We always use a project path for filtering, as project names
+       * are not guaranteed to be unique.
+       *
+       * Example:
+       *  [
+       *   {
+       *     "name": "@root",
+       *     "path": "/Users/user/projects/test",
+       *   },
+       *   {
+       *     "name": "@root/package",
+       *     "path": "/Users/user/projects/test/projects/project-2",
+       *   },
+       *   {
+       *     "name": "@root/package",
+       *     "path": "/Users/user/projects/test/projects/project-1",
+       *   }
+       * ]
+       */
+      return {
+        path: project.path,
+        label: [
+          getProjectName({ project, rootDir }),
+          ...(!project.name || duplicates.has(project.name) ? [`(${relative})`] : []),
+        ].join(" "),
+        selector: ["--filter", relative],
+      } as const
+    })
 }

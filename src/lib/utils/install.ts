@@ -12,12 +12,12 @@ import {
 import { resolveCatalogMode } from "#lib/utils/catalog-mode.js"
 import { askPackageChoices, readCatalogContents } from "#lib/utils/catalogs.js"
 import { isRecord } from "#lib/utils/guards.js"
-import { getExistingCatalogs } from "#lib/utils/packages.js"
 import { runPnpmJson } from "#lib/utils/pnpm.js"
 import { runPnpm, tailLines } from "#lib/utils/pnpm-process.js"
 import { unwrap } from "#lib/utils/prompts.js"
 import { formatSummary, type BuildsReport } from "#lib/utils/summary.js"
-import { readWorkspaceContext } from "#lib/utils/workspace.js"
+import { getWorkspaceProjectDescriptors } from "#lib/utils/workspace.js"
+import os from "node:os";
 
 /* -------------------------------------------------------------------------- */
 /* Running batches                                                            */
@@ -42,7 +42,7 @@ async function runBatch(
 
   const ignored = parseIgnoredBuilds(result.output)
 
-  // pnpm exits non-zero with ERR_PNPM_IGNORED_BUILDS even though the packages
+  // pnpm exits non-zero with ERR_PNPM_IGNORED_BUILDS even though the projects
   // were installed and the manifest was updated. That is not a failure.
   const succeeded = result.code === 0 || ignored.failedBecauseOfBuilds
 
@@ -167,9 +167,18 @@ export async function installPackagesStep(options: {
   if (packages.length === 0) return
 
   const startedAt = Date.now()
-  const debug = process.env.NADA_WITH_DEBUG_INFO === "true"
+  const debug = process.env.NADA_REPORTER === "verbose"
 
-  const workspace = await readWorkspaceContext({ rootDir })
+  const workspace = await getWorkspaceProjectDescriptors({ rootDir, onNamingIssuesFound: ({ pathsToCheckForNamingIssues }) => {
+      log.warn(
+        [
+          "You have multiple projects, sharing the same name, which is, probably, a mistake.",
+          "You can continue the installation process (as we're gonna be using project paths for filtering),",
+          "but we strongly recommend to have every of your project names unique and defined in the project's package.json.",
+          `Here is a list of project paths to check for naming issues: ${pathsToCheckForNamingIssues.join(", ")}.`,
+        ].join(os.EOL),
+      )
+    } })
 
   // Catalogs (and catalogMode) only exist in a workspace.
   const modeResult = workspace.isWorkspace

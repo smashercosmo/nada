@@ -9,7 +9,7 @@ const PACKAGE_MANAGER_IS_NOT_SUPPORTED_TEXT =
 const PNPM_VERSION_10 = 10 as const
 const PNPM_VERSION_11 = 11 as const
 
-const TEXT_INTRO = "Installing packages..." as const
+const TEXT_INTRO = "Installing projects..." as const
 const TEXT_CHECKING_IF_PNPM_IS_AVAILABLE = "Checking if `pnpm` is available..." as const
 const TEXT_PNPM_CHECK_SUCCESS = "Found `pnpm` executable." as const
 const TEXT_PNPM_CHECK_ERROR = [

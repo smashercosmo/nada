@@ -1,0 +1,56 @@
+/**
+ * Step 1
+ */
+async function checkIfPnpmIsAvailableStep() {
+  log.info(TEXT_CHECKING_IF_PNPM_IS_AVAILABLE)
+  const isPnpmAvailable = await checkIfPnpmIsAvailable()
+
+  if (isPnpmAvailable) {
+    log.success(TEXT_PNPM_CHECK_SUCCESS)
+  } else {
+    log.error(TEXT_PNPM_CHECK_ERROR)
+    cancel(TEXT_EXITING)
+    process.exit(EXIT_CODE_FATAL_EXCEPTION)
+  }
+}
+
+function extractMajorVersion(version?: string) {
+  if (version === undefined) {
+    return 0
+  } else {
+    const major = VERSION_REGEX.exec(version)?.groups?.["major"]
+    return Number(major) || 0
+  }
+}
+
+/**
+ * Step 1
+ */
+async function checkIfPnpmVersionIsSupportedStep() {
+  log.info(TEXT_CHECKING_IF_PNPM_VERSION_IS_SUPPORTED)
+  const [currentPnpmVersion, getCurrentPnpmVersionError] = await getCurrentPnpmVersion()
+
+  if (getCurrentPnpmVersionError instanceof Error) {
+    cancel(PACKAGE_MANAGER_IS_NOT_SUPPORTED_TEXT)
+    process.exit(EXIT_CODE_FATAL_EXCEPTION)
+  }
+
+  const supportedPnpmVersion = packageJson.engines.pnpm
+  const currentPnpmMajorVersion = extractMajorVersion(currentPnpmVersion)
+  const supportedPnpmMajorVersion = extractMajorVersion(supportedPnpmVersion)
+
+  if (supportedPnpmVersion === undefined) {
+    log.warn(TEXT_COULD_NOT_DETERMINE_SUPPORTED_PNPM_VERSION)
+  } else if (currentPnpmVersion === undefined) {
+    log.warn(TEXT_COULD_NOT_DETERMINE_CURRENT_PNPM_VERSION)
+  } else {
+    if (currentPnpmMajorVersion < supportedPnpmMajorVersion) {
+      log.warn(
+        getPnpmVersionIsNotSupportedMessage({
+          supportedPnpmMajorVersion: String(supportedPnpmMajorVersion),
+          currentPnpmVersion,
+        }),
+      )
+    }
+  }
+}

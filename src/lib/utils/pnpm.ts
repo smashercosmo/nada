@@ -5,13 +5,14 @@ import type { PackageInRegistry } from "@pnpm/resolving.registry.types"
 import type { ProjectManifest } from "@pnpm/types"
 import type { ChildProcess, SpawnOptions } from "node:child_process"
 
-import child_process from "child_process"
-import childProcess from "node:child_process"
+import child_process from "node:child_process"
+import console from "node:console"
 import process from "node:process"
-import util from "node:util"
+import os from "node:os"
 
 import { DEFAULT_CATALOG_NAME, SUPPORTED_PACKAGE_MANAGER } from "#lib/utils/constants.js"
 import {
+  ProcessError,
   spawn,
   spawnProcessAndCaptureResult,
   type SpawnProcessAndCaptureResultOptions,
@@ -22,10 +23,9 @@ interface WorkspaceProject {
   path: string
 }
 
-const execFileAsync = util.promisify(childProcess.execFile)
-
-// pnpm hasn't yet updated its types with new `saveTypes` option,
-// and they also forgot to add `catalog` property for the default catalog
+/**
+ * pnpm hasn't yet updated its types with a new `saveTypes` option.
+ */
 type Config = _Config & { saveTypes?: boolean; catalog?: Catalog }
 type PnpmCommand = "info" | "pkg" | "config" | "list"
 type PnpmCommandArgs<TCommand extends PnpmCommand> = TCommand extends "info"
@@ -35,6 +35,33 @@ type PnpmCommandArgs<TCommand extends PnpmCommand> = TCommand extends "info"
     : TCommand extends "pkg"
       ? ["get"] | ["get", ...(keyof ProjectManifest | (string & {}))[]]
       : ["list"] | ["get", keyof Config]
+
+type PnpmCommandReturnValue<
+  TCommand extends PnpmCommand,
+  TArgs extends PnpmCommandArgs<TCommand>,
+> = TCommand extends "info"
+  ? TArgs extends [string, ...infer TProperties extends string[]]
+    ? TProperties extends [...(keyof PackageInRegistry)[]]
+      ? Pick<PackageInRegistry, TProperties[number] | "name">
+      : PackageInRegistry
+    : unknown
+  : TCommand extends "list"
+    ? Pick<PackageDependencyHierarchy, "name" | "path">[]
+    : TCommand extends "pkg"
+      ? TArgs extends ["get", ...infer TProperties extends string[]]
+        ? TProperties extends [...(keyof ProjectManifest)[]]
+          ? Pick<ProjectManifest, TProperties[number] | "name">
+          : ProjectManifest
+        : unknown
+      : TCommand extends "config"
+        ? TArgs extends ["list"]
+          ? Config
+          : TArgs extends ["get", infer TProperty extends string]
+            ? TProperty extends keyof Config
+              ? Config[TProperty]
+              : unknown
+            : unknown
+        : unknown
 
 /**
  * @param {object} options
@@ -46,52 +73,38 @@ type PnpmCommandArgs<TCommand extends PnpmCommand> = TCommand extends "info"
 export async function runPnpmJson<
   TCommand extends PnpmCommand,
   const TArgs extends PnpmCommandArgs<TCommand>,
->(options: {
-  command: TCommand
-  args?: TArgs
-  flags?: string[]
-  cwd?: string
-}): Promise<
-  TCommand extends "info"
-    ? TArgs extends [string, ...infer TProperties extends string[]]
-      ? TProperties extends [...(keyof PackageInRegistry)[]]
-        ? Pick<PackageInRegistry, TProperties[number] | "name">
-        : PackageInRegistry
-      : unknown
-    : TCommand extends "list"
-      ? Pick<PackageDependencyHierarchy, "name" | "path">[]
-      : TCommand extends "pkg"
-        ? TArgs extends ["get", ...infer TProperties extends string[]]
-          ? TProperties extends [...(keyof ProjectManifest)[]]
-            ? Pick<ProjectManifest, TProperties[number] | "name">
-            : ProjectManifest
-          : unknown
-        : TCommand extends "config"
-          ? TArgs extends ["list"]
-            ? Config
-            : TArgs extends ["get", infer TProperty extends string]
-              ? TProperty extends keyof Config
-                ? Config[TProperty]
-                : unknown
-              : unknown
-          : unknown
-> {
+>(options: { command: TCommand; args?: TArgs; flags?: string[]; cwd?: string }) {
   const { args: _args = [], flags = [], command, cwd = process.cwd() } = options
-  const args = command === "info" || command === "pkg" ? [..._args, "name"] : _args
-  const { stdout } = await execFileAsync(
-    "pnpm",
-    [command, ...[...new Set(args)], ...flags, "--json"],
-    { cwd },
-  )
-  return JSON.parse(stdout.trim())
-}
+  const args = [
+    command,
+    ...[...new Set(command === "info" || command === "pkg" ? [..._args, "name"] : _args)],
+    ...flags,
+    "--json",
+  ]
+  const [stdout, stderr] = await spawnProcessAndCaptureResult({
+    command: "pnpm",
+    args,
+    cwd,
+  })
 
-/**
- * Executes a native pnpm command and returns raw stdout string.
- */
-export async function runPnpm(args: readonly string[], cwd: string): Promise<string> {
-  const { stdout } = await execFileAsync("pnpm", args, { cwd })
-  return stdout.trim()
+  if (stdout === undefined) {
+    throw stderr;
+  }
+
+  try {
+    return JSON.parse(stdout.trim()) as PnpmCommandReturnValue<TCommand, TArgs>
+  } catch (error) {
+    if (process.env.NADA_REPORTER === "verbose") {
+      if (error instanceof ProcessError) {
+        console.error(
+            [`Original error: ${error.message}`,
+            `Failed command: \`pnpm ${command} ${args.join(" ")}\``].join(os.EOL),
+        )
+      }
+      console.error(error instanceof Error ? error.message : "Failed to parse JSON.")
+    }
+    return undefined
+  }
 }
 
 /**

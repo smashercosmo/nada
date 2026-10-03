@@ -1,318 +1,331 @@
-import * as p from "@clack/prompts"
-import path from "node:path"
+import { log, cancel, text, select, isCancel } from "@clack/prompts"
+import os from "node:os"
+import process from "node:process"
 
+import { filterOutFlags } from "#lib/utils/args.js"
+import { getPackageInfo } from "#lib/utils/pnpm.js"
 import { ExtendedArray } from "#lib/utils/array.js"
-import { CONFIG_FILENAME, readConfig, updateConfig } from "#lib/utils/config.js"
-import { runPnpm, runPnpmJson } from "#lib/utils/pnpm.js"
+
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NADA_DISABLE_GUIDE_LINES?: "true" | "false"
+    }
+  }
+}
 
 /**
- * Uses native `pnpm pkg get` to check if types package is already declared in package.json.
+ * Step 4
  */
-export async function isTypesPackageDeclared(typesPkg: string, cwd: string) {
-  try {
-    const { dependencies = {}, devDependencies = {} } = await runPnpmJson({
-      command: "pkg",
-      args: ["get", "dependencies", "devDependencies"],
-      cwd,
+async function getPackagesFromUserInput() {
+  const result = await text({
+    message:
+      "Which packages you want to install? You can enter space- or comma-separated list of names",
+    placeholder: "react react-router",
+  })
+
+  const packages = filterOutFlags(typeof result === "string" ? result.split(/\s+/v) : [])
+
+  if (packages.isEmpty()) {
+    const choice = await select({
+      message: [
+        "You haven't specified any projects to install.",
+        "Would you like yo try again or exit?",
+      ].join(os.EOL),
+      options: [{ value: "Try again" }, { value: "Exit" }],
     })
-    return Object.hasOwn(dependencies, typesPkg) || Object.hasOwn(devDependencies, typesPkg)
-  } catch {
-    return false
+
+    if (choice === "Exit") {
+      cancel("Good bye, See you,")
+      process.exit(1)
+    }
+
+    if (choice === "Try again") {
+      return getPackagesFromUserInput()
+    }
   }
+
+  return packages
 }
 
 /**
- * Formats a package name according to DefinitelyTyped convention.
- * Replicates `types_package_name` from pnpm's add/types.rs.
- */
-export function typesPackageName(name: string) {
-  if (name.startsWith("@")) {
-    return `@types/${name.slice(1).replace("/", "__")}`
-  }
-  return `@types/${name}`
-}
-
-/**
- * Replicates pnpm's internal `exports_types` checking from
- * `pnpm/crates/package-manager/src/add/types.rs`.
+ * Checks one package against the npm registry.
  *
- * Checks for direct "types" conditions, TS version-specific "types@<range>" conditions,
- * and recursively searches nested condition mappings.
+ * Errors are converted into a `found: false` result rather than being thrown.
+ * This is important because one failed registry request must not prevent the
+ * remaining projects from being checked.
  */
-export function hasExportsTypes(exportsValue: unknown) {
-  if (!exportsValue || typeof exportsValue !== "object") {
-    return false
-  }
+async function checkPackage(pkg: string) {
+  const [info, error] = await getPackageInfo(pkg)
 
-  if (Array.isArray(exportsValue)) {
-    return exportsValue.some(hasExportsTypes)
-  }
-
-  for (const [condition, target] of Object.entries(exportsValue)) {
-    if (condition === "types" || condition.startsWith("types@")) {
-      if (typeof target === "string" && target.length > 0) return true
-      if (Array.isArray(target) && target.length > 0) return true
+  if (error) {
+    if (process.env.NADA_REPORTER === "verbose") {
+      console.error(error.message)
     }
-    if (typeof target === "object" && target !== null && hasExportsTypes(target)) {
-      return true
+    return {
+      input: pkg,
+      found: false,
     }
   }
 
-  return false
+  const lines = info.split(os.EOL)
+  const name = lines[0]?.split(/\s+/v)[0]
+
+  if (name === undefined || name === "") {
+    return {
+      input: pkg,
+      found: false,
+    }
+  }
+
+  return {
+    input: pkg,
+    found: true,
+    name,
+  }
 }
 
 /**
- * Uses native `pnpm pkg get` to inspect the installed package inside `node_modules`.
+ * Recursively validates projects against the npm registry.
+ *
+ * `found` contains projects that have already been successfully validated.
+ * They are carried through every recursive call and are NEVER checked again.
+ *
+ * `remaining` contains only projects that still need validation.
+ *
+ * This gives us two important properties:
+ *
+ *   1. A successful registry lookup happens only once per package.
+ *   2. Every correction round gets faster because the list of projects
+ *      requiring network requests becomes smaller.
+ *
+ * Example:
+ *
+ *   checkPackages(["react", "lodahs", "axios"])
+ *
+ *       found = []
+ *       remaining = ["react", "lodahs", "axios"]
+ *
+ *   after first check:
+ *
+ *       found = ["react", "axios"]
+ *       remaining = ["lodahs"]
+ *
+ *   user enters:
+ *
+ *       "lodash date-fns"
+ *
+ *   recursive call:
+ *
+ *       found = ["react", "axios"]
+ *       remaining = ["lodash", "date-fns"]
+ *
+ *   after second check:
+ *
+ *       found = ["react", "axios", "lodash", "date-fns"]
+ *       remaining = []
+ *
+ *   final result:
+ *
+ *       ["react", "axios", "lodash", "date-fns"]
+ *
+ * The recursion has no artificial maximum depth. It stops when either:
+ *
+ *   - all projects are valid, or
+ *   - the user presses Escape / submits an empty correction.
  */
-export async function hasBundledTypes(packageName: string, cwd: string): Promise<boolean> {
-  const packageDir = path.join(cwd, "node_modules", packageName)
-  try {
-    const manifest = await runPnpmJson({
-      command: "pkg",
-      args: ["get", "types", "typings", "exports"],
-      flags: ["--dir", packageDir],
-      cwd,
-    })
+export async function checkPackages(
+  options: Readonly<{ packages: readonly string[]; found?: readonly string[] }>,
+) {
+  const { packages, found = [] } = options
+  /**
+   * `found` represents projects that have already been verified.
+   *
+   * We remove duplicates here as well because the user can enter a package
+   * that was already found during an earlier round.
+   *
+   * For example:
+   *
+   *   found:
+   *     ["react"]
+   *
+   *   user enters:
+   *     "react lodash"
+   *
+   * We don't want to check `react` again.
+   */
+  const known = ExtendedArray.from(found).unique()
 
-    if (
-      manifest.types ||
-      manifest.typings ||
-      (manifest.exports && hasExportsTypes(manifest.exports))
+  /**
+   * Only check projects that aren't already known to be valid.
+   *
+   * `uniquePackages()` also means duplicate entries in the current prompt
+   * result in only one registry request.
+   */
+  const remaining = ExtendedArray.from(packages)
+    .unique()
+    .filter((pkg) => !known.includes(pkg))
+
+  /**
+   * There may be nothing left to check.
+   *
+   * This can happen if the user enters only projects already
+   * validated in a previous round.
+   */
+  if (remaining.isEmpty()) {
+    if (known.isNotEmpty()) {
+      log.success(
+        ["Found projects", found.map((pkg) => `- ${pkg}`).join(os.EOL)].join(os.EOL),
+      )
+
+      return known
+    }
+
+    cancel("No projects were provided.")
+    process.exit(1);
+  }
+
+  log.info("Checking projects on the npm registry...")
+
+  const results = await Promise.all(
+    [...remaining].map(async (pkg) => {
+      const checked = await checkPackage(pkg)
+      return checked
+    }),
+  )
+
+  /**
+   * Extract the successful results while preserving the user's order.
+   *
+   * The registry may return a canonical package name, so we store `result.name`
+   * rather than the original input string.
+   */
+  const newlyFound = ExtendedArray.from(results)
+    .filter((result) => result.found)
+    .map((result) => result.name)
+    .compact()
+
+  /**
+   * Missing projects use the original input rather than a registry-derived
+   * name because there is no valid registry name to use.
+   */
+  const missing = ExtendedArray.from(results)
+    .filter((result) => !result.found)
+    .map((result) => result.input)
+
+  /**
+   * Add this round's successful projects to our accumulated list.
+   */
+  const allFound = ExtendedArray.from([...found, ...newlyFound]).unique()
+
+  /**
+   * Success case: everything that needed checking was found.
+   */
+  if (missing.isEmpty()) {
+    log.success(
+      ["Found projects", allFound.map((pkg) => `- ${pkg}`).join(os.EOL)].join(os.EOL),
     )
-      return true
-    return false
-  } catch {
-    return false
+
+    return allFound
   }
-}
 
-/**
- * Checks if an active @types package exists on the registry and is not a
- * deprecated stub, reusing pnpm's companion selector logic (`package.deprecated.is_none()`).
- */
-export async function isDefinitelyTypedAvailable(typesPkg: string, cwd: string) {
-  try {
-    const data = await runPnpmJson({
-      command: "info",
-      args: [typesPkg, "deprecated", "version"],
-      cwd,
-    })
-
-    // If deprecated is set, DefinitelyTyped published a deprecation stub because
-    // the package transitioned to bundling its own types.
-    if (data.deprecated) {
-      return false
-    }
-
-    return Boolean(data.version)
-  } catch {
-    return false
+  /**
+   * Show everything that has been validated so far.
+   *
+   * This includes projects found during earlier recursive calls as well as
+   * projects discovered during this call.
+   */
+  if (allFound.isNotEmpty()) {
+    log.success(
+      ["Found projects", allFound.map((pkg) => `- ${pkg}`).join(os.EOL)].join(os.EOL),
+    )
   }
-}
 
-/**
- * Checks whether `saveTypes` is already enabled in `pnpm-workspace.yaml`
- * using native `pnpm config get`.
- */
-async function isSaveTypesConfigured(cwd: string) {
-  try {
-    const saveTypes = await runPnpmJson({ command: "config", args: ["get", "saveTypes"], cwd })
-    return saveTypes ?? false
-  } catch {
-    return false
-  }
-}
+  log.warn(["Missing projects", missing.map((pkg) => `- ${pkg}`).join(os.EOL)].join(os.EOL))
 
-/**
- * Sets `saveTypes: true` in `pnpm-workspace.yaml` using native `pnpm config set`.
- */
-async function setSaveTypesWorkspaceSetting(cwd: string): Promise<void> {
-  await runPnpm(["config", "set", "saveTypes", "true", "--location=project"], cwd)
-}
-
-const CREATE_NEW_CATALOG_VALUE = "Yes"
-
-/**
- * Uses native `pnpm config get catalogs` / `pnpm config list` to read existing catalogs from pnpm-workspace.yaml.
- */
-export async function getExistingCatalogs(cwd: string = process.cwd()) {
-  try {
-    const [catalogs = {}, defaultCatalog] = await Promise.all([
-      runPnpmJson({
-        command: "config",
-        args: ["get", "catalogs"],
-        cwd,
-      }),
-      runPnpmJson({
-        command: "config",
-        args: ["get", "catalog"],
-        cwd,
-      }),
-    ])
-    /**
-     * The default catalog can be defined in 2 ways.
-     * Users can specify a top-level "catalog" field or
-     * An explicitly named "default" catalog under the "catalogs" map.
-     *
-     * It's an error to define the default catalog using both options,
-     * but we still dedupe "default" keyword just in case.
-     */
-    return ExtendedArray.from([
-      ...(defaultCatalog ? ["default"] : []),
-      ...Object.keys(catalogs),
-    ]).unique()
-  } catch {
-    return ExtendedArray.from([])
-  }
-}
-
-/**
- * Prompts the user to select an existing catalog or create a new one.
- */
-async function promptForCatalog(cwd: string): Promise<string | null> {
-  const existingCatalogs = await getExistingCatalogs(cwd)
-
-  const defaultChoice = existingCatalogs.includes("types")
-    ? "types"
-    : (existingCatalogs[0] ?? "types")
-
-  const options = existingCatalogs.map((name) => ({
-    value: name,
-    label: `catalog:${name}`,
-  }))
-
-  options.push({
-    value: CREATE_NEW_CATALOG_VALUE,
-    label: "+ Create a new catalog...",
+  /**
+   * Only the missing projects are placed into the text input.
+   *
+   * This makes the correction workflow convenient:
+   *
+   *   react
+   *   lodash_typo
+   *   axios_typo
+   *
+   * becomes:
+   *
+   *   lodash_typo axios_typo
+   *
+   * The user doesn't have to retype `react`.
+   *
+   * However, the user can still type additional projects manually, so this
+   * prompt also doubles as a way to add projects.
+   */
+  const result = await text({
+    message:
+      "Correct the missing projects or add more projects. Press `Escape` to continue with valid projects.",
+    initialValue: missing.join(" "),
   })
 
-  const selection = await p.select({
-    message: "Which catalog should this type package be saved to?",
-    options,
-    initialValue: defaultChoice,
-  })
+  /**
+   * Escape means "stop correcting".
+   *
+   * If we already have valid projects, return them and allow the caller to
+   * continue with those projects.
+   *
+   * If nothing has been validated, there is nothing useful for the caller to
+   * continue with, so bail instead.
+   */
+  if (isCancel(result)) {
+    if (allFound.isNotEmpty()) {
+      return allFound
+    }
 
-  if (p.isCancel(selection)) return null
-
-  if (selection === CREATE_NEW_CATALOG_VALUE) {
-    const input = await p.text({
-      message: "Enter the new catalog name:",
-      placeholder: "types",
-      validate: (val) => {
-        if (!val?.trim()) return "Catalog name cannot be empty."
-        if (!/^[a-zA-Z0-9-_]+$/.test(val.trim())) {
-          return "Catalog name can only contain alphanumeric characters, hyphens, and underscores."
-        }
-        return undefined
-      },
-    })
-    if (p.isCancel(input)) return null
-    return input.trim()
+    cancel("No valid projects were provided.")
+    process.exit(1);
   }
 
-  return selection as string
+  /**
+   * Convert the user's response into a package list.
+   *
+   * Multiple whitespace characters are treated as separators, so all of
+   * these work:
+   *
+   *   lodash axios
+   *   lodash    axios
+   *   lodash\taxios
+   */
+  const correctedPackages = ExtendedArray.from(result.trim().split(/\s+/v)).filter(Boolean)
+
+  /**
+   * An empty response is handled similarly to Escape.
+   *
+   * We don't recurse with an empty array because there is nothing left to
+   * validate.
+   */
+  if (correctedPackages.isEmpty()) {
+    if (allFound.isNotEmpty()) {
+      return allFound
+    }
+
+    cancel("No valid projects were provided.")
+    process.exit(1)
+  }
+
+  /**
+   * Start another validation round.
+   *
+   * `allFound` is passed separately from `correctedPackages`.
+   *
+   * This is what allows us to remember successful validations while only
+   * checking the newly supplied/corrected projects.
+   *
+   * Previously validated projects will therefore NEVER cause another
+   * registry request.
+   */
+  return checkPackages({ packages: correctedPackages, found: allFound })
 }
 
-/**
- * Post-install hook: checks if an installed package requires a DefinitelyTyped companion package,
- * prompts the user to install it, and offers to persist `saveTypes: true` in pnpm-workspace.yaml.
- *
- * @param packageName Name of the installed package (e.g. "lodash", "@scope/foo")
- * @param cwd Current working directory / workspace root
- */
-/**
- * Post-install step handling companion @types installation and catalog routing.
- */
-export async function promptForCompanionTypesStep(
-  packageName: string,
-  cwd: string = process.cwd(),
-  isRootWorkspace: boolean = true,
-): Promise<void> {
-  // 1. Skip if the package is already a @types package
-  if (packageName.startsWith("@types/")) return
-
-  // 2. Inspect node_modules using native `pnpm pkg get`
-  if (await hasBundledTypes(packageName, cwd)) return
-
-  const typesPkg = typesPackageName(packageName)
-
-  // 3. Check if already declared in workspace using native `pnpm pkg get`
-  if (await isTypesPackageDeclared(typesPkg, cwd)) return
-
-  // 4. Verify DefinitelyTyped availability via native `pnpm info`
-  if (!(await isDefinitelyTypedAvailable(typesPkg, cwd))) return
-
-  // 5. Check if `.nadarc` already has auto-install configured
-  const { config } = await readConfig(cwd)
-  const isAutoInstallEnabled = config.saveTypes === true
-  const savedTypesCatalog = config.saveTypesCatalog
-
-  let targetCatalog: string | null = null
-
-  if (isAutoInstallEnabled && savedTypesCatalog) {
-    // Automatically route to the configured catalog without prompting
-    targetCatalog = savedTypesCatalog
-  } else {
-    // 6. Offer installation to user
-    const shouldInstall = await p.confirm({
-      message: `Package "${packageName}" does not provide built-in types, but "${typesPkg}" is available. Would you like to install it as a devDependency?`,
-      initialValue: true,
-    })
-
-    if (p.isCancel(shouldInstall) || !shouldInstall) return
-
-    // 7. Ask which catalog to save types to (separate from main package catalog)
-    targetCatalog = await promptForCatalog(cwd)
-    if (!targetCatalog) return
-  }
-
-  // 8. Execute `pnpm add -D <typesPkg> --save-catalog-name <catalog>`
-  const s = p.spinner()
-  s.start(`Installing ${typesPkg} into catalog "${targetCatalog}"...`)
-
-  const addArgs = ["add", "-D", typesPkg, "--save-catalog-name", targetCatalog]
-  if (isRootWorkspace) {
-    addArgs.push("-w")
-  }
-
-  try {
-    await runPnpm(addArgs, cwd)
-    s.stop(`Installed ${typesPkg} into catalog:${targetCatalog}`)
-  } catch (error) {
-    s.stop(`Failed to install ${typesPkg}`)
-    p.log.error(error instanceof Error ? error.message : String(error))
-    return
-  }
-
-  // 9. If not configured yet, offer to persist in `.nadarc`
-  if (!isAutoInstallEnabled || savedTypesCatalog !== targetCatalog) {
-    const shouldPersist = await p.confirm({
-      message: `To automatically save all future companion @types packages into catalog "${targetCatalog}" without prompting, would you like to save this preference?`,
-      initialValue: true,
-    })
-
-    if (!p.isCancel(shouldPersist) && shouldPersist) {
-      try {
-        const { created } = await updateConfig(cwd, {
-          saveTypes: true,
-          saveTypesCatalog: targetCatalog,
-        })
-
-        if (created) {
-          p.note(
-            `A new "${CONFIG_FILENAME}" configuration file was created with your settings.\nDon't forget to commit "${CONFIG_FILENAME}" to version control!`,
-            "Configuration Created",
-          )
-        } else {
-          p.log.success(
-            `Updated "${CONFIG_FILENAME}": set "saveTypes: true" and "saveTypesCatalog: ${targetCatalog}".`,
-          )
-        }
-      } catch (err) {
-        p.log.error(
-          `Failed to update ${CONFIG_FILENAME}: ${err instanceof Error ? err.message : String(err)}`,
-        )
-      }
-    }
-  }
+export {
+  getPackagesFromUserInput,
 }

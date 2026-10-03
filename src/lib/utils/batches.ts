@@ -23,7 +23,7 @@ export interface BatchResult {
   errorTail: string[]
 }
 
-/** Groups packages that share (catalog, workspace, dependency type), in order of first appearance. */
+/** Groups projects that share (catalog, workspace, dependency type), in order of first appearance. */
 export function groupIntoBatches(choices: readonly PackageChoice[]): Batch[] {
   const batches = new Map<string, Batch>()
 
