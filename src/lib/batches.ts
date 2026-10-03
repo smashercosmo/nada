@@ -1,7 +1,7 @@
-import { getPackageName, type PackageChoice } from "#lib/utils/catalogs.js"
-import { DEFAULT_CATALOG_NAME } from "#lib/utils/constants.js"
-import { stripAnsi } from "#lib/utils/pnpm-process.js"
-import type { WorkspaceTarget } from "#lib/utils/workspace.js"
+import { getPackageName, type PackageChoice } from "#lib/catalogs.js"
+import { DEFAULT_CATALOG_NAME } from "#lib/constants.js"
+import { stripAnsi } from "#lib/pnpm-process.js"
+import type { WorkspaceTarget } from "#lib/workspace.js"
 
 export interface Batch {
   /** `null` means "install without a catalog". */

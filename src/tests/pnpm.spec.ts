@@ -1,8 +1,8 @@
 import process from "node:process"
 import { describe, expect, it } from "vitest"
 
-import { PNPM_VERSION_11 } from "#lib/utils/constants.js"
-import { getCurrentPnpmVersion } from "#lib/utils/pnpm.js"
+import { PNPM_VERSION_11 } from "#lib/constants.js"
+import { getCurrentPnpmVersion } from "#lib/pnpm.js"
 import { TestProject } from "#tests/utils/project.js"
 
 describe("pnpm utils test suite", () => {

@@ -1,8 +1,8 @@
 import path from "node:path"
 
-import { describeBatch, describeCatalog, type BatchResult } from "#lib/utils/batches.js"
-import type { CatalogMode } from "#lib/utils/catalog-mode.js"
-import { getPackageName, type PackageChoice } from "#lib/utils/catalogs.js"
+import { describeBatch, describeCatalog, type BatchResult } from "#lib/batches.js"
+import type { CatalogMode } from "#lib/catalog-mode.js"
+import { getPackageName, type PackageChoice } from "#lib/catalogs.js"
 
 export interface BuildsReport {
   /** pnpm reported ignored build scripts (even if no names could be parsed). */

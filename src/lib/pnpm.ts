@@ -6,17 +6,15 @@ import type { ProjectManifest } from "@pnpm/types"
 import type { ChildProcess, SpawnOptions } from "node:child_process"
 
 import child_process from "node:child_process"
-import console from "node:console"
 import process from "node:process"
-import os from "node:os"
 
-import { DEFAULT_CATALOG_NAME, SUPPORTED_PACKAGE_MANAGER } from "#lib/utils/constants.js"
+import { DEFAULT_CATALOG_NAME, SUPPORTED_PACKAGE_MANAGER } from "#lib/constants.js"
 import {
-  ProcessError,
   spawn,
   spawnProcessAndCaptureResult,
   type SpawnProcessAndCaptureResultOptions,
-} from "#lib/utils/spawn.js"
+} from "#lib/spawn.js"
+import { formatError } from "#lib/errors.js"
 
 interface WorkspaceProject {
   name: string
@@ -88,21 +86,14 @@ export async function runPnpmJson<
   })
 
   if (stdout === undefined) {
-    throw stderr;
+    formatError({ error: stderr, details: `Failed command: \`pnpm ${command} ${args.join(" ")}\`` })
+    return undefined
   }
 
   try {
     return JSON.parse(stdout.trim()) as PnpmCommandReturnValue<TCommand, TArgs>
   } catch (error) {
-    if (process.env.NADA_REPORTER === "verbose") {
-      if (error instanceof ProcessError) {
-        console.error(
-            [`Original error: ${error.message}`,
-            `Failed command: \`pnpm ${command} ${args.join(" ")}\``].join(os.EOL),
-        )
-      }
-      console.error(error instanceof Error ? error.message : "Failed to parse JSON.")
-    }
+    formatError({ error: error })
     return undefined
   }
 }
@@ -242,10 +233,6 @@ export async function getCurrentPnpmVersion(
   options?: Omit<SpawnProcessAndCaptureResultOptions, "command" | "args">,
 ) {
   return spawnProcessAndCaptureResult({ command: "pnpm", args: ["--version"], ...options })
-}
-
-export async function getPackageInfo(pkg: string) {
-  return spawnProcessAndCaptureResult({ command: "pnpm", args: ["view", pkg] })
 }
 
 /**

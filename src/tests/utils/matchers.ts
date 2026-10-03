@@ -6,7 +6,7 @@ import { getDefaultNormalizer } from "cli-testing-library"
 import os from "node:os"
 import { expect } from "vitest"
 
-import type { ReadonlyDeep } from "#lib/utils/types.js"
+import type { ReadonlyDeep } from "#lib/types.js"
 
 const defaultNormalizer = getDefaultNormalizer({
   stripAnsi: true,

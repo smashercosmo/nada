@@ -1,8 +1,8 @@
 import { log, select } from "@clack/prompts"
 
-import { runPnpmJson } from "#lib/utils/pnpm.js"
-import { runPnpm, tailLines } from "#lib/utils/pnpm-process.js"
-import { unwrap } from "#lib/utils/prompts.js"
+import { runPnpmJson } from "#lib/pnpm.js"
+import { runPnpm, tailLines } from "#lib/pnpm-process.js"
+import { unwrap } from "#lib/prompts.js"
 
 export type CatalogMode = "manual" | "prefer" | "strict"
 

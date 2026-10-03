@@ -1,11 +1,11 @@
 import { confirm, log, select, text } from "@clack/prompts"
 
-import { isRecord } from "#lib/utils/guards.js"
-import { DEFAULT_CATALOG_NAME } from "#lib/utils/constants.js"
-import { runPnpmJson } from "#lib/utils/pnpm.js"
-import { unwrap } from "#lib/utils/prompts.js"
-import type { getWorkspaceProjectDescriptors } from "#lib/utils/workspace.js"
-import {ExtendedArray} from "#lib/utils/array.js";
+import { isRecord } from "#lib/guards.js"
+import { DEFAULT_CATALOG_NAME } from "#lib/constants.js"
+import { runPnpmJson } from "#lib/pnpm.js"
+import { unwrap } from "#lib/prompts.js"
+import type { getWorkspaceProjectDescriptors } from "#lib/workspace.js"
+import {ExtendedArray} from "#lib/array.js";
 
 type WorkspaceProjectDescriptor = Awaited<ReturnType<typeof getWorkspaceProjectDescriptors>>[number]
 

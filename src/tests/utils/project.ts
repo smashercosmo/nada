@@ -5,8 +5,8 @@ import path from "node:path"
 import process from "node:process"
 import url from "node:url"
 
-import type { PNPM_VERSION_10, PNPM_VERSION_11 } from "#lib/utils/constants.js"
-import type { ReadonlyDeep } from "#lib/utils/types.js"
+import type { PNPM_VERSION_10, PNPM_VERSION_11 } from "#lib/constants.js"
+import type { ReadonlyDeep } from "#lib/types.js"
 
 declare global {
   namespace NodeJS {

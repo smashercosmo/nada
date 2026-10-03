@@ -3,7 +3,7 @@ import os from "node:os"
 import path from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { readConfig, updateConfig } from "#lib/utils/config.js"
+import { readConfig, updateConfig } from "#lib/config.js"
 
 let tmpDir: string
 

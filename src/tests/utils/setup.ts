@@ -1,6 +1,6 @@
 import type { TestAPI } from "vitest"
 
-import type { ReadonlyDeep } from "#lib/utils/types.js"
+import type { ReadonlyDeep } from "#lib/types.js"
 
 import { TestProject } from "#tests/utils/project.js"
 

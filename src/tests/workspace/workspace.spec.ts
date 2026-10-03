@@ -4,7 +4,7 @@ import path from "node:path"
 import url from "node:url"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { getWorkspaceProjectDescriptors } from "#lib/utils/workspace.js"
+import { getWorkspaceProjectDescriptors } from "#lib/workspace.js"
 
 let tmpDir: string
 

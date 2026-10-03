@@ -144,4 +144,4 @@ Behaviors checked against pnpm 12.8.1 in a throwaway workspace, which this spec 
 
 - **Approvals can be read back.** The `allowBuilds` setting reads as a map of package name to true (approved) or false (denied); undecided packages are absent.
 - **Plain projects can become workspaces.** In a non-workspace project, running pnpm's approval command creates a workspace settings file. From the next run on, that project is treated as a (root-only) workspace: the `catalogMode` explanation and the catalog questions appear, while the workspace prompt stays skipped because there is only one target.
-- **Spinner in non-interactive terminals.** In a non-TTY the spinner prints each update on its own line, which is cosmetic only.
+  - **Spinner in non-interactive terminals.** In a non-TTY the spinner prints each update on its own line, which is cosmetic only.

@@ -1,7 +1,7 @@
 
 import path from "node:path"
 
-import { runPnpmJson } from "#lib/utils/pnpm.js"
+import { runPnpmJson } from "#lib/pnpm.js"
 
 export async function getWorkspaceProjectDescriptors({
   rootDir,

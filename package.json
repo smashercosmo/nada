@@ -1,6 +1,6 @@
 {
   "name": "nada",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "description": "Simple CLI tool yjay makes it easier to install dependencies, especcially useful for monorepos.",
   "keywords": [
@@ -32,7 +32,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "nada": "src/lib/index.ts"
+    "nada": "./src/index.ts"
   },
   "man": [
     "./docs/deps-install.1"
@@ -55,7 +55,7 @@
     "lint:es": "eslint",
     "lint:ox": "oxlint --type-aware",
     "lint": "pnpm lint:es && pnpm lint:ox && lint:compat",
-    "nada": "node src/lib/index.ts",
+    "nada": "node src/index.ts",
     "test": "vitest run",
     "typecheck": "pnpm --noEmit",
     "update:deps": "pnpm up --latest --interactive"
@@ -67,6 +67,7 @@
     "@pnpm/deps.inspection.commands": "catalog:pnpm",
     "@pnpm/deps.inspection.list": "catalog:pnpm",
     "@pnpm/find-workspace-dir": "catalog:pnpm",
+    "nada": "file:nada-0.0.1.tgz",
     "yaml": "catalog:deps"
   },
   "devDependencies": {

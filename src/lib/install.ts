@@ -8,15 +8,15 @@ import {
   parseIgnoredBuilds,
   type Batch,
   type BatchResult,
-} from "#lib/utils/batches.js"
-import { resolveCatalogMode } from "#lib/utils/catalog-mode.js"
-import { askPackageChoices, readCatalogContents } from "#lib/utils/catalogs.js"
-import { isRecord } from "#lib/utils/guards.js"
-import { runPnpmJson } from "#lib/utils/pnpm.js"
-import { runPnpm, tailLines } from "#lib/utils/pnpm-process.js"
-import { unwrap } from "#lib/utils/prompts.js"
-import { formatSummary, type BuildsReport } from "#lib/utils/summary.js"
-import { getWorkspaceProjectDescriptors } from "#lib/utils/workspace.js"
+} from "#lib/batches.js"
+import { resolveCatalogMode } from "#lib/catalog-mode.js"
+import { askPackageChoices, readCatalogContents } from "#lib/catalogs.js"
+import { isRecord } from "#lib/guards.js"
+import { runPnpmJson } from "#lib/pnpm.js"
+import { runPnpm, tailLines } from "#lib/pnpm-process.js"
+import { unwrap } from "#lib/prompts.js"
+import { formatSummary, type BuildsReport } from "#lib/summary.js"
+import { getWorkspaceProjectDescriptors } from "#lib/workspace.js"
 import os from "node:os";
 
 /* -------------------------------------------------------------------------- */

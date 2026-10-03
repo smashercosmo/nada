@@ -1,9 +1,8 @@
 import os from "node:os"
 
 const SUPPORTED_PACKAGE_MANAGER = "pnpm" as const
-const EXIT_CODE_FATAL_EXCEPTION = 1 as const
+const EXIT_CODE_GENERAL_FAILURE = 1 as const
 const EXIT_CODE_NO_MORE_CODE_TO_EXECUTE = 0 as const
-const EXIT_CODE_CANCELLED = 130 as const;
 const PACKAGE_MANAGER_IS_NOT_SUPPORTED_TEXT =
   "This tool only supports `pnpm` package manager." as const
 const PNPM_VERSION_10 = 10 as const
@@ -44,9 +43,8 @@ function getPnpmVersionIsNotSupportedMessage({
 
 export {
   SUPPORTED_PACKAGE_MANAGER,
-  EXIT_CODE_FATAL_EXCEPTION,
+  EXIT_CODE_GENERAL_FAILURE,
   EXIT_CODE_NO_MORE_CODE_TO_EXECUTE,
-  EXIT_CODE_CANCELLED,
   PACKAGE_MANAGER_IS_NOT_SUPPORTED_TEXT,
   PNPM_VERSION_10,
   PNPM_VERSION_11,
