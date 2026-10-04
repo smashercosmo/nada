@@ -11,6 +11,7 @@ import type { ReadonlyDeep } from "#lib/types.js"
 const defaultNormalizer = getDefaultNormalizer({
   stripAnsi: true,
   collapseWhitespace: true,
+  trim: true,
 })
 
 function normalize({ text }: Readonly<{ text: string }>) {

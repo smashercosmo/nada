@@ -1,5 +1,7 @@
 import os from "node:os"
 
+const SPLIT_BY_SPACES_AND_COMAS_REGEX = /[\s,]+/v
+
 const SUPPORTED_PACKAGE_MANAGER = "pnpm" as const
 const EXIT_CODE_GENERAL_FAILURE = 1 as const
 const EXIT_CODE_NO_MORE_CODE_TO_EXECUTE = 0 as const
@@ -58,4 +60,5 @@ export {
   TEXT_COULD_NOT_DETERMINE_SUPPORTED_PNPM_VERSION,
   DEFAULT_CATALOG_NAME,
   getPnpmVersionIsNotSupportedMessage,
+  SPLIT_BY_SPACES_AND_COMAS_REGEX,
 }

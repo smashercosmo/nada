@@ -75,7 +75,7 @@ export async function runPnpmJson<
   const { args: _args = [], flags = [], command, cwd = process.cwd() } = options
   const args = [
     command,
-    ...[...new Set(command === "info" || command === "pkg" ? [..._args, "name"] : _args)],
+    ...new Set(command === "info" || command === "pkg" ? [..._args, "name"] : _args),
     ...flags,
     "--json",
   ]

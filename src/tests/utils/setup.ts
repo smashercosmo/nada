@@ -11,7 +11,7 @@ function setup(it: ReadonlyDeep<Pick<TestAPI, "extend" | "afterEach" | "beforeEa
     async project({ task }, use) {
       const project = new TestProject({
         name: task.name.replaceAll(/[^0-9a-z]/giv, "-").toLowerCase(),
-        programFilePath: "#lib/index.js",
+        programFilePath: "#src/index.js",
       })
       await use(project)
     },

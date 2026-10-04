@@ -1,27 +1,13 @@
-import type { CANCEL_SYMBOL } from "@clack/prompts"
+import { intro, note, text } from "@clack/prompts";
+import {type CANCEL_SYMBOL, intro} from "@clack/prompts"
 
 import { cancel, isCancel } from "@clack/prompts"
 import process from "node:process"
 
-import { EXIT_CODE_GENERAL_FAILURE } from "#lib/constants.js"
-
-const TEXT_INSTALLATION_PROCESS_TERMINATED_BY_THE_USER =
-  "Installation process has been terminated by the user."
-
-/**
- * Unwraps a clack prompt result. If the user canceled (Ctrl+C), the CLI exits
- * right away with a non-zero code. Nothing is installed before all prompts
- * have been answered, so cancelling never leaves a partial installation behind.
- */
-function unwrap<T extends unknown>(value: T | typeof CANCEL_SYMBOL) {
-  if (isCancel(value)) {
-    cancel(TEXT_INSTALLATION_PROCESS_TERMINATED_BY_THE_USER)
-    process.exit(EXIT_CODE_GENERAL_FAILURE)
+class Prompts {
+  intro(message: string) {
+    if (process.NODE_ENV === "test" && process.send) {
+      process.send({ type: '@clack/event', command: 'intro', content: message });
+    }
   }
-  return value
-}
-
-export {
-  TEXT_INSTALLATION_PROCESS_TERMINATED_BY_THE_USER,
-  unwrap,
 }

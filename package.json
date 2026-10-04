@@ -25,6 +25,7 @@
   "imports": {
     "#lib/*.js": "./src/lib/*.ts",
     "#tests/*.js": "./src/tests/*.ts",
+    "#src/*.js": "./src/*.ts",
     "#root/*": "./*"
   },
   "exports": {
@@ -57,6 +58,10 @@
     "lint": "pnpm lint:es && pnpm lint:ox && lint:compat",
     "nada": "node src/index.ts",
     "test": "vitest run",
+    "test:pnpm": "pnpm run \"/^test:pnpm:(11|12|latest)$/\"",
+    "test:pnpm:11": "pnpm with 11.0.0 test",
+    "test:pnpm:12": "pnpm with 12.0.0 test",
+    "test:pnpm:latest": "pnpm with latest test",
     "typecheck": "pnpm --noEmit",
     "update:deps": "pnpm up --latest --interactive"
   },
@@ -66,8 +71,6 @@
     "@pnpm/cli.utils": "catalog:pnpm",
     "@pnpm/deps.inspection.commands": "catalog:pnpm",
     "@pnpm/deps.inspection.list": "catalog:pnpm",
-    "@pnpm/find-workspace-dir": "catalog:pnpm",
-    "nada": "file:nada-0.0.1.tgz",
     "yaml": "catalog:deps"
   },
   "devDependencies": {
@@ -98,19 +101,20 @@
     "typescript-eslint": "catalog:lint",
     "vitest": "catalog:test"
   },
-  "packageManager": "pnpm@12.0.0",
   "engines": {
     "node": ">=24.0.0",
-    "pnpm": ">=12.0.0"
+    "pnpm": ">=11.0.0"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "v12.8.1"
+      "version": "v12.9.1",
+      "onFail": "download"
     },
     "runtime": {
       "name": "node",
-      "version": "v26.10.0"
+      "version": "v26.10.0",
+      "onFail": "download"
     }
   },
   "publishConfig": {

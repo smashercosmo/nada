@@ -1,20 +1,11 @@
-import { render, cleanup } from "cli-testing-library"
+import {cleanup, render} from "cli-testing-library"
 import fs from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import process from "node:process"
 import url from "node:url"
 
-import type { PNPM_VERSION_10, PNPM_VERSION_11 } from "#lib/constants.js"
-import type { ReadonlyDeep } from "#lib/types.js"
-
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      PATH: string
-    }
-  }
-}
+import type {ReadonlyDeep} from "#lib/types.js"
 
 interface PackageJson {
   name: string,
@@ -35,7 +26,7 @@ export class TestProject {
    * @private
    */
   readonly #name: string = ""
-  readonly #programFilePath: string = TestProject.#relativeToAbsoluteFilePath("#lib/index.js")
+  readonly #programFilePath: string = TestProject.#relativeToAbsoluteFilePath("#src/index.js")
   /**
    * Tmp directory against which
    * we're gonna execute our CLI tpol commands
@@ -49,19 +40,6 @@ export class TestProject {
 
   static #relativeToAbsoluteFilePath(filePath: string) {
     return url.fileURLToPath(import.meta.resolve(filePath.trim()))
-  }
-
-  static #removePnpmFromPath() {
-    return process.env.PATH.split(":")
-      .filter((part) => !part.includes("pnpm"))
-      .join(":")
-  }
-
-  public static addPnpmToPath({
-    version,
-  }: ReadonlyDeep<{ version: typeof PNPM_VERSION_10 | typeof PNPM_VERSION_11 }>) {
-    const PATH = this.#removePnpmFromPath()
-    return [PATH, TestProject.#relativeToAbsoluteFilePath(`#root/src/tests/utils/bin/pnpm-${version}`)].join(":")
   }
 
   static #jsonStringifyFormatted(
@@ -92,7 +70,7 @@ export class TestProject {
       version: "1.0.0",
       engines: {
         node: ">=24.0.0",
-        pnpm: ">=10.0.0"
+        pnpm: ">=11.0.0"
       }
     }
     this.#programFilePath =
@@ -123,26 +101,17 @@ export class TestProject {
   public async run(
     options?: ReadonlyDeep<{
       args?: string[]
-      pnpm?: typeof PNPM_VERSION_10 | typeof PNPM_VERSION_11
     }>,
   ) {
-    const { args = [], pnpm } = options ?? {}
-    const result = await render(process.execPath, [this.#programFilePath, ...args], {
+    const { args = [] } = options ?? {}
+    return await render(process.execPath, [this.#programFilePath, ...args], {
       cwd: this.#directory,
       spawnOpts: {
         env: {
+          ...process.env,
           NADA_DISABLE_GUIDE_LINES: "true",
-          PATH:
-            pnpm === undefined
-              ? TestProject.#removePnpmFromPath()
-              : TestProject.addPnpmToPath({ version: pnpm }),
         },
       },
     })
-    return result
-  }
-
-  public getCurrentson() {
-    return this.#packageJson;
   }
 }

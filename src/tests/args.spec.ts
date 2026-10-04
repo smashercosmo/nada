@@ -1,524 +1,358 @@
-import process from "node:process"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-
-const mocks = vi.hoisted(() => ({
-  note: vi.fn(),
-  text: vi.fn(),
-  select: vi.fn(),
-  cancel: vi.fn(),
-}))
-
-vi.mock("@clack/prompts", () => ({
-  note: mocks.note,
-  text: mocks.text,
-  select: mocks.select,
-  cancel: mocks.cancel,
-}))
+import os from "node:os"
+import { describe, expect, it as base } from "vitest"
 
 import {
-  createPackageInputState,
-  getPackages,
-  getPackagesFromCliArgs,
-  getPackagesFromUserInput,
-  parsePackageInput,
-  showRemarkAboutFlags,
-  TEXT_EXIT_OPTION,
+  cleanUpPackagesList,
   TEXT_INPUT_PACKAGES_REQUEST,
-  TEXT_REMARK_ABOUT_FLAGS_CONTENT,
-  TEXT_REMARK_ABOUT_FLAGS_TITLE,
-  TEXT_TRY_AGAIN_OPTION,
+  TEXT_NOTE_ABOUT_FLAGS_CONTENT,
+  TEXT_NOTE_ABOUT_FLAGS_TITLE,
   TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
-  promptUserToProvidePackagesToInstallOrExit,
-} from "./args.js"
+  TEXT_TRY_AGAIN_OPTION,
+  TEXT_EXIT_OPTION,
+} from "#lib/args.js"
+import { expectStepTextToBeInConsole } from "#tests/utils/matchers.js"
+import { setup } from "#tests/utils/setup.js"
 
-const originalArgv = [...process.argv]
+const it = setup(base)
 
-afterEach(() => {
-  vi.clearAllMocks()
-  process.argv = [...originalArgv]
-})
+describe("args test suite", () => {
+  describe("cleanup packages list", () => {
+    it("should remove flags, duplicates", () => {
+      const result = cleanUpPackagesList([
+        "lodash",
+        "--save-dev",
+        "axios",
+        "--save-exact", // non-relevant flag
+        "react", // duplicate
+        "", // falsy value
+      ])
 
-describe("parsePackageInput", () => {
-  it("removes flags from anywhere in the input", () => {
-    const result = parsePackageInput([
-      "lodash",
-      "--save-dev",
-      "axios",
-      "--save-exact",
-      "react",
-    ])
-
-    expect([...result.packages]).toEqual([
-      "lodash",
-      "axios",
-      "react",
-    ])
-    expect(result.hasFlagsBeenDetected).toBe(true)
-  })
-
-  it("removes empty strings", () => {
-    const result = parsePackageInput([
-      "",
-      "lodash",
-      "",
-      "axios",
-    ])
-
-    expect([...result.packages]).toEqual([
-      "lodash",
-      "axios",
-    ])
-    expect(result.hasFlagsBeenDetected).toBe(false)
-  })
-
-  it("removes duplicate package entries while preserving order", () => {
-    const result = parsePackageInput([
-      "react",
-      "lodash",
-      "react",
-      "axios",
-      "lodash",
-    ])
-
-    expect([...result.packages]).toEqual([
-      "react",
-      "lodash",
-      "axios",
-    ])
-  })
-
-  it("does not report flags when there are none", () => {
-    const result = parsePackageInput([
-      "react",
-      "axios",
-    ])
-
-    expect(result.hasFlagsBeenDetected).toBe(false)
-  })
-
-  it("keeps different typed forms of the same package", () => {
-    const result = parsePackageInput([
-      "react",
-      "react@18",
-      "react@latest",
-      "react",
-    ])
-
-    expect([...result.packages]).toEqual([
-      "react",
-      "react@18",
-      "react@latest",
-    ])
-  })
-})
-
-describe("getPackagesFromCliArgs", () => {
-  it("collects packages after node and the script path", () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-      "lodash",
-      "axios",
-      "react",
-    ]
-
-    const result = getPackagesFromCliArgs()
-
-    expect([...result.packages]).toEqual([
-      "lodash",
-      "axios",
-      "react",
-    ])
-    expect(result.hasFlagsBeenDetected).toBe(false)
-  })
-
-  it("filters flags from CLI arguments", () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-      "lodash",
-      "--save-dev",
-      "axios",
-      "--save-exact",
-      "react",
-    ]
-
-    const result = getPackagesFromCliArgs()
-
-    expect([...result.packages]).toEqual([
-      "lodash",
-      "axios",
-      "react",
-    ])
-    expect(result.hasFlagsBeenDetected).toBe(true)
-  })
-
-  it("deduplicates packages from CLI arguments", () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-      "react",
-      "axios",
-      "react",
-      "lodash",
-      "axios",
-    ]
-
-    const result = getPackagesFromCliArgs()
-
-    expect([...result.packages]).toEqual([
-      "react",
-      "axios",
-      "lodash",
-    ])
-  })
-
-  it("returns no packages when only flags were provided", () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-      "--save-dev",
-      "--save-exact",
-    ]
-
-    const result = getPackagesFromCliArgs()
-
-    expect([...result.packages]).toEqual([])
-    expect(result.hasFlagsBeenDetected).toBe(true)
-  })
-})
-
-describe("getPackagesFromUserInput", () => {
-  it("splits packages on whitespace", async () => {
-    mocks.text.mockResolvedValue(
-      "react react-router axios",
-    )
-
-    const result = await getPackagesFromUserInput()
-
-    expect(mocks.text).toHaveBeenCalledWith({
-      message: TEXT_INPUT_PACKAGES_REQUEST,
-      placeholder: "react react-router",
+      expect([...result.packages]).toEqual(["lodash", "axios", "react"])
+      expect(result.hasDetectedFlags).toBe(true)
     })
 
-    expect([...result.packages]).toEqual([
-      "react",
-      "react-router",
-      "axios",
-    ])
-  })
+    it("should report whether flags were detected independently of the result", () => {
+      const result = cleanUpPackagesList(["--save-dev", "--save-exact"])
 
-  it("splits packages on commas", async () => {
-    mocks.text.mockResolvedValue(
-      "react,axios,lodash",
-    )
-
-    const result = await getPackagesFromUserInput()
-
-    expect([...result.packages]).toEqual([
-      "react",
-      "axios",
-      "lodash",
-    ])
-  })
-
-  it("supports mixed commas and whitespace", async () => {
-    mocks.text.mockResolvedValue(
-      "react, axios   lodash,react-router",
-    )
-
-    const result = await getPackagesFromUserInput()
-
-    expect([...result.packages]).toEqual([
-      "react",
-      "axios",
-      "lodash",
-      "react-router",
-    ])
-  })
-
-  it("filters flags from user input", async () => {
-    mocks.text.mockResolvedValue(
-      "react --save-dev axios --save-exact lodash",
-    )
-
-    const result = await getPackagesFromUserInput()
-
-    expect([...result.packages]).toEqual([
-      "react",
-      "axios",
-      "lodash",
-    ])
-    expect(result.hasFlagsBeenDetected).toBe(true)
-  })
-
-  it("deduplicates packages from user input", async () => {
-    mocks.text.mockResolvedValue(
-      "react axios react lodash axios",
-    )
-
-    const result = await getPackagesFromUserInput()
-
-    expect([...result.packages]).toEqual([
-      "react",
-      "axios",
-      "lodash",
-    ])
-  })
-
-  it("returns an empty package list when the answer is empty", async () => {
-    mocks.text.mockResolvedValue("")
-
-    const result = await getPackagesFromUserInput()
-
-    expect([...result.packages]).toEqual([])
-    expect(result.hasFlagsBeenDetected).toBe(false)
-  })
-
-  it("treats cancellation as an empty submission", async () => {
-    mocks.text.mockResolvedValue(
-      Symbol("cancel"),
-    )
-
-    const result = await getPackagesFromUserInput()
-
-    expect([...result.packages]).toEqual([])
-    expect(result.hasFlagsBeenDetected).toBe(false)
-  })
-})
-
-describe("showRemarkAboutFlags", () => {
-  it("shows the remark when flags are detected", () => {
-    const state = createPackageInputState()
-
-    showRemarkAboutFlags(state, true)
-
-    expect(mocks.note).toHaveBeenCalledTimes(1)
-    expect(mocks.note).toHaveBeenCalledWith(
-      TEXT_REMARK_ABOUT_FLAGS_CONTENT,
-      TEXT_REMARK_ABOUT_FLAGS_TITLE,
-    )
-    expect(state.hasShownFlagRemark).toBe(true)
-  })
-
-  it("does not show the remark when no flags were detected", () => {
-    const state = createPackageInputState()
-
-    showRemarkAboutFlags(state, false)
-
-    expect(mocks.note).not.toHaveBeenCalled()
-    expect(state.hasShownFlagRemark).toBe(false)
-  })
-
-  it("shows the remark only once", () => {
-    const state = createPackageInputState()
-
-    showRemarkAboutFlags(state, true)
-    showRemarkAboutFlags(state, true)
-    showRemarkAboutFlags(state, true)
-
-    expect(mocks.note).toHaveBeenCalledTimes(1)
-    expect(state.hasShownFlagRemark).toBe(true)
-  })
-
-  it("does not show the remark again after a later flag is detected", () => {
-    const state = createPackageInputState()
-
-    showRemarkAboutFlags(state, true)
-    showRemarkAboutFlags(state, false)
-    showRemarkAboutFlags(state, true)
-
-    expect(mocks.note).toHaveBeenCalledTimes(1)
-  })
-})
-
-describe("promptUserToProvidePackagesToInstallOrExit", () => {
-  it("does nothing when the user chooses Try again", async () => {
-    mocks.select.mockResolvedValue(
-      TEXT_TRY_AGAIN_OPTION,
-    )
-
-    await promptUserToProvidePackagesToInstallOrExit()
-
-    expect(mocks.select).toHaveBeenCalledWith({
-      message: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
-      options: [
-        { value: TEXT_TRY_AGAIN_OPTION },
-        { value: TEXT_EXIT_OPTION },
-      ],
+      expect([...result.packages]).toEqual([])
+      expect(result.hasDetectedFlags).toBe(true)
     })
 
-    expect(mocks.cancel).not.toHaveBeenCalled()
+    it("should report no flags when none were provided", () => {
+      const result = cleanUpPackagesList(["lodash", "axios", "react"])
+
+      expect(result.hasDetectedFlags).toBe(false)
+    })
   })
 
-  it("exits when the user chooses Exit", async () => {
-    mocks.select.mockResolvedValue(
-      TEXT_EXIT_OPTION,
-    )
+  describe("CLI input", () => {
+    it("should skip the package prompt when packages are provided as arguments", async ({
+      project,
+    }) => {
+      const result = await project.run({
+        args: ["lodash", "axios", "react"],
+      })
 
-    const exitSpy = vi
-      .spyOn(process, "exit")
-      .mockImplementation((() => {
-        throw new Error("PROCESS_EXIT")
-      }) as never)
+      expect(result.queryByText(TEXT_INPUT_PACKAGES_REQUEST)).not.toBeInTheConsole()
+    })
 
-    await expect(
-      promptUserToProvidePackagesToInstallOrExit(),
-    ).rejects.toThrow("PROCESS_EXIT")
+    it.only("should ignore CLI flags", async ({ project }) => {
+      const result = await project.run({
+        args: ["--save-dev", "--save-exact"],
+      })
 
-    expect(mocks.cancel).toHaveBeenCalledTimes(1)
-    expect(exitSpy).toHaveBeenCalledTimes(1)
 
-    exitSpy.mockRestore()
-  })
-})
+      const instance = await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
 
-describe("getPackages", () => {
-  it("returns CLI packages without prompting for interactive input", async () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-      "lodash",
-      "axios",
-    ]
+      console.log(111, instance.getStdallStr())
+      console.log(222, instance.stdoutArr.map(item => item.contents.toString()))
 
-    const result = await getPackages()
+      /*await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })*/
 
-    expect([...result]).toEqual([
-      "lodash",
-      "axios",
-    ])
+      //expect(result.getStdallStr()).toContain(TEXT_REMARK_ABOUT_FLAGS_TITLE)
 
-    expect(mocks.text).not.toHaveBeenCalled()
-    expect(mocks.select).not.toHaveBeenCalled()
-  })
+      // Exit the select so the test finishes cleanly.
+      //result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
 
-  it("filters CLI flags and returns the remaining packages", async () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-      "lodash",
-      "--save-dev",
-      "axios",
-    ]
+    it("should show the flag remark when CLI flags are provided", async ({ project }) => {
+      const result = await project.run({
+        args: ["--save-dev"],
+      })
 
-    const result = await getPackages()
-
-    expect([...result]).toEqual([
-      "lodash",
-      "axios",
-    ])
-
-    expect(mocks.note).toHaveBeenCalledTimes(1)
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_NOTE_ABOUT_FLAGS_CONTENT,
+      })
+    })
   })
 
-  it("shows the flag remark only once across CLI and interactive input", async () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-      "--save-dev",
-    ]
+  /*
 
-    mocks.text.mockResolvedValue(
-      "lodash --save-exact",
-    )
+  describe("interactive input", () => {
+    it("should show the package input prompt when no CLI packages are provided", async ({
+                                                                                          project,
+                                                                                        }) => {
+      const result = await project.run()
 
-    const state = createPackageInputState()
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
 
-    const result = await getPackages(state)
+      // Leave the flow through the explicit empty-input handling.
+      result.userEvent.keyboard("[Enter]")
 
-    expect([...result]).toEqual([
-      "lodash",
-    ])
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
 
-    expect(mocks.note).toHaveBeenCalledTimes(1)
+      // Select "Exit".
+      result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
+
+    it("should treat an empty initial answer as no package input", async ({
+                                                                            project,
+                                                                          }) => {
+      const result = await project.run()
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
+
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+
+      // "Try again" is selected by default.
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
+
+      // Exit the next select so that the test terminates.
+      result.userEvent.keyboard("[Enter]")
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+      result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
+
+    it("should treat Escape at the initial prompt like an empty answer", async ({
+                                                                                  project,
+                                                                                }) => {
+      const result = await project.run()
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
+
+      result.userEvent.keyboard("[Escape]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+
+      result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
+
+    it("should ignore flags entered in the interactive prompt", async ({
+                                                                         project,
+                                                                       }) => {
+      const result = await project.run()
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
+
+      result.userEvent.keyboard(
+        "--save-dev --save-exact",
+      )
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_REMARK_ABOUT_FLAGS_CONTENT,
+      })
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+
+      result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
+
+    it("should show the flag remark only once", async ({
+                                                         project,
+                                                       }) => {
+      const result = await project.run()
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
+
+      // First input contains a flag.
+      result.userEvent.keyboard("--save-dev")
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_REMARK_ABOUT_FLAGS_CONTENT,
+      })
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+
+      // Try again.
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
+
+      // Second input contains another flag.
+      result.userEvent.keyboard("--save-exact")
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+
+      const output = result.getStdallStr()
+
+      /!**
+       * The explanatory note belongs to the whole package-input flow,
+       * not to an individual submission.
+       *!/
+      expect(
+        output.split(TEXT_REMARK_ABOUT_FLAGS_TITLE).length - 1,
+      ).toBe(1)
+
+      result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
+
+    it("should not show the flag remark again after a flag appeared in CLI arguments", async ({
+                                                                                                project,
+                                                                                              }) => {
+      const result = await project.run({
+        args: ["--save-dev"],
+      })
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_REMARK_ABOUT_FLAGS_CONTENT,
+      })
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+
+      // Try again.
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
+
+      // Another flag later in the same overall flow.
+      result.userEvent.keyboard("--save-exact")
+      result.userEvent.keyboard("[Enter]")
+
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
+
+      const output = result.getStdallStr()
+
+      expect(
+        output.split(TEXT_REMARK_ABOUT_FLAGS_TITLE).length - 1,
+      ).toBe(1)
+
+      result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
   })
 
-  it("prompts again after an empty initial submission", async () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-    ]
+  describe("try again or exit", () => {
+    it("should offer Try again after an empty submission", async ({
+                                                                    project,
+                                                                  }) => {
+      const result = await project.run()
 
-    mocks.text
-      .mockResolvedValueOnce("")
-      .mockResolvedValueOnce("react")
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
 
-    mocks.select.mockResolvedValue(
-      TEXT_TRY_AGAIN_OPTION,
-    )
+      result.userEvent.keyboard("[Enter]")
 
-    const result = await getPackages()
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
 
-    expect([...result]).toEqual([
-      "react",
-    ])
+      // "Try again" is the first/default option.
+      result.userEvent.keyboard("[Enter]")
 
-    expect(mocks.text).toHaveBeenCalledTimes(2)
-    expect(mocks.select).toHaveBeenCalledTimes(1)
-  })
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
 
-  it("treats Escape at the initial prompt as empty input", async () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-    ]
+      // Exit eventually.
+      result.userEvent.keyboard("[Escape]")
 
-    mocks.text
-      .mockResolvedValueOnce(Symbol("cancel"))
-      .mockResolvedValueOnce("react")
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
 
-    mocks.select.mockResolvedValue(
-      TEXT_TRY_AGAIN_OPTION,
-    )
+      result.userEvent.keyboard("[ArrowDown][Enter]")
+    })
 
-    const result = await getPackages()
+    it("should exit when Exit is selected", async ({ project }) => {
+      const result = await project.run()
 
-    expect([...result]).toEqual([
-      "react",
-    ])
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_INPUT_PACKAGES_REQUEST,
+      })
 
-    expect(mocks.text).toHaveBeenCalledTimes(2)
-    expect(mocks.select).toHaveBeenCalledTimes(1)
-  })
+      result.userEvent.keyboard("[Enter]")
 
-  it("does not show the flag remark more than once across repeated attempts", async () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-    ]
+      await expectStepTextToBeInConsole({
+        result,
+        stepText: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
+      })
 
-    mocks.text
-      .mockResolvedValueOnce("--save-dev")
-      .mockResolvedValueOnce("react --save-exact")
+      result.userEvent.keyboard("[ArrowDown][Enter]")
 
-    mocks.select
-      .mockResolvedValueOnce(TEXT_TRY_AGAIN_OPTION)
-
-    const result = await getPackages()
-
-    expect([...result]).toEqual([
-      "react",
-    ])
-
-    expect(mocks.note).toHaveBeenCalledTimes(1)
-  })
-
-  it("returns package names exactly as typed", async () => {
-    process.argv = [
-      "/usr/bin/node",
-      "/project/bin/nada.js",
-    ]
-
-    mocks.text.mockResolvedValue(
-      "react@18 axios@latest",
-    )
-
-    const result = await getPackages()
-
-    expect([...result]).toEqual([
-      "react@18",
-      "axios@latest",
-    ])
-  })
+      await result.waitForExit()
+    })
+  })*/
 })

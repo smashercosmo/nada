@@ -4,36 +4,25 @@ import { cancel, note, select, text } from "@clack/prompts"
 import os from "node:os"
 import process from "node:process"
 
+import type { NotificationsState } from "#lib/state.js"
+
 import { ExtendedArray } from "#lib/array.js"
-import { EXIT_CODE_GENERAL_FAILURE } from "#lib/constants.js"
-import {
-  TEXT_INSTALLATION_PROCESS_TERMINATED_BY_THE_USER,
-  unwrap,
-} from "#lib/prompts.js"
-
-/**
- * State shared by the whole package-input/validation flow.
- *
- * The flag notice is a piece of UI state, not a parsing state, so it lives here
- * rather than inside parsePackageInput().
- */
-type PackageInputState = {
-  hasShownFlagRemark: boolean
-}
-
-function createPackageInputState(): PackageInputState {
-  return {
-    hasShownFlagRemark: false,
-  }
-}
+import {EXIT_CODE_GENERAL_FAILURE, SPLIT_BY_SPACES_AND_COMAS_REGEX} from "#lib/constants.js"
+import { TEXT_INSTALLATION_PROCESS_TERMINATED_BY_THE_USER, unwrap } from "#lib/prompts.js"
 
 //region ---------------------------------- Text ----------------------------------
 
-const TEXT_REMARK_ABOUT_FLAGS_TITLE = "About flags"
-
-const TEXT_REMARK_ABOUT_FLAGS_CONTENT = [
+const TEXT_NOTE_ABOUT_FLAGS_TITLE = "About flags"
+const TEXT_NOTE_ABOUT_FLAGS_CONTENT = [
   "This tool is purely interactive and doesn't need any flags.",
   "Passing them won't do any harm, as they will be completely ignored.",
+].join(os.EOL)
+
+const TEXT_NOTE_ABOUT_DUPLICATES_TITLE = "About duplicates"
+const TEXT_NOTE_ABOUT_DUPLICATES_CONTENT = [
+  "Some the packages were detected as duplicates and were filtered out.",
+  "Packages with the same name are considered duplicates,",
+  "even if they have different versions",
 ].join(os.EOL)
 
 const TEXT_INPUT_PACKAGES_REQUEST =
@@ -49,68 +38,119 @@ const TEXT_EXIT_OPTION = "Exit"
 
 //endregion ---------------------------------- Text ----------------------------------
 
+type PackageNameToVersionMap = Map<string, string | undefined>
+
 /**
- * Parses package input according to the rules of this CLI.
+ * Filters out packages with the same name, but
+ * different version. That's an edge case, so in order not to overcomplicate
+ * the logic, we're just following first-in-fisrt-out principle. In other words,
+ * packages in the beginning of the line will be kept and their older (or anger) siblings
+ * will be eliminated.
+ */
+function dedupe(packages: readonly string[]) {
+  const nameToVersionMap: PackageNameToVersionMap = new Map()
+  /**
+   * Handles react, react@18, react@^18.0.0, react@~18.0.0.
+   * Example:
+   *  - input: react@~18.0.0
+   *  - output: ["react", "18.0.0"]
+   */
+  const NAME_VERSION_SPLITTER_REGEX = /@[~^]*/v
+  for (const pkg in packages) {
+    const [name, version] = pkg.split(NAME_VERSION_SPLITTER_REGEX)
+    if (typeof name === "string" && name) {
+      if (!nameToVersionMap.has(name)) {
+        nameToVersionMap.set(name, version ?? undefined)
+      }
+    }
+  }
+
+  const hasDetectedDuplicates = nameToVersionMap.size !== packages.length
+  return {
+    packages: nameToVersionMap,
+    hasDetectedDuplicates,
+  }
+}
+
+/**
+ * Cleans up packages list, filtering out additional, non-relevant
+ * arguments, like flags (--save-dev, --filter, etc.), duplicates
+ * (including same packages with different versions) and
+ * falsy values.
  *
  * A token beginning with "-" is always treated as a flag and discarded.
  * We intentionally do not try to understand individual flag semantics:
  * every flag is ignored, regardless of its name.
  *
  * Example:
- * input: ["react", "--save-dev", "axios", "react"]
+ * input: ["react", "--save-dev", "axios", "react", ""]
  * output: ["react", "axios"]
  */
-function parsePackageInput(
-  args: readonly string[],
-) {
-  const hasFlagsBeenDetected = args.some((arg) =>
-    arg.startsWith("-"),
-  )
+function cleanUpPackagesList(args: readonly string[]) {
+  const hasDetectedFlags = args.some((arg) => arg.startsWith("-"))
 
-  const packages = ExtendedArray
-    .from(args)
+  const packages = ExtendedArray.from(args)
     .filter((arg) => Boolean(arg) && !arg.startsWith("-"))
     .unique()
 
   return {
-    packages,
-    hasFlagsBeenDetected,
+    ...dedupe(packages),
+    hasDetectedFlags,
   }
 }
 
 /**
- * Shows the flag explanation at most once for the current package-input flow.
+ * Shows the note about flags
+ * at most once for the current session.
  */
-function showRemarkAboutFlags(
-  state: PackageInputState,
-  hasFlagsBeenDetected: boolean,
-) {
-  if (!hasFlagsBeenDetected || state.hasShownFlagRemark) {
+function showNoteAboutFlags({
+  state,
+  hasDetectedFlags,
+}: {
+  state: NotificationsState
+  hasDetectedFlags: boolean
+}) {
+  if (!hasDetectedFlags || state.hasAlreadyShownNoteAboutFlags) {
     return
   }
 
-  note(
-    TEXT_REMARK_ABOUT_FLAGS_CONTENT,
-    TEXT_REMARK_ABOUT_FLAGS_TITLE,
-  )
+  note(TEXT_NOTE_ABOUT_FLAGS_CONTENT, TEXT_NOTE_ABOUT_FLAGS_TITLE)
 
-  state.hasShownFlagRemark = true
+  state.hasAlreadyShownNoteAboutFlags = true
+}
+
+/**
+ * Shows the note about duplicated packages
+ * at most once for the current session.
+ */
+function showNoteAboutDuplicates({
+  state,
+  hasDetectedDuplicates,
+}: {
+  state: NotificationsState
+  hasDetectedDuplicates: boolean
+}) {
+  if (!hasDetectedDuplicates || state.hasAlreadyShownNoteAboutDuplicates) {
+    return
+  }
+
+  note(TEXT_NOTE_ABOUT_DUPLICATES_CONTENT, TEXT_NOTE_ABOUT_DUPLICATES_TITLE)
+
+  state.hasAlreadyShownNoteAboutDuplicates = true
 }
 
 /**
  * Reads packages supplied after the command itself.
  *
  * pnpm invokes this CLI with: node <script> <package> <package> ...
- * so the first two argv entries belong to the launcher and are removed before
- * package parsing. This is preferable to filtering the whole argv array first:
+ * so the first two argv entries belong to the launcher and the executable
+ * and are removed before cleaning up the list. This is preferable to filtering the whole argv array first:
  * parsePackageInput() should know nothing about process.argv's structure.
  */
 function getPackagesFromCliArgs() {
   const COMMAND_PLUS_SCRIPT_ARGS_LENGTH = 2
 
-  return parsePackageInput(
-    process.argv.slice(COMMAND_PLUS_SCRIPT_ARGS_LENGTH),
-  )
+  return cleanUpPackagesList(process.argv.slice(COMMAND_PLUS_SCRIPT_ARGS_LENGTH))
 }
 
 /**
@@ -120,59 +160,54 @@ function getPackagesFromCliArgs() {
  * Escape/Ctrl+C is treated as an empty submission here. The caller decides
  * what an empty submission means in the current stage of the flow.
  */
-async function getPackagesFromUserInput() {
+async function getPackagesFromUserInput(): Promise<{
+  packages: PackageNameToVersionMap
+  hasDetectedFlags: boolean
+  hasDetectedDuplicates: boolean
+}> {
   const input = await text({
     message: TEXT_INPUT_PACKAGES_REQUEST,
     placeholder: "react react-router",
   })
 
-  // @clack/prompts return a cancel symbol for Escape/Ctrl+C.
-  // For the initial package prompt, cancellation has the same meaning as
-  // submitting nothing: show the Try again / Exit choice.
+  /**
+   * @clack/prompts return a cancel symbol for Escape/Ctrl+C.
+   * For the initial package prompt, cancellation has the same meaning as
+   * submitting nothing: user is offered "Try again / Exit" choice.
+   */
   if (typeof input !== "string") {
     return {
-      packages: ExtendedArray.from<string>([]),
-      hasFlagsBeenDetected: false,
+      packages: new Map(),
+      hasDetectedFlags: false,
+      hasDetectedDuplicates: false,
     }
   }
 
-  const args = input.split(/[\s,]+/v)
+  const args = input.split(SPLIT_BY_SPACES_AND_COMAS_REGEX)
 
-  return parsePackageInput(args)
+  return cleanUpPackagesList(args)
 }
-
-// -----------------------------------------------------------------------------
-// Empty-input helper
-// -----------------------------------------------------------------------------
 
 /**
  * Handles the "no packages were entered" decision.
  *
  * This helper is shared by getPackages() and checkPackages(), so the same
  * behavior applies whether the absence of packages happens before validation
- * or after a later empty submission.
+ * or after the submission.
  */
 async function promptUserToProvidePackagesToInstallOrExit() {
   const choice = unwrap(
     await select({
       message: TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
-      options: [
-        { value: TEXT_TRY_AGAIN_OPTION },
-        { value: TEXT_EXIT_OPTION },
-      ],
+      options: [{ value: TEXT_TRY_AGAIN_OPTION }, { value: TEXT_EXIT_OPTION }],
     }),
   )
 
   if (choice === TEXT_EXIT_OPTION) {
-    // unwrap() handles cancellation of the select itself.
     cancel(TEXT_INSTALLATION_PROCESS_TERMINATED_BY_THE_USER)
     process.exit(EXIT_CODE_GENERAL_FAILURE)
   }
 }
-
-// -----------------------------------------------------------------------------
-// Main package-input flow
-// -----------------------------------------------------------------------------
 
 /**
  * Gets the initial package list.
@@ -188,36 +223,21 @@ async function promptUserToProvidePackagesToInstallOrExit() {
  * `state` is shared with checkPackages() so the flag notice can genuinely be
  * shown only once during the entire package-input/validation flow.
  */
-async function getPackages(
-  state: PackageInputState = createPackageInputState(),
-) {
-  const fromCli = getPackagesFromCliArgs()
-
-  showRemarkAboutFlags(
-    state,
-    fromCli.hasFlagsBeenDetected,
-  )
-
-  // `pnpm nada lodash axios react`
-  // returns the package arguments directly without showing another prompt.
-  if (fromCli.packages.isNotEmpty()) {
-    return fromCli.packages
+async function getPackages({ state }: { state: NotificationsState }) {
+  {
+    const { packages, hasDetectedFlags, hasDetectedDuplicates } = getPackagesFromCliArgs()
+    showNoteAboutFlags({ state, hasDetectedFlags })
+    showNoteAboutDuplicates({ state, hasDetectedDuplicates })
+    if (packages.size > 0) {
+      return packages
+    }
   }
 
   while (true) {
-    const fromUser = await getPackagesFromUserInput()
-
-    showRemarkAboutFlags(
-      state,
-      fromUser.hasFlagsBeenDetected,
-    )
-
-    if (fromUser.packages.isNotEmpty()) {
-      return fromUser.packages
-    }
-
-    // Nothing was provided (or the prompt was cancelled), so let the user
-    // explicitly choose between trying again and exiting.
+    const { packages, hasDetectedFlags, hasDetectedDuplicates } = await getPackagesFromUserInput()
+    showNoteAboutFlags({ state, hasDetectedFlags })
+    showNoteAboutDuplicates({ state, hasDetectedDuplicates })
+    if (packages.size > 0) return packages
     await promptUserToProvidePackagesToInstallOrExit()
   }
 }
@@ -226,18 +246,16 @@ export {
   getPackages,
   getPackagesFromCliArgs,
   getPackagesFromUserInput,
-  parsePackageInput,
+  cleanUpPackagesList,
   promptUserToProvidePackagesToInstallOrExit,
-  showRemarkAboutFlags,
-  createPackageInputState,
-  TEXT_REMARK_ABOUT_FLAGS_CONTENT,
-  TEXT_REMARK_ABOUT_FLAGS_TITLE,
+  showNoteAboutFlags,
+  showNoteAboutDuplicates,
+  TEXT_NOTE_ABOUT_FLAGS_CONTENT,
+  TEXT_NOTE_ABOUT_FLAGS_TITLE,
   TEXT_INPUT_PACKAGES_REQUEST,
   TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
   TEXT_TRY_AGAIN_OPTION,
   TEXT_EXIT_OPTION,
 }
 
-export type {
-  PackageInputState,
-}
+export type { PackageNameToVersionMap }

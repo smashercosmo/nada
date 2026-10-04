@@ -1,135 +1,70 @@
-import {
-  isCancel,
-  log,
-  cancel,
-  text,
-} from "@clack/prompts"
+import { isCancel, log, cancel, text } from "@clack/prompts"
 import os from "node:os"
 import process from "node:process"
 
+import type { NotificationsState } from "#lib/state.js"
+
 import {
-  createPackageInputState,
   getPackagesFromUserInput,
-  parsePackageInput,
+  cleanUpPackagesList,
   promptUserToProvidePackagesToInstallOrExit,
-  showRemarkAboutFlags,
+  showNoteAboutFlags,
+  showNoteAboutDuplicates,
+  type PackageNameToVersionMap,
 } from "#lib/args.js"
-import type { PackageInputState } from "#lib/args.js"
 import { ExtendedArray } from "#lib/array.js"
-import { EXIT_CODE_GENERAL_FAILURE } from "#lib/constants.js"
+import {EXIT_CODE_GENERAL_FAILURE, SPLIT_BY_SPACES_AND_COMAS_REGEX} from "#lib/constants.js"
 import { runPnpmJson } from "#lib/pnpm.js"
-
-// -----------------------------------------------------------------------------
-// Text
-// -----------------------------------------------------------------------------
-
-const TEXT_TRY_AGAIN_OR_EXIT_QUESTION = [
-  "You haven't specified any packages to install.",
-  "Would you like to try again or exit?",
-].join(os.EOL)
-
-const TEXT_TRY_AGAIN_OPTION = "Try again"
-const TEXT_EXIT_OPTION = "Exit"
 
 const TEXT_CORRECTION_REQUEST =
   "Correct the missing packages or add more. Press `Escape` or `Ctrl+C` to continue with the valid packages."
 
-const TEXT_NOTHING_WAS_ENTERED = "Nothing was entered."
-const TEXT_NO_VALID_PACKAGES = "No valid packages were provided."
+const TEXT_ORIGINAL_INPUT_HAS_NOT_BEEN_CHANGED = "Original input has not been changed."
+const TEXT_NO_VALID_PACKAGES_PROVIDED = "No valid packages were provided."
 
-// -----------------------------------------------------------------------------
-// Empty-input helper
-// -----------------------------------------------------------------------------
-
-/**
- * Kept here as an exported function for compatibility with the previous API.
- *
- * The implementation itself lives in args.ts because this behavior belongs to
- * the package-input flow and is shared by both getPackages() and checkPackages().
- */
-export { promptUserToProvidePackagesToInstallOrExit }
-
-// -----------------------------------------------------------------------------
-// Registry validation
-// -----------------------------------------------------------------------------
+function formatPackage({ name, version }: { name: string; version?: string | undefined }) {
+  return version ? `${name}@${version}` : name
+}
 
 /**
- * Checks one exact user-submitted package string against the npm registry.
+ * Checks one exact user-submitted package against the npm registry.
+ * No matter the user's original input, version, found in the registry will
+ * be the one installed.
  *
- * The important distinction is:
- *
- *   input   = exactly what the user typed
- *   version = what the registry resolved that input to
- *
- * The resolved version is useful for display and validation state, but it must
- * NEVER replace the user's original input in the final result.
+ * Example:
+ *  - User typed react@18
+ *  - Pnpm found react@18.3.1
+ *  - 18.3.1 is going to be installed
  */
-async function checkPackage(pkg: string) {
+async function checkPackage({ name, version }: { name: string; version?: string | undefined }) {
+  const pkg = formatPackage({ name, version })
   const info = await runPnpmJson({
     command: "info",
     args: [pkg, "version"],
   })
 
-  if (!info) {
+  if (info) {
     return {
       input: pkg,
-      found: false,
-      name: undefined,
-      version: undefined,
-    }
+      found: true,
+      ...info,
+    } as const
   }
 
   return {
     input: pkg,
-    found: true,
-    ...info,
-  }
+    found: false,
+    name: undefined,
+    version: undefined,
+  } as const
 }
-
-// -----------------------------------------------------------------------------
-// Formatting
-// -----------------------------------------------------------------------------
 
 /**
  * Renders a titled bullet list for clack's log helpers.
  */
-function formatList(
-  title: string,
-  items: Iterable<string>,
-) {
-  return [
-    title,
-    ...[...items].map((item) => `- ${item}`),
-  ].join(os.EOL)
+function formatList(title: string, items: Iterable<string>) {
+  return [title, ...[...items].map((item) => `- ${item}`)].join(os.EOL)
 }
-
-/**
- * Formats validation results for the user.
- *
- * We deliberately separate the typed input from the resolved version here.
- *
- * Example:
- *
- *   react@18 → 18.3.1
- *
- * rather than:
- *
- *   react@18@18.3.1
- */
-function formatFoundPackages(
-  valid: Map<string, string>,
-) {
-  return formatList(
-    "Found packages",
-    [...valid].map(
-      ([input, version]) => `${input} → ${version}`,
-    ),
-  )
-}
-
-// -----------------------------------------------------------------------------
-// Validation flow
-// -----------------------------------------------------------------------------
 
 /**
  * Validates packages against the npm registry.
@@ -157,34 +92,14 @@ function formatFoundPackages(
  *
  * The final result is always `valid.keys()`: the exact user-entered strings.
  */
-async function checkPackages(options: Readonly<{
-  packages: readonly string[]
-  packageInputState?: PackageInputState
+async function checkPackages({
+  state,
+  packages,
+}: Readonly<{
+  packages: PackageNameToVersionMap
+  state: NotificationsState
 }>) {
-  // This state is intentionally shared with getPackages() by the caller.
-  //
-  // If checkPackages() is used by itself, it creates an independent state,
-  // which is still correct for that standalone flow.
-  const packageInputState =
-    options.packageInputState ?? createPackageInputState()
-
-  /**
-   * Map:
-   *
-   *   typed input -> resolved version
-   *
-   * Example:
-   *
-   *   "react"    -> "19.1.0"
-   *   "react@18" -> "18.3.1"
-   *
-   * This means:
-   * - validation state is preserved
-   * - exact user input is preserved
-   * - already-valid inputs can be skipped
-   * - two different inputs such as react and react@18 are both allowed
-   */
-  const valid = new Map<string, string>()
+  const valid: PackageNameToVersionMap = new Map()
 
   /**
    * Only the latest round's missing packages are kept here.
@@ -194,61 +109,30 @@ async function checkPackages(options: Readonly<{
    */
   let missing: string[] = []
 
-  /**
-   * Deduplicate the initial submission before any registry requests.
-   *
-   * This guarantees that duplicate input in one round causes at most one
-   * request.
-   */
-  let submitted = ExtendedArray
-    .from(options.packages)
-    .unique()
+  let submitted = new Map(packages)
 
   while (true) {
-    // -------------------------------------------------------------------------
-    // Nothing to check and nothing waiting for correction
-    // -------------------------------------------------------------------------
-
-    if (
-      submitted.isEmpty() &&
-      missing.length === 0
-    ) {
-      // This path is useful when checkPackages() is called directly with [].
-      // There is nothing to validate, so ask the user whether they want to
-      // provide packages or leave the flow.
+    /**
+     * Nothing to check and nothing waiting for correction.
+     * In that case just asking user if they want to try again
+     * and add some input in a form of packages list.
+     */
+    if (submitted.size === 0 && missing.length === 0) {
       await promptUserToProvidePackagesToInstallOrExit()
-
-      const fromUser = await getPackagesFromUserInput()
-
-      showRemarkAboutFlags(
-        packageInputState,
-        fromUser.hasFlagsBeenDetected,
-      )
-
-      submitted = fromUser.packages
-
+      const { packages, hasDetectedFlags, hasDetectedDuplicates } = await getPackagesFromUserInput()
+      showNoteAboutFlags({ state, hasDetectedFlags })
+      showNoteAboutDuplicates({ state, hasDetectedDuplicates })
+      submitted = packages
       continue
     }
 
-    // -------------------------------------------------------------------------
-    // Empty correction submission
-    // -------------------------------------------------------------------------
-
-    if (submitted.isEmpty()) {
+    if (submitted.size === 0) {
       /**
        * An empty correction input is NOT a new validation round.
-       *
-       * In particular:
-       * - no registry requests are made
-       * - `missing` stays intact
-       * - the next correction prompt is still prefilled with the same values
+       * The next correction prompt is still prefilled with the same values.
        */
-      log.warn(TEXT_NOTHING_WAS_ENTERED)
+      log.warn(TEXT_ORIGINAL_INPUT_HAS_NOT_BEEN_CHANGED)
     } else {
-      // -----------------------------------------------------------------------
-      // New validation round
-      // -----------------------------------------------------------------------
-
       /**
        * Once the user submits a non-empty correction, the previous missing
        * state is replaced by the results of this round.
@@ -258,24 +142,26 @@ async function checkPackages(options: Readonly<{
        */
       missing = []
 
-      /**
-       * Never check a package that has already validated successfully.
-       */
-      const toCheck = submitted.filter(
-        (pkg) => !valid.has(pkg),
-      )
+      const packagesToCheck = new Map(submitted)
 
-      if (toCheck.isNotEmpty()) {
-        log.info(
-          "Checking packages on the npm registry...",
-        )
+      /**
+       * Never check a package that has been already validated successfully.
+       */
+      for (const name of valid.keys()) {
+        if (packagesToCheck.has(name)) {
+          packagesToCheck.delete(name)
+        }
+      }
+
+      if (packagesToCheck.size > 0) {
+        log.info("Checking packages on the npm registry...")
 
         /**
          * All new entries can be checked independently, so run the requests
          * in parallel.
          */
         const results = await Promise.all(
-          [...toCheck].map((pkg) => checkPackage(pkg)),
+          [...packagesToCheck].map(([name, version]) => checkPackage({ name, version })),
         )
 
         for (const result of results) {
@@ -286,10 +172,7 @@ async function checkPackages(options: Readonly<{
              * The resolved version is stored separately and is only used for
              * display / remembering successful validation.
              */
-            valid.set(
-              result.input,
-              result.version,
-            )
+            valid.set(result.name, result.version)
           } else {
             missing.push(result.input)
           }
@@ -302,7 +185,10 @@ async function checkPackages(options: Readonly<{
 
       if (valid.size > 0) {
         log.success(
-          formatFoundPackages(valid),
+          formatList(
+            "Found packages",
+            [...valid].map(([input, version]) => `${input} → ${version}`),
+          ),
         )
       }
 
@@ -325,17 +211,10 @@ async function checkPackages(options: Readonly<{
        *   react@18@18.3.1
        */
       if (missing.length === 0) {
-        return ExtendedArray.from([
-          ...valid.keys(),
-        ])
+        return ExtendedArray.from([...valid.keys()])
       }
 
-      log.warn(
-        formatList(
-          "Missing packages",
-          missing,
-        ),
-      )
+      log.warn(formatList("Missing packages", missing))
     }
 
     // -------------------------------------------------------------------------
@@ -369,16 +248,11 @@ async function checkPackages(options: Readonly<{
      * - CLI arguments
      * - initial interactive input
      *
-     * Therefore flags are filtered here too.
+     * Therefore, flags are filtered here too.
      */
-    const parsed = parsePackageInput(
-      answer.split(/[\s,]+/v),
-    )
-
-    showRemarkAboutFlags(
-      packageInputState,
-      parsed.hasFlagsBeenDetected,
-    )
+    const { packages, hasDetectedFlags, hasDetectedDuplicates } = cleanUpPackagesList(answer.split(SPLIT_BY_SPACES_AND_COMAS_REGEX))
+    showNoteAboutFlags({state, hasDetectedFlags })
+    showNoteAboutDuplicates({state, hasDetectedDuplicates })
 
     /**
      * Whatever the user entered becomes the next round's submission.
@@ -386,7 +260,7 @@ async function checkPackages(options: Readonly<{
      * In particular, a missing package that was omitted is dropped from
      * `missing` on the next non-empty round.
      */
-    submitted = parsed.packages
+    submitted = new Map(packages)
   }
 
   // ---------------------------------------------------------------------------
@@ -396,27 +270,17 @@ async function checkPackages(options: Readonly<{
   /**
    * Cancellation is only allowed to continue if something valid exists.
    *
-   * Otherwise there is no useful result to hand to the next installation step.
+   * Otherwise, there is no useful result to hand to the next installation step.
    */
   if (valid.size === 0) {
-    cancel(TEXT_NO_VALID_PACKAGES)
+    cancel(TEXT_NO_VALID_PACKAGES_PROVIDED)
     process.exit(EXIT_CODE_GENERAL_FAILURE)
   }
 
   /**
    * Again, return the exact typed strings, not the resolved versions.
    */
-  return ExtendedArray.from([
-    ...valid.keys(),
-  ])
+  return ExtendedArray.from([...valid.keys()])
 }
 
-export {
-  checkPackages,
-  checkPackage,
-  formatList,
-  formatFoundPackages,
-  TEXT_TRY_AGAIN_OR_EXIT_QUESTION,
-  TEXT_TRY_AGAIN_OPTION,
-  TEXT_EXIT_OPTION,
-}
+export { checkPackages, checkPackage, formatList, promptUserToProvidePackagesToInstallOrExit }

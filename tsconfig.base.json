@@ -8,7 +8,6 @@
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
 
-
     "composite": true,
     "emitDeclarationOnly": true,
     "declarationMap": true,
